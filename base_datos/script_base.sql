@@ -44,7 +44,6 @@ CREATE TABLE Taller (
 );
 
 
-
 CREATE TABLE Marca (
 	id_marca INT AUTO_INCREMENT PRIMARY KEY,
 	nombre varchar(100)
