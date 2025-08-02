@@ -1,0 +1,79 @@
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    min-height: 100vh;
+    border-right: 1px solid var(--bs-border-color);
+}
+
+.sidebar-link {
+    padding: 0.5rem 1rem;
+    color: var(--bs-body-color);
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.sidebar-link.active {
+    background-color: rgba(41, 210, 220, 0.12);
+    color: var(--color-accent);
+    font-weight: 500;
+}
+// TODO: BORRAR CUANDO HAGAMOS EL ROUTING
+.sidebar-link.test-active {
+    background-color: rgba(41, 210, 220, 0.1);
+    color: var(--color-accent);
+    font-weight: 500;
+}
+
+.sub-link {
+    font-size: 16px;
+    font-weight: 500 !important;
+    padding-left: 2rem !important;
+    width: -webkit-fill-available;
+}
+
+.btn-toggle {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    color: var(--bs-emphasis-color);
+    background-color: transparent;
+}
+
+.btn-toggle-nav a {
+    padding: 0.1875rem 0.5rem;
+    margin-top: 0.125rem;
+    margin-left: 1rem;
+}
+
+.btn-toggle::before {
+    display: none !important;
+}
+
+.btn-toggle .fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.btn-toggle[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.scrollarea {
+    overflow-y: auto;
+}
+
+.logo-container {
+    border-bottom: 1px solid var(--bs-border-color) !important;
+}
+
+.logo {
+    width: 200px;
+    height: auto;
+    margin: auto;
+}

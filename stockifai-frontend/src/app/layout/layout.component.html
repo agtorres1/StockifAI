@@ -1,0 +1,38 @@
+<div class="sidebar flex-shrink-0 p-3">
+    <div class="d-flex align-items-center mb-3 logo-container">
+        <img src="assets/images/LogoStockifAI-removebg-preview.png" alt="StockifAI" height="40" class="logo" />
+    </div>
+
+    <ul class="list-unstyled ps-0">
+        <li *ngFor="let item of menuItems" class="mb-1">
+            <div *ngIf="item.subItems && item.subItems.length > 0">
+                <button
+                    class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed w-100 sidebar-link"
+                    data-bs-toggle="collapse" [attr.data-bs-target]="getCollapseId(item.title)" aria-expanded="false">
+                    <i class="{{ item.icon }} me-2"></i>
+                    <span class="flex-grow-1 text-start">{{ item.title }}</span>
+                    <i class="fas fa-chevron-down ms-auto"></i>
+                </button>
+                <div class="collapse" [id]="getCollapseId(item.title).slice(1)">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li *ngFor="let sub of item.subItems" class="">
+                            <a [routerLink]="sub.route" routerLinkActive="active"
+                                class="sidebar-link sub-link d-inline-flex align-items-center rounded ps-4">
+                                {{ sub.title }}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div *ngIf="!item.subItems || item.subItems.length === 0">
+                <a [routerLink]="item.route" routerLinkActive="active"
+                    class="sidebar-link d-inline-flex align-items-center rounded w-100 text-start btn-toggle-nav"
+                    [ngClass]="{'test-active': item.title === 'Dashboard'}">
+                    <i class="{{ item.icon }} me-2"></i> {{ item.title }}
+                </a>
+            </div>
+
+        </li>
+    </ul>
+</div>
