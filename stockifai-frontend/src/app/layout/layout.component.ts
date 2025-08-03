@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { TitleService } from '../core/services/title.service';
 
 @Component({
     selector: 'app-layout',
@@ -37,6 +38,8 @@ export class LayoutComponent {
     openSubmenus = new Set<MenuItem>();
     selectedItem?: MenuItem;
 
+    constructor(public titleService: TitleService) {}
+
     toggleSidebar() {
         this.isCollapsed = !this.isCollapsed;
     }
@@ -73,6 +76,10 @@ export class LayoutComponent {
 
     logout() {
         console.log('Logout');
+    }
+
+    change(title: string){
+        this.titleService.setTitle(title);
     }
 }
 

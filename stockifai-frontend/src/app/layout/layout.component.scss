@@ -3,6 +3,7 @@
     background-color: var(--sidebar-bg);
     min-height: 100vh;
     border-right: 1px solid var(--bs-border-color);
+    position: fixed;
 }
 
 .sidebar-link {
@@ -76,4 +77,54 @@
     width: 200px;
     height: auto;
     margin: auto;
+}
+
+.main-content {
+    margin-left: 250px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-header {
+    height: 50px;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+main {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: #29d2dc;
+    border-radius: 50%;
+}
+
+.header-icons i {
+    color: var(--bs-emphasis-color);
+}
+
+.header-icons .dropdown-toggle::after {
+    color: var(--bs-emphasis-color);
+}
+
+.header-title {
+    font-size: 1rem;
+    font-weight: 500 !important;
 }

@@ -3,6 +3,8 @@
 
     --color-accent: #29d2dc;
     --color-accent-dark: #1ba7b0;
+
+    --text-primary: #212529;
 }
 
 body {
@@ -20,4 +22,8 @@ main {
     max-height: 100vh;
     overflow-x: auto;
     overflow-y: hidden;
+}
+
+.pointer {
+    cursor: pointer;
 }
