@@ -1,9 +1,15 @@
 .sidebar {
     width: 250px;
     background-color: var(--sidebar-bg);
-    min-height: 100vh;
+    height: 100vh;
     border-right: 1px solid var(--bs-border-color);
     position: fixed;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-links {
+    overflow-y: auto;
 }
 
 .sidebar-link {
@@ -84,6 +90,11 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: auto;
+}
+
+.main-container {
+    padding: 1rem;
 }
 
 .app-header {

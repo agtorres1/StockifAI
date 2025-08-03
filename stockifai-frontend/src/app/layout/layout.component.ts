@@ -15,7 +15,7 @@ export class LayoutComponent {
             title: 'Talleres',
             icon: 'fas fa-tools',
             subItems: [
-                { title: 'Talleres', icon: 'fas fa-building', route: '/talleres/talleres' },
+                { title: 'Talleres', icon: 'fas fa-building', route: '/talleres/listado' },
                 { title: 'Grupos', icon: 'fas fa-users', route: '/talleres/grupos' },
                 { title: 'Usuarios', icon: 'fas fa-user', route: '/talleres/usuarios' },
             ],
@@ -24,8 +24,8 @@ export class LayoutComponent {
             title: 'Repuestos',
             icon: 'fas fa-boxes',
             subItems: [
-                { title: 'Movimientos', icon: 'fas fa-exchange-alt', route: '/movimientos' },
-                { title: 'Forecasting', icon: 'fas fa-chart-line', route: '/forecasting' },
+                { title: 'Movimientos', icon: 'fas fa-exchange-alt', route: 'repuestos/movimientos' },
+                { title: 'Forecasting', icon: 'fas fa-chart-line', route: 'repuestos/forecasting' },
                 { title: 'Stock', icon: 'fas fa-boxes', route: '/repuestos/stock' },
                 { title: 'Catalogo', icon: 'fas fa-book', route: '/repuestos/catalogo' },
                 { title: 'Marcas', icon: 'fas fa-tags', route: '/repuestos/marcas' },

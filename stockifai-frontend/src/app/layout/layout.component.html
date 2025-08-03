@@ -4,7 +4,7 @@
             <img src="assets/images/LogoStockifAI-clear.png" alt="StockifAI" height="40" class="logo" />
         </div>
 
-        <ul class="list-unstyled ps-0">
+        <ul class="sidebar-links list-unstyled ps-0">
             <li *ngFor="let item of menuItems" class="mb-1">
                 <div *ngIf="item.subItems && item.subItems.length > 0">
                     <button
@@ -29,8 +29,7 @@
 
                 <div *ngIf="!item.subItems || item.subItems.length === 0">
                     <a [routerLink]="item.route" routerLinkActive="active"
-                        class="sidebar-link d-inline-flex align-items-center rounded w-100 text-start btn-toggle-nav"
-                        [ngClass]="{'test-active': item.title === 'Dashboard'}">
+                        class="sidebar-link d-inline-flex align-items-center rounded w-100 text-start btn-toggle-nav">
                         <i class="{{ item.icon }} me-2"></i> {{ item.title }}
                     </a>
                 </div>
@@ -65,7 +64,7 @@
         </header>
 
 
-        <main class="flex-grow-1">
+        <main class="container main-container flex-grow-1">
             <router-outlet></router-outlet>
         </main>
     </div>
