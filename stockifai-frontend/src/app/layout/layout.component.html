@@ -10,12 +10,13 @@
                     <button
                         class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed w-100 sidebar-link"
                         data-bs-toggle="collapse" [attr.data-bs-target]="getCollapseId(item.title)"
-                        aria-expanded="false">
+                        aria-expanded="false" [attr.aria-expanded]="isSubItemActive(collapseDiv, item.subItems)">
                         <i class="{{ item.icon }} me-2"></i>
                         <span class="flex-grow-1 text-start">{{ item.title }}</span>
                         <i class="fas fa-chevron-down ms-auto"></i>
                     </button>
-                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)">
+                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)" 
+                        #collapseDiv [class.show]="isSubItemActive(collapseDiv, item.subItems)">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li *ngFor="let sub of item.subItems" class="">
                                 <a [routerLink]="sub.route" routerLinkActive="active"

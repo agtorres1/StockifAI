@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { TitleService } from '../core/services/title.service';
 
 @Component({
@@ -24,8 +25,8 @@ export class LayoutComponent {
             title: 'Repuestos',
             icon: 'fas fa-boxes',
             subItems: [
-                { title: 'Movimientos', icon: 'fas fa-exchange-alt', route: 'repuestos/movimientos' },
-                { title: 'Forecasting', icon: 'fas fa-chart-line', route: 'repuestos/forecasting' },
+                { title: 'Movimientos', icon: 'fas fa-exchange-alt', route: '/repuestos/movimientos' },
+                { title: 'Forecasting', icon: 'fas fa-chart-line', route: '/repuestos/forecasting' },
                 { title: 'Stock', icon: 'fas fa-boxes', route: '/repuestos/stock' },
                 { title: 'Catalogo', icon: 'fas fa-book', route: '/repuestos/catalogo' },
                 { title: 'Marcas', icon: 'fas fa-tags', route: '/repuestos/marcas' },
@@ -38,7 +39,9 @@ export class LayoutComponent {
     openSubmenus = new Set<MenuItem>();
     selectedItem?: MenuItem;
 
-    constructor(public titleService: TitleService) {}
+    menuExpanded: { [key: string]: boolean } = {};
+
+    constructor(public titleService: TitleService, private router: Router) {}
 
     toggleSidebar() {
         this.isCollapsed = !this.isCollapsed;
@@ -78,8 +81,15 @@ export class LayoutComponent {
         console.log('Logout');
     }
 
-    change(title: string){
+    change(title: string) {
         this.titleService.setTitle(title);
+    }
+
+    isSubItemActive(element: HTMLElement, subItems: MenuItem[]): boolean {
+        const isVisible = element.classList.contains('show');
+        const routeMatch = subItems.some((sub) => sub.route && this.router.url.startsWith(sub.route));
+
+        return isVisible || routeMatch;
     }
 }
 

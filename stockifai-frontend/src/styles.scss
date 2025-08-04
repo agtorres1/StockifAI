@@ -1,8 +1,8 @@
 :root {
     --sidebar-bg: #f4f8fa;
 
-    --color-accent: #29d2dc;
-    --color-accent-dark: #1ba7b0;
+    --color-accent: #1ba7b0;
+    --color-accent-light: #29d2dc;
 
     --text-primary: #212529;
 }
@@ -10,6 +10,7 @@
 body {
     min-height: 100vh;
     min-height: -webkit-fill-available;
+    background-color: #f5f7fa !important;
 }
 
 html {
@@ -26,4 +27,45 @@ main {
 
 .pointer {
     cursor: pointer;
+}
+
+form label {
+    font-size: 14px;
+    margin-bottom: 0.25rem !important;
+}
+
+table {
+    box-shadow: 0 0 0 1px #dee2e6;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+thead th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+tbody tr:hover {
+    background-color: #f1f3f5;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: #168e96 !important;
+    border-color: #168e96 !important;
+}
+
+.btn-link {
+    color: var(--color-accent) !important;
 }

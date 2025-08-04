@@ -6,6 +6,7 @@
     position: fixed;
     display: flex;
     flex-direction: column;
+    box-shadow: 4px 0 5px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-links {
@@ -100,7 +101,7 @@
 .app-header {
     height: 50px;
     background-color: white;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #dee2e6;
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
