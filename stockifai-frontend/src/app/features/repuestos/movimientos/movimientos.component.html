@@ -66,8 +66,8 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label">Archivo CSV</label>
-                    <input type="file" accept=".csv" class="form-control" name="file"
-                        (change)="onFileChange($event)" required />
+                    <input type="file" accept=".csv" class="form-control" name="file" (change)="onFileChange($event)"
+                        required />
                     <div class="invalid-feedback d-block" *ngIf="form.submitted && !archivo">
                         Seleccioná un archivo CSV.
                     </div>
@@ -84,11 +84,15 @@
                 </div>
 
                 <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{ errorMsg }}</div>
+                <div *ngIf="successMsg" class="alert alert-success mt-3">{{ successMsg }}</div>
             </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary" [disabled]="!archivo">Importar</button>
+                <button type="button" class="btn btn-primary" (click)="submitArchivo()"
+                    [disabled]="!archivo || loadingArchivo">
+                    {{ loadingArchivo ? 'Importando...' : 'Importar' }}
+                </button>
             </div>
         </form>
     </div>

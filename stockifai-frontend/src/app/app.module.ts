@@ -13,6 +13,7 @@ import { TalleresGruposComponent } from './features/talleres/grupos/grupos.compo
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { LayoutComponent } from './layout/layout.component';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
     declarations: [
@@ -26,7 +27,7 @@ import { LayoutComponent } from './layout/layout.component';
         TalleresListadoComponent,
         TalleresUsuariosComponent,
     ],
-    imports: [BrowserModule, CommonModule, RouterModule.forRoot([]), AppRoutingModule, FormsModule],
+    imports: [BrowserModule, CommonModule, RouterModule.forRoot([]), AppRoutingModule, FormsModule, HttpClientModule],
     providers: [],
     bootstrap: [AppComponent],
 })

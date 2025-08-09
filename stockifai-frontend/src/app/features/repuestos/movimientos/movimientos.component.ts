@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
+import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
 
 @Component({
@@ -55,8 +56,10 @@ export class MovimientosComponent {
     archivo: File | null = null;
     fecha: string = '';
     errorMsg = '';
+    successMsg = '';
+    loadingArchivo = false;
 
-    constructor(private titleService: TitleService) {
+    constructor(private titleService: TitleService, private stockService: StockService) {
         this.titleService.setTitle('Movimientos');
         this.fecha = new Date().toISOString().split('T')[0];
     }
@@ -76,15 +79,19 @@ export class MovimientosComponent {
         }
     }
 
-    submitArchivo() {
+    async submitArchivo() {
         if (!this.archivo) return;
 
-        const fd = new FormData();
-        fd.append('file', this.archivo);
-        fd.append('fecha', this.fecha);
-
+        this.loadingArchivo = true;
         this.errorMsg = '';
-
-        console.log('Enviando archivo...', this.archivo);
+        try {
+            const res = await this.stockService.importarMovimientos(this.archivo, this.fecha);
+            this.successMsg = 'Archivo subido correctamente';
+            this.loadingArchivo = false;
+        } catch (err) {
+            console.error(err);
+            this.errorMsg = 'Error subiendo el archivo';
+            this.loadingArchivo = false;
+        }
     }
 }
