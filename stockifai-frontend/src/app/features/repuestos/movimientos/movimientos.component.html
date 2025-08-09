@@ -1,1 +1,95 @@
-<p>movimientos works!</p>
+<div class="card shadow-sm">
+    <div class="card-body p-3">
+        <form>
+            <div class="row gy-2 mb-3 align-items-end">
+                <div class="col-md-4 col-lg-3">
+                    <label for="sku" class="form-label">SKU</label>
+                    <input type="text" class="form-control form-control-sm" id="sku" [(ngModel)]="filtro.sku" name="sku"
+                        placeholder="SKU, nombre..." (ngModelChange)="filtrar()" />
+                </div>
+
+                <div class="col-md-4 col-lg-3">
+                    <label for="deposito" class="form-label">Depósito</label>
+                    <select class="form-select form-select-sm" id="deposito" [(ngModel)]="filtro.deposito"
+                        name="deposito" (ngModelChange)="filtrar()">
+                        <option value="">Todos los depósitos</option>
+                        <option *ngFor="let d of depositos" [value]="d">{{ d.nombre }}</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 col-lg-6 d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1"
+                        data-bs-toggle="modal" data-bs-target="#importarMovimientosModal">
+                        <i class="fa fa-file-export me-1"></i>
+                        Importar movimientos
+                    </button>
+
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>SKU</th>
+                        <th>Depósito</th>
+                        <th>Fecha</th>
+                        <th>Cantidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let mov of movimientos">
+                        <td>{{ mov.sku }}</td>
+                        <td>{{ mov.depositoNombre }}</td>
+                        <td>{{ mov.fecha | date: 'dd/MM/yyyy' }}</td>
+                        <td>{{ mov.cantidad }}</td>
+                    </tr>
+                    <tr *ngIf="movimientos.length === 0">
+                        <td colspan="4" class="text-center text-muted py-3">No hay movimientos para mostrar.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="importarMovimientosModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content" #form="ngForm" (ngSubmit)="submitArchivo()">
+            <div class="modal-header">
+                <h5 class="modal-title">Importar movimientos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Archivo CSV</label>
+                    <input type="file" accept=".csv" class="form-control" name="file"
+                        (change)="onFileChange($event)" required />
+                    <div class="invalid-feedback d-block" *ngIf="form.submitted && !archivo">
+                        Seleccioná un archivo CSV.
+                    </div>
+                    <div class="form-text">
+                        Formato: <code>sku,deposito,tipo de movimiento,cantidad</code>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" name="fecha" [(ngModel)]="fecha" />
+                    </div>
+                </div>
+
+                <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{ errorMsg }}</div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="!archivo">Importar</button>
+            </div>
+        </form>
+    </div>
+</div>

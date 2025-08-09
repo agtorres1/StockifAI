@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { TitleService } from '../../../core/services/title.service';
+import { ForecastingItem } from '../../../core/models/forecasting-item';
 
 @Component({
     selector: 'app-forecasting',
@@ -56,7 +57,7 @@ export class ForecastingComponent {
         console.log('detail', item);
     }
 
-    resultados = [
+    resultados: ForecastingItem[] = [
         {
             nombre: 'Filtro de aire',
             sku: 'SKU001',
