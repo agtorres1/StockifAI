@@ -53,9 +53,3 @@ class ImportarCatalogoView(APIView):
                 mode=ser.validated_data.get("mode", "upsert"),
             )
         return Response(res, status=status.HTTP_200_OK)
-
-class DepositosPorTallerView(APIView):
-    def get(self, request, taller_id: int):
-        qs = Deposito.objects.filter(taller_id=taller_id)
-        data = DepositoSerializer(qs, many=True).data
-        return Response(data, status=status.HTTP_200_OK)
