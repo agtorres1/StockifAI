@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
 import { StockService } from '../../../core/services/stock.service';
+import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
 
 @Component({
@@ -9,16 +10,21 @@ import { TitleService } from '../../../core/services/title.service';
     templateUrl: './movimientos.component.html',
     styleUrl: './movimientos.component.scss',
 })
-export class MovimientosComponent {
+export class MovimientosComponent implements OnInit {
+    tallerId: number = 1;
     filtro = {
         sku: '',
         deposito: null as number | null,
     };
 
-    depositos: Deposito[] = [
-        { id: 1, nombre: 'Depósito Central' },
-        { id: 2, nombre: 'Depósito Secundario' },
-    ];
+    depositos: Deposito[] = [];
+    loading: boolean = false;
+    errorMessage: string = '';
+
+    //depositos: Deposito[] = [
+    //    { id: 1, nombre: 'Depósito Central' },
+    //    { id: 2, nombre: 'Depósito Secundario' },
+    //];
 
     movimientos: Movimiento[] = [
         {
@@ -59,9 +65,30 @@ export class MovimientosComponent {
     successMsg = '';
     loadingArchivo = false;
 
-    constructor(private titleService: TitleService, private stockService: StockService) {
+    constructor(
+        private titleService: TitleService,
+        private stockService: StockService,
+        private talleresService: TalleresService
+    ) {
         this.titleService.setTitle('Movimientos');
         this.fecha = new Date().toISOString().split('T')[0];
+    }
+
+    async ngOnInit() {
+        this.cargarDepositos();
+    }
+
+    async cargarDepositos() {
+        try {
+            this.loading = true;
+            const res = await this.talleresService.getDepositos(this.tallerId);
+            console.log('depositos', res);
+            this.depositos = res;
+            this.loading = false;
+        } catch (error: any) {
+            this.errorMessage = error.message;
+            this.loading = false;
+        }
     }
 
     filtrar() {}
@@ -85,7 +112,7 @@ export class MovimientosComponent {
         this.loadingArchivo = true;
         this.errorMsg = '';
         try {
-            const res = await this.stockService.importarMovimientos(this.archivo, this.fecha);
+            const res = await this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha);
             this.successMsg = 'Archivo subido correctamente';
             this.loadingArchivo = false;
         } catch (err) {

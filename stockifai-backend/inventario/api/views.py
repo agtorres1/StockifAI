@@ -2,13 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-from .serializers import MovimientosImportSerializer, StockImportSerializer, CatalogoImportSerializer
+from .serializers import MovimientosImportSerializer, StockImportSerializer, CatalogoImportSerializer, \
+    DepositoSerializer
+from ..models import Deposito
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
 from django.conf import settings
 
 from ..services.import_stock import importar_stock
-
 
 class ImportarMovimientosView(APIView):
     def post(self, request):
@@ -52,3 +53,9 @@ class ImportarCatalogoView(APIView):
                 mode=ser.validated_data.get("mode", "upsert"),
             )
         return Response(res, status=status.HTTP_200_OK)
+
+class DepositosPorTallerView(APIView):
+    def get(self, request, taller_id: int):
+        qs = Deposito.objects.filter(taller_id=taller_id)
+        data = DepositoSerializer(qs, many=True).data
+        return Response(data, status=status.HTTP_200_OK)

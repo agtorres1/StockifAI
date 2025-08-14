@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RestService {
-    private baseUrl = 'https://jsonplaceholder.typicode.com';
+    private baseUrl = 'http://127.0.0.1:8000/api/';
 
     constructor(private http: HttpClient) {}
 
@@ -12,7 +12,7 @@ export class RestService {
     async get<T>(endpoint: string, params?: any, headers?: any): Promise<T> {
         try {
             return await firstValueFrom(
-                this.http.get<T>(`${this.baseUrl}/${endpoint}`, {
+                this.http.get<T>(`${this.baseUrl}${endpoint}`, {
                     params,
                     headers: new HttpHeaders(headers || {}),
                 })
@@ -25,7 +25,7 @@ export class RestService {
     async post<T>(endpoint: string, body: any, headers?: any): Promise<T> {
         try {
             return await firstValueFrom(
-                this.http.post<T>(`${this.baseUrl}/${endpoint}`, body, {
+                this.http.post<T>(`${this.baseUrl}${endpoint}`, body, {
                     headers: new HttpHeaders(headers || {}),
                 })
             );
@@ -37,7 +37,7 @@ export class RestService {
     async put<T>(endpoint: string, body: any, headers?: any): Promise<T> {
         try {
             return await firstValueFrom(
-                this.http.put<T>(`${this.baseUrl}/${endpoint}`, body, {
+                this.http.put<T>(`${this.baseUrl}${endpoint}`, body, {
                     headers: new HttpHeaders(headers || {}),
                 })
             );
@@ -62,7 +62,7 @@ export class RestService {
     async upload<T>(endpoint: string, formData: FormData, headers?: any): Promise<T> {
         try {
             return await firstValueFrom(
-                this.http.post<T>(`${this.baseUrl}/${endpoint}`, formData, {
+                this.http.post<T>(`${this.baseUrl}${endpoint}`, formData, {
                     headers: new HttpHeaders(headers || {}),
                 })
             );

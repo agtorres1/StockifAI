@@ -1,4 +1,8 @@
 from rest_framework import serializers
+
+from inventario.models import Deposito
+
+
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
     fields_map = serializers.JSONField(required=False)
@@ -28,3 +32,9 @@ class CatalogoImportSerializer(serializers.Serializer):
     fields_map = serializers.DictField(child=serializers.CharField(), required=False)
     default_estado = serializers.ChoiceField(choices=("ACTIVO", "INACTIVO"), required=False, default="ACTIVO")
     mode = serializers.ChoiceField(choices=("upsert", "create-only", "update-only"), required=False, default="upsert")
+
+
+class DepositoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deposito
+        fields = ("id", "nombre", "taller_id")
