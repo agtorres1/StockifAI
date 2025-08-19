@@ -64,6 +64,7 @@ export class MovimientosComponent implements OnInit {
     errorMsg = '';
     successMsg = '';
     loadingArchivo = false;
+    erroresImport: any[] = [];
 
     constructor(
         private titleService: TitleService,
@@ -97,6 +98,12 @@ export class MovimientosComponent implements OnInit {
 
     importar() {}
 
+    openImportarModal() {
+        this.loadingArchivo = false;
+        this.erroresImport = [];
+        this.successMsg = '';
+    }
+
     public onFileChange(event: Event): void {
         const input = event.target as HTMLInputElement | null;
         if (input?.files && input.files.length > 0) {
@@ -113,11 +120,15 @@ export class MovimientosComponent implements OnInit {
         this.errorMsg = '';
         try {
             const res = await this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha);
-            this.successMsg = 'Archivo subido correctamente';
+            if (res.errores && res.errores.length > 0) {
+                this.erroresImport = res.errores;
+            }
+            if (res.insertados > 0) {
+                this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
+            }
             this.loadingArchivo = false;
         } catch (err) {
-            console.error(err);
-            this.errorMsg = 'Error subiendo el archivo';
+            this.errorMsg = 'Error al importar el archivo';
             this.loadingArchivo = false;
         }
     }

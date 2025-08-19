@@ -19,7 +19,7 @@
 
                 <div class="col-md-4 col-lg-6 d-flex justify-content-end">
                     <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1"
-                        data-bs-toggle="modal" data-bs-target="#importarMovimientosModal" (click)="errorMsg = ''">
+                        data-bs-toggle="modal" data-bs-target="#importarMovimientosModal" (click)="openImportarModal()">
                         <i class="fa fa-file-export me-1"></i>
                         Importar movimientos
                     </button>
@@ -28,7 +28,7 @@
             </div>
         </form>
 
-         <div *ngIf="loading" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
+        <div *ngIf="loading" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
             <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
             <span>Cargando…</span>
         </div>
@@ -74,32 +74,36 @@
 
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Archivo CSV</label>
+                    <label class="form-label">Archivo</label>
                     <input type="file" accept=".csv, .xlsx" class="form-control" name="file"
                         (change)="onFileChange($event)" required />
                     <div class="invalid-feedback d-block" *ngIf="form.submitted && !archivo">
-                        Seleccioná un archivo CSV.
+                        Seleccioná un archivo csv o xlsx.
                     </div>
                     <div class="form-text">
-                        Formato: <code>sku,deposito,tipo de movimiento,cantidad</code>
+                        Formato: <code>repuesto,fecha,cantidad,tipo de movimiento,deposito</code>
                     </div>
                 </div>
-
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" class="form-control" name="fecha" [(ngModel)]="fecha" />
-                    </div>
-                </div>
-
+                
                 <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{ errorMsg }}</div>
                 <div *ngIf="successMsg" class="alert alert-success mt-3">{{ successMsg }}</div>
+                <div *ngIf="erroresImport && erroresImport.length > 0" class="alert alert-danger mt-3">
+                    <h6 class="mb-2">Movimientos rechazados ({{erroresImport.length}})</h6>
+                    <ul class="mb-0 ps-3 small">
+                        <li *ngFor="let error of erroresImport">
+                            <strong>Fila {{ error.fila ?? '—' }}:</strong> {{ error.motivo }}
+                        </li>
+                    </ul>
+                </div>
+
+
             </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" (click)="submitArchivo()"
                     [disabled]="!archivo || loadingArchivo">
+                    <div *ngIf="loadingArchivo" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
                     {{ loadingArchivo ? 'Importando...' : 'Importar' }}
                 </button>
             </div>

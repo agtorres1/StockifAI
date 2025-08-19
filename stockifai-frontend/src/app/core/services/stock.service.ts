@@ -18,6 +18,6 @@ export class StockService {
             formData.append('defaultFecha', fecha);
         }
 
-        return this.restService.upload('/importaciones/movimientos', formData);
+        return this.restService.upload('importaciones/movimientos', formData);
     }
 }
