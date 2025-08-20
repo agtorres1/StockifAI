@@ -77,6 +77,7 @@ export class MovimientosComponent implements OnInit {
 
     async ngOnInit() {
         this.cargarDepositos();
+        this.cargarMovimientos();
     }
 
     async cargarDepositos() {
@@ -85,6 +86,18 @@ export class MovimientosComponent implements OnInit {
             const res = await this.talleresService.getDepositos(this.tallerId);
             console.log('depositos', res);
             this.depositos = res;
+            this.loading = false;
+        } catch (error: any) {
+            this.errorMessage = error.message;
+            this.loading = false;
+        }
+    }
+
+    async cargarMovimientos(){
+        try {
+            this.loading = true;
+            const res = await this.stockService.getMovimientos(this.tallerId);
+            console.log('movimienots', res);
             this.loading = false;
         } catch (error: any) {
             this.errorMessage = error.message;

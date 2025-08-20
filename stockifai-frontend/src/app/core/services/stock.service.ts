@@ -6,8 +6,8 @@ import { RestService } from './rest.service';
 export class StockService {
     constructor(private restService: RestService) {}
 
-    getMovimientos(): Promise<Movimiento[]> {
-        return this.restService.get<Movimiento[]>('movimientos');
+    getMovimientos(tallerId: number): Promise<Movimiento[]> {
+        return this.restService.get<Movimiento[]>(`talleres/${tallerId}/movimientos`);
     }
 
     importarMovimientos(tallerId: number, file: File, fecha?: string): Promise<any> {
