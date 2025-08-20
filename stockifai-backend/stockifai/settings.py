@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+
+
+
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
@@ -26,12 +29,28 @@ TEMPLATES = [{
         "django.contrib.auth.context_processors.auth","django.contrib.messages.context_processors.messages"]},
 }]
 WSGI_APPLICATION = "stockifai.wsgi.application"
-DATABASES = {"default":{
-    "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
-    "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
-    "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
-    "OPTIONS":{"charset":"utf8mb4"}
-}}
+
+
+
+#DATABASES = {"default":{
+#    "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
+#    "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
+#    "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
+#    "OPTIONS":{"charset":"utf8mb4"}
+#}}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAMEAWS'),
+        'USER': os.getenv('DB_USERAWS'),
+        'PASSWORD': os.getenv('DB_PASSWORDAWS'),
+        'HOST': os.getenv('DB_HOSTAWS'),
+        'PORT': os.getenv('DB_PORTAWS'),
+    }
+}
+
+
 LANGUAGE_CODE="es-ar"; TIME_ZONE="America/Argentina/Buenos_Aires"; USE_I18N=True; USE_TZ=True
 STATIC_URL="static/"; DEFAULT_AUTO_FIELD="django.db.models.BigAutoField"
 REST_FRAMEWORK={"DEFAULT_RENDERER_CLASSES":["rest_framework.renderers.JSONRenderer"],
