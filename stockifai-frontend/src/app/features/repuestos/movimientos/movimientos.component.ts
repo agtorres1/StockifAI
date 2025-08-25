@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
 import { StockService } from '../../../core/services/stock.service';
@@ -12,50 +13,16 @@ import { TitleService } from '../../../core/services/title.service';
 })
 export class MovimientosComponent implements OnInit {
     tallerId: number = 1;
-    filtro = {
-        sku: '',
-        deposito: null as number | null,
-    };
+    filtro = { idDeposito: '', searchText: '', desde: '', hasta: '' };
 
     depositos: Deposito[] = [];
+    movimientos: Movimiento[] = [];
     loading: boolean = false;
     errorMessage: string = '';
 
-    //depositos: Deposito[] = [
-    //    { id: 1, nombre: 'Depósito Central' },
-    //    { id: 2, nombre: 'Depósito Secundario' },
-    //];
-
-    movimientos: Movimiento[] = [
-        {
-            tipo: 'ENTRADA',
-            cantidad: 5,
-            fecha: new Date('2025-08-01'),
-            depositoNombre: 'Depósito Central',
-            sku: 'ABC123',
-        },
-        {
-            tipo: 'SALIDA',
-            cantidad: 2,
-            fecha: new Date('2025-08-01'),
-            depositoNombre: 'Depósito Central',
-            sku: 'ABC123',
-        },
-        {
-            tipo: 'ENTRADA',
-            cantidad: 3,
-            fecha: new Date('2025-08-02'),
-            depositoNombre: 'Depósito Secundario',
-            sku: 'XYZ789',
-        },
-        {
-            tipo: 'SALIDA',
-            cantidad: 1,
-            fecha: new Date('2025-08-02'),
-            depositoNombre: 'Depósito Central',
-            sku: 'XYZ789',
-        },
-    ];
+    page: number = 1;
+    pageSize: number = 10;
+    totalPages: number = 0;
 
     mostrarDialog: boolean = false;
 
@@ -66,6 +33,8 @@ export class MovimientosComponent implements OnInit {
     loadingArchivo = false;
     erroresImport: any[] = [];
 
+    private search$ = new Subject<string>();
+
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
@@ -75,41 +44,81 @@ export class MovimientosComponent implements OnInit {
         this.fecha = new Date().toISOString().split('T')[0];
     }
 
-    async ngOnInit() {
-        this.cargarDepositos();
-        this.cargarMovimientos();
+    ngOnInit(): void {
+        this.loading = true;
+
+        forkJoin({
+            depositos: this.talleresService.getDepositos(this.tallerId),
+            movimientos: this.stockService.getMovimientos(this.tallerId, this.page, this.pageSize, this.filtro),
+        }).subscribe({
+            next: ({ depositos, movimientos }) => {
+                this.depositos = depositos;
+                this.movimientos = movimientos.results;
+                this.totalPages = movimientos.total_pages;
+                this.loading = false;
+                this.errorMessage = '';
+            },
+            error: (error) => {
+                this.errorMessage = error?.message ?? 'Error al cargar';
+                this.loading = false;
+            },
+        });
+
+        this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
+            this.page = 1;
+            this.filtro.searchText = text;
+            this.cargarPagina(this.page);
+        });
     }
 
-    async cargarDepositos() {
-        try {
-            this.loading = true;
-            const res = await this.talleresService.getDepositos(this.tallerId);
-            console.log('depositos', res);
-            this.depositos = res;
-            this.loading = false;
-        } catch (error: any) {
-            this.errorMessage = error.message;
-            this.loading = false;
-        }
+    filtrar() {
+        this.page = 1;
+        this.cargarPagina(this.page);
     }
 
-    async cargarMovimientos(){
-        try {
-            this.loading = true;
-            const res = await this.stockService.getMovimientos(this.tallerId);
-            console.log('movimienots', res);
-            this.loading = false;
-        } catch (error: any) {
-            this.errorMessage = error.message;
-            this.loading = false;
-        }
+    resetearFiltros() {
+        this.filtro = { idDeposito: '', searchText: '', desde: '', hasta: '' };
+        this.filtrar();
     }
 
-    filtrar() {}
+    onSearchChange(text: string) {
+        this.search$.next(text);
+    }
 
-    resetear() {}
+    private cargarPagina(p: number) {
+        if (p < 1 || p > this.totalPages) return;
 
-    importar() {}
+        this.loading = true;
+        this.stockService.getMovimientos(this.tallerId, p, this.pageSize, this.filtro).subscribe({
+            next: (resp) => {
+                this.movimientos = resp.results;
+                this.totalPages = resp.total_pages;
+                this.page = resp.page;
+                this.pageSize = resp.page_size;
+                this.loading = false;
+                this.errorMessage = '';
+            },
+            error: (err) => {
+                this.errorMessage = err?.message ?? 'Error al cargar';
+                this.loading = false;
+            },
+        });
+    }
+
+    goPreviousPage() {
+        this.cargarPagina(this.page - 1);
+    }
+    goNextPage() {
+        this.cargarPagina(this.page + 1);
+    }
+    goToPage(p: number) {
+        this.cargarPagina(p);
+    }
+
+    onPageSizeChange(size: number) {
+        this.pageSize = +size;
+        this.cargarPagina(1);
+    }
 
     openImportarModal() {
         this.loadingArchivo = false;
@@ -132,7 +141,9 @@ export class MovimientosComponent implements OnInit {
         this.loadingArchivo = true;
         this.errorMsg = '';
         try {
-            const res = await this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha);
+            const res = await firstValueFrom(
+                this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha)
+            );
             if (res.errores && res.errores.length > 0) {
                 this.erroresImport = res.errores;
             }

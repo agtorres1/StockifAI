@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RestService {
@@ -8,66 +8,45 @@ export class RestService {
 
     constructor(private http: HttpClient) {}
 
-    // Usamos firstValueFrom para convertir los Observables en Promises
-    async get<T>(endpoint: string, params?: any, headers?: any): Promise<T> {
-        try {
-            return await firstValueFrom(
-                this.http.get<T>(`${this.baseUrl}${endpoint}`, {
-                    params,
-                    headers: new HttpHeaders(headers || {}),
-                })
-            );
-        } catch (error) {
-            return Promise.reject(error);
-        }
+    get<T>(endpoint: string, params?: any, headers?: Record<string, string>): Observable<T> {
+        return this.http
+            .get<T>(`${this.baseUrl}${endpoint}`, {
+                params,
+                headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
-    async post<T>(endpoint: string, body: any, headers?: any): Promise<T> {
-        try {
-            return await firstValueFrom(
-                this.http.post<T>(`${this.baseUrl}${endpoint}`, body, {
-                    headers: new HttpHeaders(headers || {}),
-                })
-            );
-        } catch (error) {
-            return Promise.reject(error);
-        }
+    post<T>(endpoint: string, body: any, headers?: Record<string, string>): Observable<T> {
+        return this.http
+            .post<T>(`${this.baseUrl}${endpoint}`, body, {
+                headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
-    async put<T>(endpoint: string, body: any, headers?: any): Promise<T> {
-        try {
-            return await firstValueFrom(
-                this.http.put<T>(`${this.baseUrl}${endpoint}`, body, {
-                    headers: new HttpHeaders(headers || {}),
-                })
-            );
-        } catch (error) {
-            return Promise.reject(error);
-        }
+    put<T>(endpoint: string, body: any, headers?: Record<string, string>): Observable<T> {
+        return this.http
+            .put<T>(`${this.baseUrl}${endpoint}`, body, {
+                headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
-    async delete<T>(endpoint: string, params?: any, headers?: any): Promise<T> {
-        try {
-            return await firstValueFrom(
-                this.http.delete<T>(`${this.baseUrl}/${endpoint}`, {
-                    params,
-                    headers: new HttpHeaders(headers || {}),
-                })
-            );
-        } catch (error) {
-            return Promise.reject(error);
-        }
+    delete<T>(endpoint: string, params?: any, headers?: Record<string, string>): Observable<T> {
+        return this.http
+            .delete<T>(`${this.baseUrl}${endpoint}`, {
+                params,
+                headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
-    async upload<T>(endpoint: string, formData: FormData, headers?: any): Promise<T> {
-        try {
-            return await firstValueFrom(
-                this.http.post<T>(`${this.baseUrl}${endpoint}`, formData, {
-                    headers: new HttpHeaders(headers || {}),
-                })
-            );
-        } catch (error) {
-            return Promise.reject(error);
-        }
+    upload<T>(endpoint: string, formData: FormData, headers?: Record<string, string>): Observable<T> {
+        return this.http
+            .post<T>(`${this.baseUrl}${endpoint}`, formData, {
+                headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
     }
 }

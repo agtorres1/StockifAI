@@ -1,7 +1,13 @@
+import { Deposito } from './deposito';
+import { Repuesto } from './repuesto';
+
 export interface Movimiento {
+    id: number;
+    fecha: Date;
     tipo: string;
     cantidad: number;
-    fecha: Date;
-    depositoNombre: string;
-    sku: string;
+    deposito: Deposito;
+    repuesto: Repuesto;
+    externo_id?: number;
+    documento?: string;
 }
