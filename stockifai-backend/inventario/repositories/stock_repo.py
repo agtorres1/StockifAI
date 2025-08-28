@@ -1,6 +1,8 @@
 from django.db.models import F
 from .base import RepoResult, StockInsufficientError
-from inventario.models import StockPorDeposito, RepuestoTaller, Deposito
+from inventario.models import StockPorDeposito, Deposito
+from catalogo.models import RepuestoTaller
+
 class StockRepo:
     def get_or_create(self, rt: RepuestoTaller, deposito: Deposito) -> RepoResult:
         obj, created = StockPorDeposito.objects.get_or_create(repuesto_taller=rt, deposito=deposito)

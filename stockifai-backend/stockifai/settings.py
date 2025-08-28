@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+AUTH_USER_MODEL = 'user.User'  # 'user' es el nombre de tu app
 
 
 load_dotenv()
@@ -10,10 +10,19 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
 ALLOWED_HOSTS = ["*"] if DEBUG else os.getenv("DJANGO_ALLOWED_HOSTS","").split(",")
 INSTALLED_APPS = [
-    "django.contrib.admin","django.contrib.auth","django.contrib.contenttypes",
-    "django.contrib.sessions","django.contrib.messages","django.contrib.staticfiles",
-    "rest_framework","catalogo","inventario","corsheaders"
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "catalogo",
+    "inventario",
+    "corsheaders",
+    "user",  # <-- agregalo
 ]
+
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware","django.contrib.sessions.middleware.SessionMiddleware",
@@ -62,3 +71,5 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:4200",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+
