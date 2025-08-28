@@ -73,3 +73,16 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+
+
+AUTH0_DOMAIN = "dev-8xslftegs71zzapj.us.auth0.com"
+API_IDENTIFIER = "http://127.0.0.1:8000"  # poner tu URL de backend
+ALGORITHMS = ["RS256"]
+
+
