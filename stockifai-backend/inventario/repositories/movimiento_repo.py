@@ -19,13 +19,13 @@ class MovimientoRepo:
         Devuelve movimientos de EGRESO para el taller indicado, de los últimos 5 años.
         """
 
-        cant_anios = 5
+        cant_anios = 4 #hay datos erroneos con 5
 
         hasta_date = timezone.now()
         desde_date = (hasta_date - relativedelta(years=cant_anios)).date()
 
-        desde_dt = datetime.combine(desde_date, time.min)
-        hasta_dt = datetime.combine(hasta_date, time.max)
+        desde_dt = timezone.make_aware(datetime.combine(desde_date, time.min))
+        hasta_dt = timezone.make_aware(datetime.combine(hasta_date, time.max))
 
         query_set = (
             Movimiento.objects
@@ -42,5 +42,6 @@ class MovimientoRepo:
             .values("id", "numero_pieza", "descripcion", "fecha", "cantidad")
             .order_by("fecha")
         )
+        print(query_set)
         return query_set
 
