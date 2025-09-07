@@ -47,6 +47,13 @@ class RepuestoTaller(models.Model):
     precio = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     costo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     original = models.BooleanField(default=True)
+    pred_1 = models.IntegerField(null=True, blank=True)
+    pred_2 = models.IntegerField(null=True, blank=True)
+    pred_3 = models.IntegerField(null=True, blank=True)
+    pred_4 = models.IntegerField(null=True, blank=True)
+
+
+
     class Meta:
         unique_together = [('repuesto', 'taller')]
 

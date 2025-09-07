@@ -20,7 +20,8 @@ INSTALLED_APPS = [
     "catalogo",
     "inventario",
     "corsheaders",
-    "user",  # <-- agregalo
+    "user",
+    'd_externo'
 ]
 
 MIDDLEWARE = [
