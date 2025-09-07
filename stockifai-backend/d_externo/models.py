@@ -5,7 +5,7 @@ class Inflacion(models.Model):
     ipc = models.DecimalField(max_digits=9, decimal_places=4)
 
     def __str__(self):
-        return f"{self.fecha} - {self.valor}"
+        return f"{self.fecha} - {self.ipc}"
 
 class Patentamiento(models.Model):
     fecha = models.DateField()
@@ -13,7 +13,6 @@ class Patentamiento(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.cantidad}"
-
 
 
 class IPSA(models.Model):
@@ -27,17 +26,12 @@ class IPSA(models.Model):
         return f"{self.fecha} - {self.ipsa}"
 
 
-
-
 class Prenda(models.Model):
     fecha = models.DateField()
     prenda = models.IntegerField()
 
     def __str__(self):
         return f"{self.fecha} - {self.prenda}"
-
-
-
 
 class TasaInteresPrestamo(models.Model):
     fecha = models.DateField()
@@ -113,14 +107,14 @@ class RegistroEntrenamiento_intermitente(models.Model):
     prendas_ema_12 = models.FloatField(verbose_name="Prendas (EMA 12)")
     prendas_delta = models.FloatField(verbose_name="Prendas (Delta)")
 
-    tasa_de_interes_prestamos_lag_1 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 1)")
-    tasa_de_interes_prestamos_lag_2 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 2)")
-    tasa_de_interes_prestamos_lag_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 3)")
-    tasa_de_interes_prestamos_lag_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 6)")
-    tasa_de_interes_prestamos_ema_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 3)")
-    tasa_de_interes_prestamos_ema_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 6)")
-    tasa_de_interes_prestamos_ema_12 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 12)")
-    tasa_de_interes_prestamos_delta = models.FloatField(verbose_name="Tasa de Interés Préstamos (Delta)")
+    tasa_de_interes_lag_1 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 1)")
+    tasa_de_interes_lag_2 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 2)")
+    tasa_de_interes_lag_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 3)")
+    tasa_de_interes_lag_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 6)")
+    tasa_de_interes_ema_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 3)")
+    tasa_de_interes_ema_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 6)")
+    tasa_de_interes_ema_12 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 12)")
+    tasa_de_interes_delta = models.FloatField(verbose_name="Tasa de Interés Préstamos (Delta)")
 
     tipo_de_cambio_lag_1 = models.FloatField(verbose_name="Tipo de Cambio (Lag 1)")
     tipo_de_cambio_lag_2 = models.FloatField(verbose_name="Tipo de Cambio (Lag 2)")
@@ -147,8 +141,55 @@ class RegistroEntrenamiento_intermitente(models.Model):
 
     semana_1 = models.FloatField(default=0)
     semana_2 = models.FloatField(default=0)
-    # ... (y así sucesivamente hasta semana_52)
-    # se omiten las 52 semanas para brevedad, pero seguirían la misma lógica
+    semana_3 = models.FloatField(default=0)
+    semana_4 = models.FloatField(default=0)
+    semana_5 = models.FloatField(default=0)
+    semana_6 = models.FloatField(default=0)
+    semana_7 = models.FloatField(default=0)
+    semana_8 = models.FloatField(default=0)
+    semana_9 = models.FloatField(default=0)
+    semana_10 = models.FloatField(default=0)
+    semana_11 = models.FloatField(default=0)
+    semana_12 = models.FloatField(default=0)
+    semana_13 = models.FloatField(default=0)
+    semana_14 = models.FloatField(default=0)
+    semana_15 = models.FloatField(default=0)
+    semana_16 = models.FloatField(default=0)
+    semana_17 = models.FloatField(default=0)
+    semana_18 = models.FloatField(default=0)
+    semana_19 = models.FloatField(default=0)
+    semana_20 = models.FloatField(default=0)
+    semana_21 = models.FloatField(default=0)
+    semana_22 = models.FloatField(default=0)
+    semana_23 = models.FloatField(default=0)
+    semana_24 = models.FloatField(default=0)
+    semana_25 = models.FloatField(default=0)
+    semana_26 = models.FloatField(default=0)
+    semana_27 = models.FloatField(default=0)
+    semana_28 = models.FloatField(default=0)
+    semana_29 = models.FloatField(default=0)
+    semana_30 = models.FloatField(default=0)
+    semana_31 = models.FloatField(default=0)
+    semana_32 = models.FloatField(default=0)
+    semana_33 = models.FloatField(default=0)
+    semana_34 = models.FloatField(default=0)
+    semana_35 = models.FloatField(default=0)
+    semana_36 = models.FloatField(default=0)
+    semana_37 = models.FloatField(default=0)
+    semana_38 = models.FloatField(default=0)
+    semana_39 = models.FloatField(default=0)
+    semana_40 = models.FloatField(default=0)
+    semana_41 = models.FloatField(default=0)
+    semana_42 = models.FloatField(default=0)
+    semana_43 = models.FloatField(default=0)
+    semana_44 = models.FloatField(default=0)
+    semana_45 = models.FloatField(default=0)
+    semana_46 = models.FloatField(default=0)
+    semana_47 = models.FloatField(default=0)
+    semana_48 = models.FloatField(default=0)
+    semana_49 = models.FloatField(default=0)
+    semana_50 = models.FloatField(default=0)
+    semana_51 = models.FloatField(default=0)
     semana_52 = models.FloatField(default=0)
 
     trimestre_1 = models.FloatField(default=0)
@@ -165,9 +206,31 @@ class RegistroEntrenamiento_intermitente(models.Model):
     ventas_t_1 = models.FloatField(verbose_name="Ventas (t-1)")
     ventas_t_2 = models.FloatField(verbose_name="Ventas (t-2)")
     ventas_t_3 = models.FloatField(verbose_name="Ventas (t-3)")
-    # ... (y así sucesivamente hasta ventas_t_52)
-    # se omiten para brevedad, pero seguirían la misma lógica
-    ventas_t_52 = models.FloatField(verbose_name="Ventas (t-52)")
+    ventas_t_4 = models.FloatField(verbose_name="Ventas (t-4)")
+    ventas_t_5 = models.FloatField(verbose_name="Ventas (t-5)")
+    ventas_t_6 = models.FloatField(verbose_name="Ventas (t-6)")
+    ventas_t_7 = models.FloatField(verbose_name="Ventas (t-7)")
+    ventas_t_8 = models.FloatField(verbose_name="Ventas (t-8)")
+    ventas_t_9 = models.FloatField(verbose_name="Ventas (t-9)")
+    ventas_t_10 = models.FloatField(verbose_name="Ventas (t-10)")
+    ventas_t_11 = models.FloatField(verbose_name="Ventas (t-11)")
+    ventas_t_12 = models.FloatField(verbose_name="Ventas (t-12)")
+    ventas_t_13 = models.FloatField(verbose_name="Ventas (t-13)")
+    ventas_t_14 = models.FloatField(verbose_name="Ventas (t-14)")
+    ventas_t_15 = models.FloatField(verbose_name="Ventas (t-15)")
+    ventas_t_16 = models.FloatField(verbose_name="Ventas (t-16)")
+    ventas_t_17 = models.FloatField(verbose_name="Ventas (t-17)")
+    ventas_t_18 = models.FloatField(verbose_name="Ventas (t-18)")
+    ventas_t_19 = models.FloatField(verbose_name="Ventas (t-19)")
+    ventas_t_20 = models.FloatField(verbose_name="Ventas (t-20)")
+    ventas_t_21 = models.FloatField(verbose_name="Ventas (t-21)")
+    ventas_t_22 = models.FloatField(verbose_name="Ventas (t-22)")
+    ventas_t_23 = models.FloatField(verbose_name="Ventas (t-23)")
+    ventas_t_24 = models.FloatField(verbose_name="Ventas (t-24)")
+    ventas_t_25 = models.FloatField(verbose_name="Ventas (t-25)")
+    ventas_t_26 = models.FloatField(verbose_name="Ventas (t-26)")
+    ventas_t_27 = models.FloatField(verbose_name="Ventas (t-27)")
+    ventas_t_28 = models.FloatField(verbose_name="Ventas (t-28)")
 
     # Estadísticas de Ventas
     media_ultimas_4 = models.FloatField(verbose_name="Media Últimas 4 Semanas")
@@ -194,19 +257,13 @@ class RegistroEntrenamiento_intermitente(models.Model):
         return f"{self.numero_parte} - {self.fecha}"
 
 
-# registers/models.py
-from django.db import models
-
-
-class RegistroEntrenamientoFrecuenciaAlta(models.Model):
+class RegistroEntrenamiento_Frecuencia_Alta(models.Model):
     """
     Modelo de Django para la tabla de registros de entrenamiento de frecuencia alta.
 
     Diseñado para piezas con comportamiento de demanda frecuente, incluyendo
     variables económicas y estadísticas detalladas.
     """
-    id_taller =
-
 
     # Identificadores y Demanda
     numero_parte = models.CharField(max_length=255, verbose_name="Número de Parte")
@@ -250,14 +307,14 @@ class RegistroEntrenamientoFrecuenciaAlta(models.Model):
     prendas_ema_12 = models.FloatField(verbose_name="Prendas (EMA 12)")
     prendas_delta = models.FloatField(verbose_name="Prendas (Delta)")
 
-    tasa_de_interes_prestamos_lag_1 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 1)")
-    tasa_de_interes_prestamos_lag_2 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 2)")
-    tasa_de_interes_prestamos_lag_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 3)")
-    tasa_de_interes_prestamos_lag_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 6)")
-    tasa_de_interes_prestamos_ema_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 3)")
-    tasa_de_interes_prestamos_ema_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 6)")
-    tasa_de_interes_prestamos_ema_12 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 12)")
-    tasa_de_interes_prestamos_delta = models.FloatField(verbose_name="Tasa de Interés Préstamos (Delta)")
+    tasa_de_interes_lag_1 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 1)")
+    tasa_de_interes_lag_2 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 2)")
+    tasa_de_interes_lag_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 3)")
+    tasa_de_interes_lag_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (Lag 6)")
+    tasa_de_interes_ema_3 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 3)")
+    tasa_de_interes_ema_6 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 6)")
+    tasa_de_interes_ema_12 = models.FloatField(verbose_name="Tasa de Interés Préstamos (EMA 12)")
+    tasa_de_interes_delta = models.FloatField(verbose_name="Tasa de Interés Préstamos (Delta)")
 
     tipo_de_cambio_lag_1 = models.FloatField(verbose_name="Tipo de Cambio (Lag 1)")
     tipo_de_cambio_lag_2 = models.FloatField(verbose_name="Tipo de Cambio (Lag 2)")

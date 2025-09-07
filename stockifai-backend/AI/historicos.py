@@ -15,6 +15,11 @@ import holidays
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
 django.setup()
 
+from d_externo.repositories.dataexterna import obtener_todas_las_inflaciones, obtener_todos_los_patentamientos, \
+    obtener_todos_los_ipsa, obtener_todas_las_prendas, obtener_todas_las_tasas_interes, obtener_todos_los_tipos_cambio
+
+
+
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 from inventario.repositories.movimiento_repo import MovimientoRepo
@@ -214,105 +219,105 @@ def generar_caracteristicas(df_full: pd.DataFrame) -> pd.DataFrame:
     df_modelo = df_modelo.sort_values(["NumeroParte", "fecha"]).reset_index(drop=True)
     return df_modelo
 
-def integrar_datos_externos(df_full: pd.DataFrame, ruta_carpeta_externos: str) -> pd.DataFrame:
 
-    print("\n--- PASO 3.5: Integrando datos externos desde archivos CSV con lags y EMAs ---")
+import pandas as pd
+import warnings
 
-    if not os.path.isdir(ruta_carpeta_externos):
-        print(f"Advertencia: La carpeta de datos externos '{ruta_carpeta_externos}' no existe. Se omite este paso.")
-        return df_full
+import pandas as pd
+import warnings
 
-    archivos_externos = [
-        f
-        for f in os.listdir(ruta_carpeta_externos)
-        if f.endswith(".csv") and os.path.isfile(os.path.join(ruta_carpeta_externos, f))
-    ]
 
-    if not archivos_externos:
-        print("Advertencia: No se encontraron archivos CSV en la carpeta de datos externos.")
-        return df_full
-
-    df_full = df_full.copy()
-    df_full["fecha"] = pd.to_datetime(df_full["fecha"])
+def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
+    """
+    Obtiene datos externos desde las funciones helper, calcula features
+    (lags, EMAs, deltas) y los integra al DataFrame principal.
+    """
+    print("\n--- Integrando datos externos desde las funciones helper ---")
 
     df_full_con_externos = df_full.copy()
+    df_full_con_externos["fecha"] = pd.to_datetime(df_full_con_externos["fecha"])
 
-    for archivo in archivos_externos:
-        ruta_archivo_completa = os.path.join(ruta_carpeta_externos, archivo)
+    modelos_externos = [
+        {"function": obtener_todas_las_inflaciones, "nombre": "inflacion", "tipo": "mensual"},
+        {"function": obtener_todos_los_patentamientos, "nombre": "patentamientos", "tipo": "anual"},
+        {"function": obtener_todos_los_ipsa, "nombre": "ipsa", "tipo": "mensual"},
+        {"function": obtener_todas_las_prendas, "nombre": "prenda", "tipo": "mensual"},
+        {"function": obtener_todas_las_tasas_interes, "nombre": "tasa_de_interes", "tipo": "mensual"},
+        {"function": obtener_todos_los_tipos_cambio, "nombre": "tipo_de_cambio", "tipo": "mensual"},
+    ]
+
+    for config in modelos_externos:
+        helper_function = config["function"]
+        new_col_name = config["nombre"]
+        print(f" - Procesando: {helper_function.__name__}...")
+
         try:
-            df_ext = pd.read_csv(ruta_archivo_completa)
-            df_ext.columns = [c.strip() for c in df_ext.columns]
-
-            # Columna de fecha
-            fecha_col = next((col for col in df_ext.columns if "fecha" in col.lower()), None)
-            if not fecha_col:
-                print(f" - Advertencia: Archivo '{archivo}' no tiene columna 'fecha'. Se omite.")
+            # --- 2. Extraer datos del modelo usando la función helper ---
+            data_list = helper_function()
+            if not data_list:
+                warnings.warn(f"No se encontraron datos usando la función '{helper_function.__name__}'. Se omite.")
                 continue
 
-            # Columna de valor (primera que no sea fecha)
-            valor_col = next((col for col in df_ext.columns if col.lower() != fecha_col.lower()), None)
-            if not valor_col:
-                print(f" - Advertencia: Archivo '{archivo}' no tiene columna de valor. Se omite.")
-                continue
+            df_ext = pd.DataFrame(data_list)
 
-            print(f" - Procesando archivo '{archivo}'...")
+            if new_col_name == 'inflacion':
+                df_ext = df_ext.rename(columns={'ipc': new_col_name})
+            elif new_col_name == 'patentamientos':
+                df_ext = df_ext.rename(columns={'cantidad': new_col_name})
+            elif new_col_name == 'ipsa':
+                df_ext = df_ext.rename(columns={'ipsa': new_col_name})
+            elif new_col_name == 'tasa_de_interes':
+                df_ext = df_ext.rename(columns={'tasa_interes': new_col_name})
+            elif new_col_name == 'prenda':
+                df_ext = df_ext.rename(columns={'prenda': new_col_name})
+            elif new_col_name == 'tipo_de_cambio':
+                df_ext = df_ext.rename(columns={'tipo_cambio': new_col_name})
 
-            # Normalizo
-            df_ext["fecha"] = pd.to_datetime(df_ext[fecha_col], errors="coerce")
-            df_ext = df_ext.dropna(subset=["fecha"]).sort_values("fecha")
+            df_ext["fecha"] = pd.to_datetime(df_ext["fecha"])
+            df_ext[new_col_name] = pd.to_numeric(df_ext[new_col_name], errors='coerce')
+            df_ext = df_ext.dropna().sort_values("fecha")
 
-            if fecha_col != "fecha" and fecha_col in df_ext.columns:
-                df_ext = df_ext.drop(columns=[fecha_col])
-
-
-            new_col_name = os.path.splitext(archivo)[0].replace(" ", "_").replace(".", "_")
-            df_ext = df_ext.rename(columns={valor_col: new_col_name})
-            df_ext = df_ext.loc[:, ~df_ext.columns.duplicated()]
-
-            #  lags/EMAs (mensual vs anual)
-            if "patentamientos" in valor_col.lower():
-                lags = [12, 24, 36]  # anuales
+            # --- 3. Generar Características (Lags, EMAs, Deltas) ---
+            if config["tipo"] == "anual":
+                lags = [12, 24, 36]
                 ema_spans = [12, 24]
             else:
-                lags = [1, 2, 3, 6]  # mensuales
+                lags = [1, 2, 3, 6]
                 ema_spans = [3, 6, 12]
 
-            # Lags
+            # Generate lagged features using a simple shift based on the index,
+            # as the DataFrame is already sorted by date.
             for lag in lags:
                 df_ext[f"{new_col_name}_lag_{lag}"] = df_ext[new_col_name].shift(lag)
-
-            # EMAs
             for span in ema_spans:
                 df_ext[f"{new_col_name}_ema_{span}"] = df_ext[new_col_name].ewm(span=span, adjust=False).mean()
-
-            # Delta
             df_ext[f"{new_col_name}_delta"] = df_ext[new_col_name].diff()
 
-            # Remuevo la columna original para evitar fuga
-            df_ext = df_ext.drop(columns=[new_col_name])
+            # --- 4. Fusionar con el DataFrame principal ---
+            df_ext_to_merge = df_ext.drop(columns=[new_col_name])
 
-            # Alinear con semanas (merge_asof hacia atrás)
             df_full_con_externos = pd.merge_asof(
                 df_full_con_externos.sort_values("fecha"),
-                df_ext.sort_values("fecha"),
+                df_ext_to_merge.sort_values("fecha"),
                 on="fecha",
                 direction="backward",
             )
-
         except Exception as e:
-            print(f" - Error al procesar '{archivo}': {e}. Se omite.")
+            warnings.warn(f"Error procesando la función '{helper_function.__name__}': {e}. Se omite.")
             continue
 
-    # Forward fill por SKU para columnas externas
     cols_nucleares = {"NumeroParte", "fecha", "Cantidad", "segmento_demanda"}
-    for col in df_full_con_externos.columns:
-        if col not in cols_nucleares:
-            df_full_con_externos[col] = (
-                df_full_con_externos.groupby("NumeroParte")[col].ffill()
-            )
+    cols_a_propagar = [col for col in df_full_con_externos.columns if col not in cols_nucleares]
 
+    if cols_a_propagar:
+        df_full_con_externos[cols_a_propagar] = df_full_con_externos.groupby("NumeroParte")[cols_a_propagar].ffill()
+
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.expand_frame_repr', False)
+    print(df_full_con_externos.head())
+    print("✓ Integración de datos externos completada.")
     return df_full_con_externos
-
 
 def dividir_datos(
     df: pd.DataFrame, n_semanas_val: int = 4, n_semanas_test: int = 4
@@ -355,7 +360,6 @@ def dividir_datos(
 def ejecutar_preproceso(
     taller_id: int,
     output_dir_base: str = "models",
-    datos_externos_dir: str = "datos_externos",
 ) -> Dict[str, Dict[str, pd.DataFrame]]:
 
     print(f"\n--- INICIANDO PIPELINE DE PREPROCESAMIENTO PARA EL TALLER: (id={taller_id}) ---")
@@ -369,7 +373,7 @@ def ejecutar_preproceso(
     df_full = clasificar_demanda(demanda_semanal)
 
     # 3) Externos
-    df_full = integrar_datos_externos(df_full, datos_externos_dir)
+    df_full = integrar_datos_externos(df_full)
 
     # 4) Features
     df_modelo = generar_caracteristicas(df_full)
@@ -410,11 +414,9 @@ def ejecutar_preproceso(
 if __name__ == "__main__":
     # parametros para probar
     TALLER_ID = 1
-    DATOS_EXTERNOS_DIR = "datos_externos"  # carpeta con CSVs externos
     OUTPUT_DIR = "models" # donde se guardan los modelos
 
     ejecutar_preproceso(
         taller_id=TALLER_ID,
         output_dir_base=OUTPUT_DIR,
-        datos_externos_dir=DATOS_EXTERNOS_DIR,
     )

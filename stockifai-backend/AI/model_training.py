@@ -20,7 +20,7 @@ def get_features_for_segment(segmento: str, df_columns: list) -> list:
     features_semana = [f'semana_{i}' for i in range(1, 53)]
     features_trimestre = [f'trimestre_{i}' for i in range(1, 4)]
     features_externas = [c for c in df_columns if any(c.startswith(prefix) for prefix in [
-        'Inflacion', 'Ipsa', 'Patentamientos', 'Prendas', 'Tasa_de_interes_de_prestamos', 'Tipo_de_cambio'
+        'Inflacion', 'Ipsa', 'Patentamientos', 'Prendas', 'Tasa_de_interes', 'Tipo_de_cambio'
     ]) and not c.endswith('_original')]
 
     if segmento == 'frecuencia_alta':
