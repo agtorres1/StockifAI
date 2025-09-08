@@ -1,4 +1,5 @@
 from d_externo.models import Inflacion, Patentamiento, IPSA, Prenda, TasaInteresPrestamo, TipoCambio,  RegistroEntrenamiento_intermitente, RegistroEntrenamiento_Frecuencia_Alta
+from user.models import Taller
 
 def obtener_todas_las_inflaciones():
     """
@@ -30,43 +31,49 @@ def obtener_todos_los_tipos_cambio():
     return list(TipoCambio.objects.all().values('fecha', 'tipo_cambio'))
 
 
-def obtener_registroentrenamiento_intermitente():
+def obtener_registroentrenamiento_intermitente(taller_id: int):
     """
     Devuelve todos los registros de RegistroEntrenamiento_intermitente
-    como una lista de diccionarios.
+    de un taller específico como una lista de diccionarios.
     """
-    registros = RegistroEntrenamiento_intermitente.objects.all()
+    registros = RegistroEntrenamiento_intermitente.objects.filter(taller_id=taller_id)
     lista_diccionarios = list(registros.values())
     return lista_diccionarios
 
 
-def guardar_registroentrenamiento_intermitente(datos):
+def guardar_registroentrenamiento_intermitente(datos: dict, taller: Taller):
     """
-    Guarda un registro en la base de datos.
-
-    Parámetro:
-        datos (dict): Diccionario con los campos y valores a guardar.
+    Guarda un registro en la base de datos para RegistroEntrenamiento_intermitente.
     """
-    registro = RegistroEntrenamiento_intermitente.objects.create(**datos)
-    return registro
+    try:
+        registro = RegistroEntrenamiento_intermitente.objects.create(
+            taller=taller,
+            **datos
+        )
+        return registro
+    except Taller.DoesNotExist:
+        raise ValueError(f"No se encontró un Taller con id={taller_id}")
 
 
-def obtener_registros_frecuencia_alta():
+def obtener_registroentrenamiento_frecuencia_alta(taller_id: int):
     """
     Devuelve todos los registros de RegistroEntrenamientoFrecuenciaAlta
-    como una lista de diccionarios.
+    de un taller específico como una lista de diccionarios.
     """
-    registros = RegistroEntrenamiento_Frecuencia_Alta.objects.all()
+    registros = RegistroEntrenamiento_Frecuencia_Alta.objects.filter(taller_id=taller_id)
     lista_diccionarios = list(registros.values())
     return lista_diccionarios
 
 
-def guardar_registro_frecuencia_alta(datos):
+def guardar_registroentrenamiento_frecuencia_alta(datos: dict, taller: Taller):
     """
     Guarda un registro en la base de datos para RegistroEntrenamientoFrecuenciaAlta.
-
-    Parámetro:
-        datos (dict): Diccionario con los campos y valores a guardar.
     """
-    registro = RegistroEntrenamiento_Frecuencia_Alta.objects.create(**datos)
-    return registro
+    try:
+        registro = RegistroEntrenamiento_Frecuencia_Alta.objects.create(
+            taller=taller,
+            **datos
+        )
+        return registro
+    except Taller.DoesNotExist:
+        raise ValueError(f"No se encontró un Taller con id={taller_id}")

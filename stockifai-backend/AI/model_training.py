@@ -5,11 +5,15 @@ import lightgbm as lgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import joblib
 import warnings
-from sqlalchemy import create_engine
-from typing import Dict, Any, List
+
+
+from d_externo.repositories.dataexterna import guardar_registroentrenamiento_frecuencia_alta, \
+    guardar_registroentrenamiento_intermitente
+from user.models import Taller
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+RUTA_BASE_MODELOS = "models"
 
 def get_features_for_segment(segmento: str, df_columns: list) -> list:
     """
@@ -38,42 +42,51 @@ def get_features_for_segment(segmento: str, df_columns: list) -> list:
         all_possible_features = features_base + features_externas + features_mes + features_semana + features_trimestre + features_lags + features_rolling
 
     else:
-        features_lags = []
-        features_rolling = []
         all_possible_features = features_base + features_externas + features_mes + features_semana + features_trimestre
 
     final_features = [col for col in all_possible_features if col in df_columns]
     return final_features
 
 
-def guardar_ultimo_registro_a_db(df: pd.DataFrame):
-
+def guardar_ultimo_registro_a_db(df: pd.DataFrame, segmento: str, taller_id: int):
+    """
+    Guarda el último registro de cada SKU en la base de datos de Django
+    usando los modelos correspondientes según el segmento.
+    """
     print("\nIniciando la carga del último registro de cada SKU a la base de datos...")
-
+    taller = Taller.objects.get(id=taller_id)
     try:
-        engine = create_engine(db_connection_string)
-
         # Obtenemos el último registro (última fecha) para cada SKU
-        df_ultimo_registro = df.sort_values('fecha').drop_duplicates(subset=['NumeroParte'], keep='last')
+        df_ultimo_registro = df.sort_values('fecha').drop_duplicates(
+            subset=['NumeroParte'], keep='last'
+        )
 
-        # Filtramos las columnas relevantes para la base de datos
-        cols_to_save = [col for col in df_ultimo_registro.columns if col not in ['Cantidad', 'pred', 'error_abs']]
-        df_ultimo_registro_db = df_ultimo_registro[cols_to_save]
+        # Iteramos fila por fila y guardamos en el modelo correcto
+        for _, row in df_ultimo_registro.iterrows():
+            datos = row.to_dict()
 
-        # Guardamos en la base de datos, usando 'replace' para actualizar los registros existentes
-        df_ultimo_registro_db.to_sql(tabla_destino, engine, if_exists='replace', index=False)
+            # Normalizamos nombres de columnas (coincidir con modelo Django)
+            datos = {k.lower(): v for k, v in datos.items()}
 
-        print(
-            f"Últimos registros de {len(df_ultimo_registro_db)} SKUs guardados con éxito en la tabla '{tabla_destino}'.")
+            if segmento == "frecuencia_alta":
+                guardar_registroentrenamiento_frecuencia_alta(datos, taller)
+            elif segmento == "intermitente":
+                guardar_registroentrenamiento_intermitente(datos, taller)
+            else:
+                print(f"Segmento '{segmento}' no soportado. Registro no guardado.")
+                continue
+
+        print(f"Últimos registros de {len(df_ultimo_registro)} SKUs guardados con éxito en '{segmento}'.")
+
     except Exception as e:
         print(f"Error al guardar los últimos registros en la base de datos: {e}")
 
 
-def train_segment_model(taller: int, segmento: str, ruta_base: str, db_connection_string: str):
+def train_segment_model(taller: int, segmento: str):
     """
     Carga datos preprocesados y entrena un modelo LightGBM para un segmento específico.
     """
-    ruta_segmento_data = os.path.join(ruta_base, str(taller), segmento)
+    ruta_segmento_data = os.path.join(RUTA_BASE_MODELOS, str(taller), segmento)
     ruta_archivo_train = os.path.join(ruta_segmento_data, f"demanda_preprocesada_{segmento}_train.csv")
     ruta_archivo_val = os.path.join(ruta_segmento_data, f"demanda_preprocesada_{segmento}_val.csv")
     ruta_archivo_test = os.path.join(ruta_segmento_data, f"demanda_preprocesada_{segmento}_test.csv")
@@ -181,20 +194,15 @@ def train_segment_model(taller: int, segmento: str, ruta_base: str, db_connectio
     joblib.dump(lgb_final_model, ruta_guardado_modelo)
     print(f"Modelo final para '{segmento}' guardado en '{ruta_guardado_modelo}'.")
 
-    guardar_ultimo_registro_a_db(df_test)
+    guardar_ultimo_registro_a_db(df_test, taller_id)
 
 
-def ejecutar_pipeline_entrenamiento(taller_id: int, ruta_base: str = 'models', db_config: Dict[str, Any] = None):
+def ejecutar_pipeline_entrenamiento(taller_id: int):
     """
     Ejecuta el pipeline de entrenamiento para todos los segmentos de un taller.
     """
-    if db_config is None:
-        print("Error: No se proporcionó la configuración de la base de datos.")
-        return
 
-    db_connection_string = f"postgresql://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['database']}"
-
-    ruta_taller_output = os.path.join(ruta_base, str(taller_id))
+    ruta_taller_output = os.path.join(RUTA_BASE_MODELOS, str(taller_id))
 
     if not os.path.isdir(ruta_taller_output):
         print(f"Error: No se encontró la carpeta del taller en '{ruta_taller_output}'.")
@@ -210,11 +218,11 @@ def ejecutar_pipeline_entrenamiento(taller_id: int, ruta_base: str = 'models', d
     for segmento in segmentos:
         if segmento in ['nuevo', 'sin_venta']:
             continue
-        train_segment_model(taller_id, segmento, ruta_base, db_connection_string)
+        train_segment_model(taller_id, segmento)
 
     print("\n--- PROCESO DE ENTRENAMIENTO COMPLETO ---")
 
 
 if __name__ == '__main__':
     taller_id =  1
-    ejecutar_pipeline_entrenamiento(taller_id, db_config=db_config_params)
+    ejecutar_pipeline_entrenamiento(taller_id)

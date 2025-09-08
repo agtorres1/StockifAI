@@ -18,8 +18,6 @@ django.setup()
 from d_externo.repositories.dataexterna import obtener_todas_las_inflaciones, obtener_todos_los_patentamientos, \
     obtener_todos_los_ipsa, obtener_todas_las_prendas, obtener_todas_las_tasas_interes, obtener_todos_los_tipos_cambio
 
-
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 from inventario.repositories.movimiento_repo import MovimientoRepo
@@ -191,7 +189,6 @@ def generar_caracteristicas(df_full: pd.DataFrame) -> pd.DataFrame:
             windows = [4, 8, 12]
             lags_to_generate = list(range(1, max_lag + 1))
         else:  # 'nuevo' (y 'sin_venta' no se usa para entrenar)
-            max_lag = 0
             windows = []
             lags_to_generate = []
 
@@ -218,13 +215,6 @@ def generar_caracteristicas(df_full: pd.DataFrame) -> pd.DataFrame:
     df_modelo = pd.concat(dataframes_procesados, ignore_index=True)
     df_modelo = df_modelo.sort_values(["NumeroParte", "fecha"]).reset_index(drop=True)
     return df_modelo
-
-
-import pandas as pd
-import warnings
-
-import pandas as pd
-import warnings
 
 
 def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
@@ -295,7 +285,6 @@ def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
 
             # --- 4. Fusionar con el DataFrame principal ---
             df_ext_to_merge = df_ext.drop(columns=[new_col_name])
-
             df_full_con_externos = pd.merge_asof(
                 df_full_con_externos.sort_values("fecha"),
                 df_ext_to_merge.sort_values("fecha"),

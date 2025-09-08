@@ -385,6 +385,7 @@ class RegistroEntrenamiento_Frecuencia_Alta(models.Model):
     semana_26 = models.FloatField(default=0)
     semana_27 = models.FloatField(default=0)
     semana_28 = models.FloatField(default=0)
+    semana_28 = models.FloatField(default=0)
     semana_29 = models.FloatField(default=0)
     semana_30 = models.FloatField(default=0)
     semana_31 = models.FloatField(default=0)

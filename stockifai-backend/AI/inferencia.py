@@ -3,14 +3,17 @@
 
 import os
 import warnings
-from datetime import datetime, timedelta
 
-import django
 import joblib
 import numpy as np
 import pandas as pd
 import holidays
-from sqlalchemy import create_engine, text
+
+from catalogo.models import Repuesto
+from d_externo.repositories.dataexterna import obtener_registroentrenamiento_intermitente, \
+    obtener_registroentrenamiento_frecuencia_alta
+from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
+from user.models import Taller
 
 # --- Configuración de Django (si es necesario para los repositorios) ---
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
@@ -19,20 +22,6 @@ from sqlalchemy import create_engine, text
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=UserWarning)
 
-# --- CONFIGURACIÓN ---
-# Base de datos para leer los últimos registros y guardar las predicciones
-DB_CONFIG = {
-    'user': 'tu_usuario',
-    'password': 'tu_contraseña',
-    'host': 'localhost',
-    'port': '5432',
-    'database': 'tu_base_de_datos'
-}
-DB_CONNECTION_STRING = f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
-
-# Tablas de la base de datos
-TABLA_ULTIMOS_REGISTROS = "ultimos_registros_sku"  # Tabla creada por el script 2
-TABLA_DESTINO_PREDICCIONES = "Repuesto_Taller"
 
 # Directorio donde se guardaron los modelos entrenados
 RUTA_BASE_MODELOS = "models"
@@ -144,79 +133,65 @@ def generar_features_futuras(df_historia: pd.DataFrame, fecha_a_predecir: pd.Tim
     return historia_combinada.iloc[[-1]]
 
 
-def guardar_predicciones_db(taller_id: int, predicciones: list, engine):
+def guardar_predicciones_db(taller_id: int, predicciones: list):
     """
-    Guarda las predicciones finales en la tabla Repuesto_Taller.
-    Intenta un UPDATE, si falla (la fila no existe), hace un INSERT.
+    Guarda las predicciones usando RepuestoTallerRepo.
     """
+    try:
+        taller = Taller.objects.get(id=taller_id)
+    except Taller.DoesNotExist:
+        print(f"No se encontró un Taller con id={taller_id}")
+        return
+
     if not predicciones:
         print("No hay predicciones para guardar.")
         return
 
-    df_predicciones = pd.DataFrame(predicciones)
+    repo = RepuestoTallerRepo()
 
-    with engine.connect() as connection:
-        for _, row in df_predicciones.iterrows():
-            sku = row["NumeroParte"]
-            pred_1 = row["pred_semana_1"]
-            pred_2 = row["pred_semana_2"]
-            pred_3 = row["pred_semana_3"]
-            pred_4 = row["pred_semana_4"]
+    for pred in predicciones:
+        numero_parte = pred.get("NumeroParte")
+        if not numero_parte:
+            continue
+        try:
+            repuesto = Repuesto.objects.get(numero_parte=numero_parte)
+            resultado = repo.get_or_create(repuesto, taller)
+            obj = resultado.obj
 
-            try:
-                # Intenta actualizar el registro existente
-                update_query = text(f"""
-                    UPDATE "{TABLA_DESTINO_PREDICCIONES}"
-                    SET "Prediccion a 1 semana" = :p1,
-                        "Prediccion a 2 semana" = :p2,
-                        "Prediccion a 3 semana" = :p3,
-                        "Prediccion a 4 semana" = :p4
-                    WHERE "NumeroParte" = :sku AND "TallerID" = :taller_id;
-                """)
-                result = connection.execute(update_query, {
-                    "p1": pred_1, "p2": pred_2, "p3": pred_3, "p4": pred_4,
-                    "sku": sku, "taller_id": taller_id
-                })
-                connection.commit()
+            for semana in range(1, 5):
+                key = f'pred_semana_{semana}'
+                if key in pred:
+                    setattr(obj, f'pred_{semana}', pred[key])
 
-                # Si no se actualizó ninguna fila, significa que no existe
-                if result.rowcount == 0:
-                    print(f"SKU '{sku}' no encontrado para actualizar, se intentará insertar (si es necesario).")
-                    # Aquí se podría añadir una lógica de INSERT si fuera necesario
-                    # insert_query = ...
-                    # connection.execute(insert_query, ...)
-                    # connection.commit()
+            obj.save()
+            print(f"Predicciones guardadas para SKU {numero_parte}")
 
-            except Exception as e:
-                print(f"Error al actualizar la predicción para el SKU {sku}: {e}")
-
-    print(f"Se procesaron las predicciones para {len(df_predicciones)} SKUs.")
+        except Repuesto.DoesNotExist:
+            print(f"Repuesto con numero_parte={numero_parte} no encontrado.")
 
 
 def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
-    """
-    Función principal para ejecutar el pipeline de inferencia.
-    """
     print(f"\n--- INICIANDO PIPELINE DE INFERENCIA PARA TALLER ID: {taller_id} ---")
     print(f"Fecha de inicio de predicción: {fecha_prediccion_str}")
 
-    try:
-        engine = create_engine(DB_CONNECTION_STRING)
-        # 1. Cargar el último registro de cada SKU desde la BD
-        query = f'SELECT * FROM "{TABLA_ULTIMOS_REGISTROS}" WHERE "taller_id" = {taller_id}'
-        df_ultimos_registros = pd.read_sql(query, engine)
-        df_ultimos_registros['fecha'] = pd.to_datetime(df_ultimos_registros['fecha'])
+    # --- 1. Cargar el último registro de cada SKU desde Django ---
+    registros_frecuencia_alta = obtener_registroentrenamiento_frecuencia_alta(taller_id)
+    registros_intermitente = obtener_registroentrenamiento_intermitente(taller_id)
 
-        if df_ultimos_registros.empty:
-            print(
-                f"Error: No se encontraron últimos registros para el taller_id={taller_id} en la tabla '{TABLA_ULTIMOS_REGISTROS}'.")
-            return
+    # Convertir a DataFrame
+    df_frecuencia_alta = pd.DataFrame(registros_frecuencia_alta)
+    df_intermitente = pd.DataFrame(registros_intermitente)
 
-        print(f"Se cargaron los últimos registros de {df_ultimos_registros['NumeroParte'].nunique()} SKUs.")
-
-    except Exception as e:
-        print(f"Error al conectar o leer de la base de datos: {e}")
+    # Concatenar todos los registros
+    df_ultimos_registros = pd.concat([df_frecuencia_alta, df_intermitente], ignore_index=True)
+    if df_ultimos_registros.empty:
+        print(f"No se encontraron registros para el taller_id={taller_id}.")
         return
+
+    # Convertir columna fecha a datetime
+    df_ultimos_registros['fecha'] = pd.to_datetime(df_ultimos_registros['fecha'])
+
+    print(f"Se cargaron los últimos registros de {df_ultimos_registros['numero_parte'].nunique()} SKUs.")
 
     # Definir las 4 semanas futuras para la predicción
     fecha_inicio = pd.to_datetime(fecha_prediccion_str)
@@ -227,61 +202,51 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
 
     resultados_finales = []
 
-    # 2. Iterar sobre cada SKU para predecir
-    for sku in df_ultimos_registros['NumeroParte'].unique():
-
-        historia_sku = df_ultimos_registros[df_ultimos_registros['NumeroParte'] == sku].copy()
+    for sku in df_ultimos_registros['numero_parte'].unique():
+        historia_sku = df_ultimos_registros[df_ultimos_registros['numero_parte'] == sku].copy()
         segmento = historia_sku['segmento_demanda'].iloc[0]
 
         if segmento in ['sin_venta', 'nuevo']:
             print(f"SKU {sku} pertenece al segmento '{segmento}', se omite predicción.")
             continue
 
-        # 3. Cargar el modelo correspondiente
+        # Cargar el modelo correspondiente
         ruta_modelo = os.path.join(RUTA_BASE_MODELOS, str(taller_id), segmento, f"modelo_lightgbm_{segmento}_final.pkl")
         if not os.path.exists(ruta_modelo):
-            print(
-                f"Advertencia: No se encontró el modelo para el segmento '{segmento}' en la ruta '{ruta_modelo}'. Se omite SKU {sku}.")
+            print(f"Advertencia: No se encontró el modelo para el segmento '{segmento}'. Se omite SKU {sku}.")
             continue
 
         modelo = joblib.load(ruta_modelo)
         features_del_modelo = modelo.feature_name_
 
         print(f"\nProcesando SKU: {sku} (Segmento: {segmento})")
-
         predicciones_sku = {'NumeroParte': sku}
         historia_temporal = historia_sku.copy()
 
-        # 4. Bucle autoregresivo para 4 semanas
         for i, fecha_futura in enumerate(fechas_a_predecir):
-            # Generar features para la fecha futura actual
             features_para_predecir_df = generar_features_futuras(historia_temporal, fecha_futura, ar_holidays)
-
-            # Alinear columnas con las que el modelo espera
             features_para_predecir_df = features_para_predecir_df[features_del_modelo]
-
-            # Hacer la predicción
             prediccion_raw = modelo.predict(features_para_predecir_df)
             prediccion_final = np.maximum(0, prediccion_raw).round().astype(int)[0]
 
             print(f"  - Predicción para {fecha_futura.date()} (Semana {i + 1}): {prediccion_final}")
             predicciones_sku[f'pred_semana_{i + 1}'] = prediccion_final
 
-            # Actualizar el historial con la nueva predicción para el siguiente paso
             nuevo_registro_predicho = features_para_predecir_df.copy()
             nuevo_registro_predicho['fecha'] = fecha_futura
             nuevo_registro_predicho['Cantidad'] = prediccion_final
-            nuevo_registro_predicho['NumeroParte'] = sku
+            nuevo_registro_predicho['numero_parte'] = sku
             nuevo_registro_predicho['segmento_demanda'] = segmento
 
             historia_temporal = pd.concat([historia_temporal, nuevo_registro_predicho], ignore_index=True)
 
         resultados_finales.append(predicciones_sku)
 
-    # 5. Guardar todas las predicciones en la base de datos
     if resultados_finales:
         print("\n--- Guardando predicciones en la base de datos ---")
-        guardar_predicciones_db(taller_id, resultados_finales, engine)
+        guardar_predicciones_db(taller_id, resultados_finales)
+
+
     else:
         print("\nNo se generaron predicciones.")
 
