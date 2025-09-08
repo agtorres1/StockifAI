@@ -1,4 +1,5 @@
 from django.db import models
+from user.models import Taller
 
 class Inflacion(models.Model):
     fecha = models.DateField()
@@ -63,13 +64,23 @@ class TipoCambio(models.Model):
 
 
 class RegistroEntrenamiento_intermitente(models.Model):
-    """
-    Modelo de Django para la tabla de registros de entrenamiento.
 
+
+
+    taller = models.ForeignKey(
+            Taller,  # referencia directa al modelo importado
+            on_delete=models.CASCADE,
+            related_name="registros_intermitente"
+        )
+
+    """
     Representa las entradas de datos para un modelo de pronóstico de demanda,
     incluyendo información de la pieza, fecha, cantidad, variables económicas
     y estadísticas de ventas históricas.
     """
+
+
+
 
     # Identificadores y Demanda
     numero_parte = models.CharField(max_length=255, verbose_name="Número de Parte")
@@ -194,8 +205,7 @@ class RegistroEntrenamiento_intermitente(models.Model):
         return f"{self.numero_parte} - {self.fecha}"
 
 
-# registers/models.py
-from django.db import models
+
 
 
 class RegistroEntrenamientoFrecuenciaAlta(models.Model):
@@ -205,8 +215,12 @@ class RegistroEntrenamientoFrecuenciaAlta(models.Model):
     Diseñado para piezas con comportamiento de demanda frecuente, incluyendo
     variables económicas y estadísticas detalladas.
     """
-    id_taller =
 
+    taller = models.ForeignKey(
+        Taller,  # referencia directa al modelo importado
+        on_delete=models.CASCADE,
+        related_name="registros_frecuencia_alta"
+    )
 
     # Identificadores y Demanda
     numero_parte = models.CharField(max_length=255, verbose_name="Número de Parte")
