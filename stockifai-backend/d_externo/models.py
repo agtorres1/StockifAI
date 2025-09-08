@@ -62,20 +62,17 @@ class RegistroEntrenamiento_intermitente(models.Model):
 
 
     taller = models.ForeignKey(
-            Taller,  # referencia directa al modelo importado
-            on_delete=models.CASCADE,
-            related_name="registros_intermitente"
+        "user.Taller",
+        on_delete=models.CASCADE,
+        related_name="registros_intermitente",
+        null=True,  # temporal para no romper la migración
+        blank=True
         )
-
     """
     Representa las entradas de datos para un modelo de pronóstico de demanda,
     incluyendo información de la pieza, fecha, cantidad, variables económicas
     y estadísticas de ventas históricas.
     """
-
-
-
-
     # Identificadores y Demanda
     numero_parte = models.CharField(max_length=255, verbose_name="Número de Parte")
     fecha = models.DateField(verbose_name="Fecha")
@@ -281,7 +278,9 @@ class RegistroEntrenamiento_Frecuencia_Alta(models.Model):
     taller = models.ForeignKey(
         Taller,  # referencia directa al modelo importado
         on_delete=models.CASCADE,
-        related_name="registros_frecuencia_alta"
+        related_name="registros_frecuencia_alta",
+        null=True,  # temporalmente
+        blank=True
     )
 
     # Identificadores y Demanda
