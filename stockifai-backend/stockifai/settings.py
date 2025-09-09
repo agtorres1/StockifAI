@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 AUTH_USER_MODEL = 'user.User'  # 'user' es el nombre de tu app
-
+import environ
 
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,6 +30,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware","django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
 TEMPLATES = [{
@@ -81,9 +82,15 @@ REST_FRAMEWORK = {
 }
 
 
+##########codigo del auth0
+# Inicializar django-environ
+env = environ.Env()
 
-AUTH0_DOMAIN = "dev-8xslftegs71zzapj.us.auth0.com"
-API_IDENTIFIER = "http://127.0.0.1:8000"  # poner tu URL de backend
-ALGORITHMS = ["RS256"]
+# Ruta al archivo .env (está un nivel arriba de settings.py)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-
+AUTH0_DOMAIN = env("AUTH0_DOMAIN")
+API_IDENTIFIER = env("AUTH0_AUDIENCE")
+ALGORITHMS = [env("AUTH0_ALGORITHMS")]
+#####
