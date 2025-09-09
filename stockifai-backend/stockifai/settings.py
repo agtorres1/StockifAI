@@ -90,7 +90,10 @@ env = environ.Env()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-AUTH0_DOMAIN = env("AUTH0_DOMAIN")
-API_IDENTIFIER = env("AUTH0_AUDIENCE")
-ALGORITHMS = [env("AUTH0_ALGORITHMS")]
+AUTH0_DOMAIN = env('AUTH0_DOMAIN')
+AUTH0_CLIENT_ID = env('AUTH0_CLIENT_ID')
+AUTH0_CLIENT_SECRET = env('AUTH0_CLIENT_SECRET')
+AUTH0_AUDIENCE = env('AUTH0_AUDIENCE')
+ALGORITHMS = env.list('AUTH0_ALGORITHMS')
+
 #####

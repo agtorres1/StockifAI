@@ -4,7 +4,7 @@ from jose import jwt
 from django.conf import settings
 
 AUTH0_DOMAIN = settings.AUTH0_DOMAIN
-API_IDENTIFIER = settings.API_IDENTIFIER
+API_IDENTIFIER = settings.AUTH0_AUDIENCE
 ALGORITHMS = settings.ALGORITHMS
 
 # Descarga el JWKS (JSON Web Key Set) de Auth0
