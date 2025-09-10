@@ -53,6 +53,23 @@
     </div>
 </div>
 
+<div class="d-flex gap-2">
+    <div class="card shadow-sm" style="width: 60%;">
+        <div class="chart-wrap">
+            <canvas baseChart [type]="'line'" [data]="data" [options]="options"></canvas>
+        </div>
+    </div>
+
+    <div class="card shadow-sm" style="width: 40%;">
+        <div class="chart-wrap">
+            <canvas baseChart [type]="stockChartType" [data]="stockChartData" [options]="stockChartOptions">
+            </canvas>
+        </div>
+    </div>
+
+</div>
+
+
 <div class="card shadow-sm mt-4">
     <div class="card-body">
         <div class="table-responsive">
@@ -69,7 +86,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let item of resultados">
+                    <tr *ngFor="let item of resultados" [ngClass]="{'table-primary': item.sku === 'SKU001'}">
                         <td>{{ item.nombre }}</td>
                         <td>{{ item.sku }}</td>
                         <td>{{ item.categoria }}</td>

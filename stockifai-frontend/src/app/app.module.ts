@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
+import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
@@ -13,7 +15,6 @@ import { TalleresGruposComponent } from './features/talleres/grupos/grupos.compo
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { LayoutComponent } from './layout/layout.component';
-import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
     declarations: [
@@ -27,8 +28,8 @@ import { HttpClientModule } from '@angular/common/http';
         TalleresListadoComponent,
         TalleresUsuariosComponent,
     ],
-    imports: [BrowserModule, CommonModule, RouterModule.forRoot([]), AppRoutingModule, FormsModule, HttpClientModule],
-    providers: [],
+    imports: [BrowserModule, CommonModule, RouterModule.forRoot([]), AppRoutingModule, FormsModule, HttpClientModule, BaseChartDirective],
+    providers: [provideCharts(withDefaultRegisterables())],
     bootstrap: [AppComponent],
 })
 export class AppModule {}
