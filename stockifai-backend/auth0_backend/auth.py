@@ -1,39 +1,27 @@
-import json
-import requests
-from jose import jwt
-from django.conf import settings
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth.models import AnonymousUser
+from .jwt_utils import decode_jwt
 
-AUTH0_DOMAIN = settings.AUTH0_DOMAIN
-API_IDENTIFIER = settings.AUTH0_AUDIENCE
-ALGORITHMS = settings.ALGORITHMS
+class Auth0JWTAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        # Ignorar admin
+        if not request.path.startswith("/api/"):
+            return None  # deja que Django maneje otras rutas (/admin/)
 
-# Descarga el JWKS (JSON Web Key Set) de Auth0
-jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
-jwks = requests.get(jwks_url).json()
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            raise AuthenticationFailed("Token requerido")
 
-def decode_jwt(token):
-    # Extrae el header del token
-    header = jwt.get_unverified_header(token)
+        parts = auth_header.split()
+        if parts[0].lower() != "bearer" or len(parts) != 2:
+            raise AuthenticationFailed("Header Authorization inválido")
 
-    rsa_key = {}
-    for key in jwks["keys"]:
-        if key["kid"] == header["kid"]:
-            rsa_key = {
-                "kty": key["kty"],
-                "kid": key["kid"],
-                "use": key["use"],
-                "n": key["n"],
-                "e": key["e"]
-            }
-    if not rsa_key:
-        raise Exception("No se encontró la clave adecuada en JWKS")
+        token = parts[1]
 
-    # Decodifica el token usando la clave pública
-    payload = jwt.decode(
-        token,
-        rsa_key,
-        algorithms=ALGORITHMS,
-        audience=API_IDENTIFIER,
-        issuer=f"https://{AUTH0_DOMAIN}/"
-    )
-    return payload
+        try:
+            payload = decode_jwt(token)
+        except Exception as e:
+            raise AuthenticationFailed(f"Token inválido: {str(e)}")
+
+        return (AnonymousUser(), payload)

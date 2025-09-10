@@ -1,14 +1,13 @@
 from django.http import JsonResponse
 from .auth import decode_jwt
 
-EXCLUDE_PATHS = ["/user/login/", "/user/callback/"]
+EXCLUDE_PATHS = ["/user/login/", "/user/callback/", "/admin/"]
 
 def jwt_middleware(get_response):
     def middleware(request):
-
-        if request.path in EXCLUDE_PATHS:
+        # Ignorar rutas excluidas
+        if any(request.path.startswith(p) for p in EXCLUDE_PATHS):
             return get_response(request)
-
 
         auth = request.headers.get("Authorization", None)
 
