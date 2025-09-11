@@ -1,5 +1,7 @@
 # inventario/services/import_catalogo.py
 from django.db import transaction
+
+from catalogo.models import Repuesto
 from ..repositories.base import NotFoundError
 from ._helpers_movimientos import read_df
 from ._helpers_catalogo import norm_cols_catalogo
@@ -64,30 +66,44 @@ def importar_catalogo(*, file, fields_map: dict | None = None,
     df = read_df(file)
     df = norm_cols_catalogo(df, fields_map or {})
 
+    df["numero_pieza"] = df["numero_pieza"].astype(str).str.strip()
+    df["descripcion"] = df["descripcion"].astype(str).str.strip()
+    df = df.drop_duplicates(subset=["numero_pieza"])
+
+    if "estado" not in df.columns:
+        df["estado"] = default_estado
+    df["estado"] = df["estado"].apply(lambda v: _norm_estado(v, default_estado))
+
+
+    # Buscar todos los numeros de repuestos afuera del for
+    numeros = df["numero_pieza"].tolist()
+
+    existentes_qs = Repuesto.objects.filter(numero_pieza__in=numeros).only(
+        "id", "numero_pieza", "descripcion", "estado", "categoria_id", "marca_id"
+    )
+    existentes = {r.numero_pieza: r for r in existentes_qs}
+
     creados = actualizados = ignorados = 0
     errores = []
 
     for idx, row in df.iterrows():
         try:
-            numero = str(row["numero_pieza"]).strip()
-            descripcion = str(row["descripcion"]).strip()
+            numero = row["numero_pieza"]
+            descripcion = row["descripcion"]
 
             if not numero or not descripcion:
                 raise ValueError("Las columnas 'numero_pieza' y 'descripcion' son obligatorias y no pueden estar vacías.")
-
-            estado = _norm_estado(row.get("estado"), default_estado)
 
             # Resolver opcionales
             categoria = _resolver_categoria(row)
             marca = _resolver_marca(row)
 
+            rep = existentes.get(numero)
+            existe = rep is not None
+
             # Buscar existente
-            try:
-                rep = repuesto_repo.get_by_numero(numero)
-                existe = True
-            except NotFoundError:
-                rep = None
-                existe = False
+            rep = existentes.get(numero)
+            existe = rep is not None
 
             if existe and mode == "create-only":
                 ignorados += 1
@@ -99,10 +115,10 @@ def importar_catalogo(*, file, fields_map: dict | None = None,
             if existe:
                 # actualizar
                 changed = False
-                if getattr(rep, "description", "") != descripcion:
+                if getattr(rep, "descripcion", "") != descripcion:
                     rep.description = descripcion; changed = True
-                if getattr(rep, "status", "") != estado:
-                    rep.status = estado; changed = True
+                if getattr(rep, "estado", "") != row.get("estado"):
+                    rep.status = row.get("estado"); changed = True
                 if categoria is not None and getattr(rep, "categoria_id", None) != getattr(categoria, "id", None):
                     rep.categoria = categoria; changed = True
                 if marca is not None and getattr(rep, "marca_id", None) != getattr(marca, "id", None):
@@ -118,10 +134,11 @@ def importar_catalogo(*, file, fields_map: dict | None = None,
                 rep = repuesto_repo.create(
                     numero_pieza=numero,
                     descripcion=descripcion,
-                    estado=estado,
+                    estado=row.get("estado"),
                     categoria=categoria,
                     marca=marca,
                 )
+                existentes[numero] = rep
                 creados += 1
 
         except Exception as ex:
