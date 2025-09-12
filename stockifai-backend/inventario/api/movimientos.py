@@ -67,7 +67,7 @@ class MovimientosListView(APIView):
             end_next = timezone.make_aware(datetime.combine(date_to + timedelta(days=1), time.min), tz)
             queryset = queryset.filter(fecha__lt=end_next)
 
-        queryset = queryset.order_by("fecha")
+        queryset = queryset.order_by("fecha", "id")
 
         # Paginacion
         paginator = Paginator(queryset, page_size)

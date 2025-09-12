@@ -120,6 +120,27 @@ export class MovimientosComponent implements OnInit {
         this.cargarPagina(1);
     }
 
+    get paginationItems(): Array<number | '…'> {
+        const windowSize = 2;
+        const total = this.totalPages ?? 0;
+        const current = Math.min(Math.max(this.page ?? 1, 1), Math.max(total, 1));
+
+        if (total <= 7) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+
+        const left = Math.max(2, current - windowSize);
+        const right = Math.min(total - 1, current + windowSize);
+
+        const items: Array<number | '…'> = [1];
+        if (left > 2) items.push('…');
+        for (let p = left; p <= right; p++) items.push(p);
+        if (right < total - 1) items.push('…');
+        items.push(total);
+
+        return items;
+    }
+
     openImportarModal() {
         this.loadingArchivo = false;
         this.erroresImport = [];

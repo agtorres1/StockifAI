@@ -30,7 +30,7 @@
 
                 <div class="col-md-2 col-lg-2">
                     <label for="dateFrom" class="form-label">Desde</label>
-                    <input type="date" class="form-control form-control-sm" id="dateFrom" name="dateFrom" 
+                    <input type="date" class="form-control form-control-sm" id="dateFrom" name="dateFrom"
                         [(ngModel)]="filtro.desde" [max]="filtro.hasta || null" (ngModelChange)="filtrar()" />
                 </div>
 
@@ -41,7 +41,8 @@
                 </div>
 
                 <div class="col-md-1 col-lg-1 mt-auto">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetearFiltros()">Resetear</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="resetearFiltros()">Resetear</button>
                 </div>
             </div>
         </form>
@@ -100,17 +101,16 @@
                         <li class="page-item" [class.disabled]="page===1">
                             <button class="page-link" (click)="goPreviousPage()" [disabled]="page===1">Anterior</button>
                         </li>
-
-                        <li class="page-item" *ngFor="let p of [page-2, page-1, page, page+1, page+2]"
-                            [class.active]="p===page" [class.d-none]="p<1 || p>totalPages">
-                            <button class="page-link" (click)="goToPage(p)">{{ p }}</button>
+                        <li class="page-item" *ngFor="let item of paginationItems; let i = index;"
+                            [class.active]="item===page" [class.disabled]="item==='…'">
+                            <span class="page-link" *ngIf="item==='…'">&hellip;</span>
+                            <button class="page-link" *ngIf="item!=='…'" (click)="goToPage(+item)">{{ item }}</button>
                         </li>
-
                         <li class="page-item" [class.disabled]="page===totalPages">
-                            <button class="page-link" (click)="goNextPage()"
-                                [disabled]="page===totalPages">Siguiente</button>
+                            <button class="page-link" (click)="goNextPage()" [disabled]="page===totalPages">Siguiente</button>
                         </li>
                     </ul>
+
                 </div>
             </div>
 

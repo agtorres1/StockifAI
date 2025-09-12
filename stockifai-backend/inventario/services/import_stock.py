@@ -2,7 +2,7 @@
 from collections import defaultdict
 from uuid import uuid4
 
-from django.db import transaction, connection
+from django.db import transaction, connection, ProgrammingError
 from django.db.models import F, Value, Case, When, IntegerField
 from django.utils import timezone
 
@@ -40,7 +40,7 @@ def importar_stock(
     - repuesto (número de pieza)
     - cantidad (int)
     - deposito (nombre)
-    Genera SIEMPRE el movimiento correspondiente (AJUSTE+/AJUSTE-).
+    Genera SIEMPRE el movimiento correspondiente (AJUSTE_INICIAL+/AJUSTE_INICIAL-).
     mode = "set" -> setea el stock exacto; "sum" -> suma/resta la cantidad.
     """
     # 1) Leer archivo
@@ -235,7 +235,7 @@ def _process_movements_and_deltas(df, entities, batch_id, hoy, documento, mode, 
                     })
                     continue
 
-            tipo = "AJUSTE+" if delta > 0 else "AJUSTE-"
+            tipo = "INICIAL+" if delta > 0 else "INICIAL-"
             cantidad_mov = abs(delta)
             externo_id = f"IMPSTK:{batch_id}:{idx + 2}:{numero}:{dep_name}"
 
@@ -258,7 +258,6 @@ def _process_movements_and_deltas(df, entities, batch_id, hoy, documento, mode, 
         Movimiento.objects.bulk_create(
             movimientos_bulk,
             batch_size=BULK_BATCH,
-            ignore_conflicts=True,  # requiere unique en externo_id para idempotencia
         )
 
     # UPDATE masivo de stock

@@ -57,7 +57,7 @@ class Ingreso(models.Model):
 
 
 class Movimiento(models.Model):
-    TIPO=(('INGRESO','INGRESO'),('EGRESO','EGRESO'),('AJUSTE+','AJUSTE+'),('AJUSTE-','AJUSTE-'))
+    TIPO=(('INGRESO','INGRESO'),('EGRESO','EGRESO'),('AJUSTE+','AJUSTE+'),('AJUSTE-','AJUSTE-'),('INICIAL+','INICIAL+'),('INICIAL-','INICIAL-'))
     stock_por_deposito=models.ForeignKey(StockPorDeposito, on_delete=models.PROTECT, related_name='movimientos')
     tipo=models.CharField(max_length=10, choices=TIPO); cantidad=models.IntegerField(); fecha=models.DateTimeField()
     documento=models.CharField(max_length=120, null=True, blank=True)
