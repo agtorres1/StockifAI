@@ -21,6 +21,7 @@ six==1.17.0
 sqlparse==0.5.3
 tzdata==2025.2
 wheel==0.45.1
+django-db-connection-pool==1.2.4
 
 python-jose[cryptography]
 requests

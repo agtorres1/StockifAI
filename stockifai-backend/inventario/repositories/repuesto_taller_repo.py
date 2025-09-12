@@ -31,3 +31,14 @@ class RepuestoTallerRepo:
 
         obj.save()
         return obj
+
+    def list_by_taller_and_repuestos(self, taller: Taller, repuesto_ids: list[int]) -> list[RepuestoTaller]:
+        """
+        Devuelve todos los RepuestoTaller de un taller para una lista de repuesto_ids.
+        """
+        if not repuesto_ids:
+            return []
+        return list(
+            RepuestoTaller.objects.filter(taller=taller, repuesto_id__in=repuesto_ids)
+            .only("id_repuesto_taller", "repuesto_id", "taller_id")
+        )

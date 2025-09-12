@@ -30,7 +30,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware","django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "auth0_backend.middleware.jwt_middleware"
+    #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
 TEMPLATES = [{
@@ -44,21 +44,36 @@ WSGI_APPLICATION = "stockifai.wsgi.application"
 
 
 #DATABASES = {"default":{
-#    "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
-#    "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
-#    "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
-#    "OPTIONS":{"charset":"utf8mb4"}
+#  "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
+#   "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
+#   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
+#   "OPTIONS":{"charset":"utf8mb4"}
 #}}
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
+     'default': {
+        'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': os.getenv('DB_NAMEAWS'),
         'USER': os.getenv('DB_USERAWS'),
         'PASSWORD': os.getenv('DB_PASSWORDAWS'),
         'HOST': os.getenv('DB_HOSTAWS'),
         'PORT': os.getenv('DB_PORTAWS'),
-    }
+        'CONN_MAX_AGE': 3600,  # 1 hora - reutilizar conexiones agresivamente
+        'CONN_HEALTH_CHECKS': True,
+         'OPTIONS': {
+             'connect_timeout': 30,
+             'read_timeout': 300,  # 5 minutos
+             'write_timeout': 300,  # 5 minutos
+             # Para MySQL:
+             'init_command': "SET SESSION net_write_timeout=300, net_read_timeout=300",
+             'charset': 'utf8mb4',
+         },
+        'POOL_OPTIONS': {
+            'POOL_SIZE': 10,
+            'MAX_OVERFLOW': 20,
+            'RECYCLE': 3600,  # 1 hora
+        }
+     }
 }
 
 
@@ -88,6 +103,22 @@ REST_FRAMEWORK = {
     ),
 }
 
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'import_debug.log',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+}
 
 ##########codigo del auth0
 # Inicializar django-environ

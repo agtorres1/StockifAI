@@ -54,3 +54,14 @@ class RepuestoRepo:
                 categoria=categoria,
                 marca=marca,
             ), True
+
+    def list_by_numeros(self, numeros: list[str]):
+        """
+        Devuelve todos los repuestos cuyos numeros estén en la lista.
+        """
+        if not numeros:
+            return []
+        return list(
+            Repuesto.objects.filter(numero_pieza__in=numeros)
+            .only("id", "numero_pieza", "descripcion", "estado", "categoria_id", "marca_id")
+        )
