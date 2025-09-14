@@ -23,7 +23,7 @@ class MovimientosListView(APIView):
                   - date_from: YYYY-MM-DD
                   - date_to:   YYYY-MM-DD
                   - page: int (default 1)
-                  - page_size: int (default 50, máx 200)
+                  - page_size: int (default 10, máx 200)
         """
 
         deposito_id = request.query_params.get("deposito_id")
@@ -67,7 +67,7 @@ class MovimientosListView(APIView):
             end_next = timezone.make_aware(datetime.combine(date_to + timedelta(days=1), time.min), tz)
             queryset = queryset.filter(fecha__lt=end_next)
 
-        queryset = queryset.order_by("fecha", "id")
+        queryset = queryset.order_by("-fecha", "-id")
 
         # Paginacion
         paginator = Paginator(queryset, page_size)

@@ -3,9 +3,9 @@
         <div class="row">
             <div class="col-md-12 col-lg-12 d-flex justify-content-end">
                 <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1"
-                    data-bs-toggle="modal" data-bs-target="#importarMovimientosModal" (click)="openImportarModal()">
+                    data-bs-toggle="modal" data-bs-target="#importarCatalogoModal" (click)="openImportarModal()">
                     <i class="fa fa-file-export me-1"></i>
-                    Importar movimientos
+                    Importar Catalogo
                 </button>
             </div>
         </div>
@@ -13,34 +13,33 @@
         <form class="mb-4">
             <div class="row gy-1">
                 <div class="col-md-6 col-lg-4">
-                    <label for="sku" class="form-label">Filtrar por</label>
-                    <input type="text" class="form-control form-control-sm" id="sku" [(ngModel)]="filtro.searchText"
-                        name="sku" placeholder="SKU, nombre..." (ngModelChange)="onSearchChange($event)" />
+                    <label for="searchText" class="form-label">Filtrar por</label>
+                    <input type="text" class="form-control form-control-sm" id="searchText"
+                        [(ngModel)]="filtro.searchText" name="searchText" placeholder="SKU, nombre..."
+                        (ngModelChange)="onSearchChange($event)" />
                 </div>
 
                 <div class="col-md-3 col-lg-3">
-                    <label for="deposito" class="form-label">Depósito</label>
-                    <select class="form-select form-select-sm" id="deposito" [(ngModel)]="filtro.idDeposito"
-                        name="deposito" (ngModelChange)="filtrar()">
+                    <label for="marca" class="form-label">Marca</label>
+                    <select class="form-select form-select-sm" id="marca" [(ngModel)]="filtro.idMarca" name="marca"
+                        (ngModelChange)="filtrar()">
                         <option value="">Todos</option>
-                        <option *ngFor="let deposito of depositos" [value]="deposito.id">{{ deposito.nombre }}
+                        <option *ngFor="let marca of marcas" [value]="marca.id">{{ marca.nombre }}
                         </option>
                     </select>
                 </div>
 
-                <div class="col-md-2 col-lg-2">
-                    <label for="dateFrom" class="form-label">Desde</label>
-                    <input type="date" class="form-control form-control-sm" id="dateFrom" name="dateFrom"
-                        [(ngModel)]="filtro.desde" [max]="filtro.hasta || null" (ngModelChange)="filtrar()" />
+                <div class="col-md-3 col-lg-3">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select class="form-select form-select-sm" id="categoria" [(ngModel)]="filtro.idCategoria"
+                        name="categoria" (ngModelChange)="filtrar()">
+                        <option value="">Todos</option>
+                        <option *ngFor="let categoria of categorias" [value]="categoria.id">{{ categoria.nombre }}
+                        </option>
+                    </select>
                 </div>
 
-                <div class="col-md-2 col-lg-2">
-                    <label for="dateTo" class="form-label">Hasta</label>
-                    <input type="date" class="form-control form-control-sm" id="dateTo" name="dateTo"
-                        [(ngModel)]="filtro.hasta" [min]="filtro.desde || null" (ngModelChange)="filtrar()" />
-                </div>
-
-                <div class="col-md-1 col-lg-1 mt-auto">
+                <div class="col-md-1 col-lg-1 mt-auto ms-auto">
                     <button type="button" class="btn btn-sm btn-outline-secondary"
                         (click)="resetearFiltros()">Resetear</button>
                 </div>
@@ -65,23 +64,19 @@
                     <tr>
                         <th>SKU</th>
                         <th>Nombre</th>
-                        <th>Depósito</th>
-                        <th>Fecha</th>
-                        <th>Tipo</th>
-                        <th>Cantidad</th>
+                        <th>Marca</th>
+                        <th>Categoria</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let mov of movimientos">
-                        <td>{{ mov.repuesto.numero_pieza }}</td>
-                        <td>{{ mov.repuesto.descripcion }}</td>
-                        <td>{{ mov.deposito.nombre }}</td>
-                        <td>{{ mov.fecha | date: 'dd/MM/yyyy' }}</td>
-                        <td>{{ mov.tipo }}</td>
-                        <td>{{ mov.cantidad }}</td>
+                    <tr *ngFor="let repuesto of repuestos">
+                        <td>{{ repuesto.numero_pieza }}</td>
+                        <td>{{ repuesto.descripcion }}</td>
+                        <td>{{ repuesto.marca?.nombre }}</td>
+                        <td>{{ repuesto.categoria?.nombre }}</td>
                     </tr>
-                    <tr *ngIf="movimientos.length === 0">
-                        <td colspan="6" class="text-center text-muted py-3">No hay movimientos para mostrar.</td>
+                    <tr *ngIf="repuestos.length === 0">
+                        <td colspan="6" class="text-center text-muted py-3">No hay repuestos para mostrar.</td>
                     </tr>
                 </tbody>
             </table>
@@ -107,7 +102,8 @@
                             <button class="page-link" *ngIf="item!=='…'" (click)="goToPage(+item)">{{ item }}</button>
                         </li>
                         <li class="page-item" [class.disabled]="page===totalPages">
-                            <button class="page-link" (click)="goNextPage()" [disabled]="page===totalPages">Siguiente</button>
+                            <button class="page-link" (click)="goNextPage()"
+                                [disabled]="page===totalPages">Siguiente</button>
                         </li>
                     </ul>
 
@@ -117,12 +113,11 @@
     </div>
 </div>
 
-
-<div class="modal fade" id="importarMovimientosModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="importarCatalogoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <form class="modal-content" #form="ngForm" (ngSubmit)="submitArchivo()">
             <div class="modal-header">
-                <h5 class="modal-title">Importar movimientos</h5>
+                <h5 class="modal-title">Importar catalogo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar" (click)="closeImportModal()"></button>
             </div>
 
@@ -135,14 +130,14 @@
                         Seleccioná un archivo csv o xlsx.
                     </div>
                     <div class="form-text">
-                        Formato: <code>repuesto,fecha,cantidad,tipo de movimiento,deposito</code>
+                        Formato: <code>numero de pieza,descripcion,marca_id,categoria_id</code>
                     </div>
                 </div>
 
                 <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{ errorMsg }}</div>
                 <div *ngIf="successMsg" class="alert alert-success mt-3">{{ successMsg }}</div>
                 <div *ngIf="erroresImport && erroresImport.length > 0" class="alert alert-danger mt-3">
-                    <h6 class="mb-2">Movimientos rechazados ({{erroresImport.length}})</h6>
+                    <h6 class="mb-2">Repuestos rechazados ({{erroresImport.length}})</h6>
                     <ul class="mb-0 ps-3 small">
                         <li *ngFor="let error of erroresImport">
                             <strong>Fila {{ error.fila ?? '—' }}:</strong> {{ error.motivo }}

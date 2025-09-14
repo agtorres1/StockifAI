@@ -8,6 +8,7 @@ import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.component';
 import { ForecastingComponent } from './features/repuestos/forecasting/forecasting.component';
 import { MovimientosComponent } from './features/repuestos/movimientos/movimientos.component';
 import { StockComponent } from './features/repuestos/stock/stock.component';
@@ -27,8 +28,17 @@ import { LayoutComponent } from './layout/layout.component';
         TalleresGruposComponent,
         TalleresListadoComponent,
         TalleresUsuariosComponent,
+        CatalogoComponent,
     ],
-    imports: [BrowserModule, CommonModule, RouterModule.forRoot([]), AppRoutingModule, FormsModule, HttpClientModule, BaseChartDirective],
+    imports: [
+        BrowserModule,
+        CommonModule,
+        RouterModule.forRoot([]),
+        AppRoutingModule,
+        FormsModule,
+        HttpClientModule,
+        BaseChartDirective,
+    ],
     providers: [provideCharts(withDefaultRegisterables())],
     bootstrap: [AppComponent],
 })

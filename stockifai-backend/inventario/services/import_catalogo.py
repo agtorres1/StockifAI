@@ -1,7 +1,8 @@
 # inventario/services/import_catalogo.py
 from django.db import transaction
+from django.db.models import Q
 
-from catalogo.models import Repuesto
+from catalogo.models import Repuesto, Categoria, Marca
 from ..repositories.base import NotFoundError
 from ._helpers_movimientos import read_df
 from ._helpers_catalogo import norm_cols_catalogo
@@ -25,30 +26,86 @@ def _norm_estado(v: str, default_estado: str) -> str:
         return v
     return default_estado  # por defecto ACTIVO
 
-def _resolver_categoria(row):
+def _resolver_categoria(row, categorias_by_id, categorias_by_name, categoria_repo):
     if "categoria_id" in row and row["categoria_id"] not in (None, "", float("nan")):
         try:
             cid = int(row["categoria_id"])
-            return categoria_repo.get(cid)
+            if cid in categorias_by_id:
+                return categorias_by_id[cid]
         except Exception:
-            # id inválido -> intentar por nombre si hay
             pass
-    if "categoria_nombre" in row and row["categoria_nombre"] not in (None, ""):
-        nombre = str(row["categoria_nombre"]).strip()
-        return categoria_repo.get_or_create(nombre).obj
-    return None  # opcional
 
-def _resolver_marca(row):
+    if "categoria" in row and row["categoria"] not in (None, ""):
+        nombre = str(row["categoria"]).strip()
+        if nombre:
+            if nombre in categorias_by_name:
+                return categorias_by_name[nombre]
+
+            created = categoria_repo.get_or_create(nombre).obj
+            categorias_by_id[getattr(created, "id", None)] = created
+            categorias_by_name[nombre] = created
+            return created
+
+    return None
+
+def _resolver_marca(row, marcas_by_id, marcas_by_name, marca_repo):
     if "marca_id" in row and row["marca_id"] not in (None, "", float("nan")):
         try:
             mid = int(row["marca_id"])
-            return marca_repo.get(mid)
+            if mid in marcas_by_id:
+                return marcas_by_id[mid]
         except Exception:
             pass
-    if "marca_nombre" in row and row["marca_nombre"] not in (None, ""):
-        nombre = str(row["marca_nombre"]).strip()
-        return marca_repo.get_or_create(nombre).obj
-    return None  # opcional
+
+    if "marca" in row and row["marca"] not in (None, ""):
+        nombre = str(row["marca"]).strip()
+        if nombre:
+            if nombre in marcas_by_name:
+                return marcas_by_name[nombre]
+
+            created = marca_repo.get_or_create(nombre).obj
+            marcas_by_id[getattr(created, "id", None)] = created
+            marcas_by_name[nombre] = created
+            return created
+
+    return None
+
+def _fetch_categorias_y_marca(df):
+    cat_ids = set()
+    if "categoria_id" in df.columns:
+        for v in df["categoria_id"]:
+            try:
+                if v not in (None, "", float("nan")):
+                    cat_ids.add(int(v))
+            except Exception:
+                pass
+    cat_names = set()
+    if "categoria" in df.columns:
+        cat_names = {str(x).strip() for x in df["categoria"].dropna() if str(x).strip()}
+
+    mar_ids = set()
+    if "marca_id" in df.columns:
+        for v in df["marca_id"]:
+            try:
+                if v not in (None, "", float("nan")):
+                    mar_ids.add(int(v))
+            except Exception:
+                pass
+    mar_names = set()
+    if "marca" in df.columns:
+        mar_names = {str(x).strip() for x in df["marca"].dropna() if str(x).strip()}
+
+
+    categorias = list(Categoria.objects.filter(Q(id__in=cat_ids) | Q(nombre__in=cat_names)).only("id", "nombre"))
+    marcas = list(Marca.objects.filter(Q(id__in=mar_ids) | Q(nombre__in=mar_names)).only("id", "nombre"))
+
+    categorias_by_id = {c.id: c for c in categorias}
+    categorias_by_name = {c.nombre: c for c in categorias}
+    marcas_by_id = {m.id: m for m in marcas}
+    marcas_by_name = {m.nombre: m for m in marcas}
+
+    return categorias_by_id, categorias_by_name, marcas_by_id, marcas_by_name
+
 
 @transaction.atomic
 def importar_catalogo(*, file, fields_map: dict | None = None,
@@ -86,6 +143,8 @@ def importar_catalogo(*, file, fields_map: dict | None = None,
     creados = actualizados = ignorados = 0
     errores = []
 
+    categorias_by_id, categorias_by_name, marcas_by_id, marcas_by_name = _fetch_categorias_y_marca(df)
+
     for idx, row in df.iterrows():
         try:
             numero = row["numero_pieza"]
@@ -95,8 +154,8 @@ def importar_catalogo(*, file, fields_map: dict | None = None,
                 raise ValueError("Las columnas 'numero_pieza' y 'descripcion' son obligatorias y no pueden estar vacías.")
 
             # Resolver opcionales
-            categoria = _resolver_categoria(row)
-            marca = _resolver_marca(row)
+            categoria = _resolver_categoria(row, categorias_by_id, categorias_by_name, categoria_repo)
+            marca = _resolver_marca(row, marcas_by_id, marcas_by_name, marca_repo)
 
             rep = existentes.get(numero)
             existe = rep is not None

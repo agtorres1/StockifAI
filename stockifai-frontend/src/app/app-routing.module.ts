@@ -7,6 +7,7 @@ import { StockComponent } from './features/repuestos/stock/stock.component';
 import { TalleresGruposComponent } from './features/talleres/grupos/grupos.component';
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
+import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -20,6 +21,7 @@ const routes: Routes = [
     { path: 'movimientos', component: MovimientosComponent },
     { path: 'forecasting', component: ForecastingComponent },
     { path: 'stock', component: StockComponent },
+    { path: 'catalogo', component: CatalogoComponent },
   ]},
   { path: '**', redirectTo: 'dashboard' },
 ];
