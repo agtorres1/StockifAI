@@ -67,7 +67,7 @@ class MovimientosListView(APIView):
             end_next = timezone.make_aware(datetime.combine(date_to + timedelta(days=1), time.min), tz)
             queryset = queryset.filter(fecha__lt=end_next)
 
-        queryset = queryset.order_by("-fecha", "-id")
+        queryset = queryset.order_by("-fecha", "stock_por_deposito__repuesto_taller__repuesto__descripcion")
 
         # Paginacion
         paginator = Paginator(queryset, page_size)

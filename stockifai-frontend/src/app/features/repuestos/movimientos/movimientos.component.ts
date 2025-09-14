@@ -35,6 +35,8 @@ export class MovimientosComponent implements OnInit {
 
     private search$ = new Subject<string>();
 
+    importarStockInicial: boolean = false;
+
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
@@ -163,15 +165,29 @@ export class MovimientosComponent implements OnInit {
         this.loadingArchivo = true;
         this.errorMsg = '';
         try {
-            const res = await firstValueFrom(
-                this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha)
-            );
-            if (res.errores && res.errores.length > 0) {
-                this.erroresImport = res.errores;
+            if (this.importarStockInicial) {
+                const res = await firstValueFrom(
+                    this.stockService.importarStockInicial(this.tallerId, this.archivo)
+                );
+                if (res.errores && res.errores.length > 0) {
+                    this.erroresImport = res.errores;
+                }
+                if (res.procesados > 0) {
+                    this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
+                }
+                
+            } else {
+                const res = await firstValueFrom(
+                    this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha)
+                );
+                if (res.errores && res.errores.length > 0) {
+                    this.erroresImport = res.errores;
+                }
+                if (res.insertados > 0) {
+                    this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
+                }
             }
-            if (res.insertados > 0) {
-                this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
-            }
+
             this.loadingArchivo = false;
         } catch (err) {
             this.errorMsg = 'Error al importar el archivo';

@@ -35,4 +35,12 @@ export class StockService {
 
         return this.restService.upload('importaciones/movimientos', formData);
     }
+
+    importarStockInicial(tallerId: number, file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('taller_id', String(tallerId));
+        formData.append('file', file);
+
+        return this.restService.upload('importaciones/stock', formData);
+    }
 }
