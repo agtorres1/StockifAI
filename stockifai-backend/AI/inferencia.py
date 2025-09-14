@@ -8,6 +8,10 @@ import joblib
 import numpy as np
 import pandas as pd
 import holidays
+import django
+# --- Configuración de Django (si es necesario para los repositorios) ---
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+django.setup()
 
 from catalogo.models import Repuesto
 from d_externo.repositories.dataexterna import obtener_registroentrenamiento_intermitente, \
@@ -15,17 +19,11 @@ from d_externo.repositories.dataexterna import obtener_registroentrenamiento_int
 from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
 from user.models import Taller
 
-# --- Configuración de Django (si es necesario para los repositorios) ---
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
-# django.setup()
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=UserWarning)
 
-
 # Directorio donde se guardaron los modelos entrenados
 RUTA_BASE_MODELOS = "models"
-
 
 def get_features_for_segment(segmento: str, df_columns: list) -> list:
     """
@@ -104,11 +102,11 @@ def generar_features_futuras(df_historia: pd.DataFrame, fecha_a_predecir: pd.Tim
 
     # Lags
     for lag in lags_to_generate:
-        historia_combinada[f"ventas_t_{lag}"] = historia_combinada["Cantidad"].shift(lag)
+        historia_combinada[f"ventas_t_{lag}"] = historia_combinada["cantidad"].shift(lag)
 
     # Rolling stats
     for window in windows:
-        rolling_series = historia_combinada["Cantidad"].shift(1).rolling(window, min_periods=2)
+        rolling_series = historia_combinada["cantidad"].shift(1).rolling(window, min_periods=2)
         historia_combinada[f"media_ultimas_{window}"] = rolling_series.mean()
         historia_combinada[f"std_pasada_{window}_semanas"] = rolling_series.std()
 
@@ -122,7 +120,7 @@ def generar_features_futuras(df_historia: pd.DataFrame, fecha_a_predecir: pd.Tim
 
     # 3. Datos Externos (se propagan desde el último valor conocido)
     cols_externas = [c for c in df_historia.columns if any(c.startswith(prefix) for prefix in
-                                                           ['Inflacion', 'Ipsa', 'Patentamientos', 'Prendas',
+                                                           ['Inflacion', 'Ipsa', 'Patentamientos', 'Prenda',
                                                             'Tasa_de_interes_de_prestamos', 'Tipo_de_cambio'])]
 
     ultimo_registro_externo = df_historia[cols_externas].iloc[-1]
@@ -150,24 +148,23 @@ def guardar_predicciones_db(taller_id: int, predicciones: list):
     repo = RepuestoTallerRepo()
 
     for pred in predicciones:
-        numero_parte = pred.get("NumeroParte")
-        if not numero_parte:
+        numero_pieza = pred.get("numero_pieza")
+        if not numero_pieza:
             continue
         try:
-            repuesto = Repuesto.objects.get(numero_parte=numero_parte)
-            resultado = repo.get_or_create(repuesto, taller)
-            obj = resultado.obj
+            repuesto = Repuesto.objects.get(numero_pieza=numero_pieza)
 
-            for semana in range(1, 5):
-                key = f'pred_semana_{semana}'
-                if key in pred:
-                    setattr(obj, f'pred_{semana}', pred[key])
+            # Preparamos el diccionario de predicciones en el formato esperado por el repositorio
+            predicciones_para_repo = {f'pred_{i}': pred[f'pred_semana_{i}'] for i in range(1, 5) if
+                                      f'pred_semana_{i}' in pred}
 
-            obj.save()
-            print(f"Predicciones guardadas para SKU {numero_parte}")
+            # Llamamos al métod del repositorio para guardar las predicciones
+            repo.set_predicciones(repuesto=repuesto, taller=taller, predicciones=predicciones_para_repo)
+
+            print(f"Predicciones guardadas para SKU {numero_pieza}")
 
         except Repuesto.DoesNotExist:
-            print(f"Repuesto con numero_parte={numero_parte} no encontrado.")
+            print(f"Repuesto con numero_pieza={numero_pieza} no encontrado.")
 
 
 def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
@@ -181,6 +178,11 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
     # Convertir a DataFrame
     df_frecuencia_alta = pd.DataFrame(registros_frecuencia_alta)
     df_intermitente = pd.DataFrame(registros_intermitente)
+    #formateo boolean
+    if 'es_semana_feriado' in df_frecuencia_alta:
+        df_frecuencia_alta['es_semana_feriado'] = df_frecuencia_alta['es_semana_feriado'].astype(int)
+    if 'es_semana_feriado' in df_intermitente:
+        df_intermitente['es_semana_feriado'] = df_intermitente['es_semana_feriado'].astype(int)
 
     # Concatenar todos los registros
     df_ultimos_registros = pd.concat([df_frecuencia_alta, df_intermitente], ignore_index=True)
@@ -191,7 +193,7 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
     # Convertir columna fecha a datetime
     df_ultimos_registros['fecha'] = pd.to_datetime(df_ultimos_registros['fecha'])
 
-    print(f"Se cargaron los últimos registros de {df_ultimos_registros['numero_parte'].nunique()} SKUs.")
+    print(f"Se cargaron los últimos registros de {df_ultimos_registros['numero_pieza'].nunique()} SKUs.")
 
     # Definir las 4 semanas futuras para la predicción
     fecha_inicio = pd.to_datetime(fecha_prediccion_str)
@@ -202,8 +204,8 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
 
     resultados_finales = []
 
-    for sku in df_ultimos_registros['numero_parte'].unique():
-        historia_sku = df_ultimos_registros[df_ultimos_registros['numero_parte'] == sku].copy()
+    for sku in df_ultimos_registros['numero_pieza'].unique():
+        historia_sku = df_ultimos_registros[df_ultimos_registros['numero_pieza'] == sku].copy()
         segmento = historia_sku['segmento_demanda'].iloc[0]
 
         if segmento in ['sin_venta', 'nuevo']:
@@ -220,7 +222,7 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
         features_del_modelo = modelo.feature_name_
 
         print(f"\nProcesando SKU: {sku} (Segmento: {segmento})")
-        predicciones_sku = {'NumeroParte': sku}
+        predicciones_sku = {'numero_pieza': sku}
         historia_temporal = historia_sku.copy()
 
         for i, fecha_futura in enumerate(fechas_a_predecir):
@@ -234,8 +236,8 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
 
             nuevo_registro_predicho = features_para_predecir_df.copy()
             nuevo_registro_predicho['fecha'] = fecha_futura
-            nuevo_registro_predicho['Cantidad'] = prediccion_final
-            nuevo_registro_predicho['numero_parte'] = sku
+            nuevo_registro_predicho['cantidad'] = prediccion_final
+            nuevo_registro_predicho['numero_pieza'] = sku
             nuevo_registro_predicho['segmento_demanda'] = segmento
 
             historia_temporal = pd.concat([historia_temporal, nuevo_registro_predicho], ignore_index=True)
@@ -257,7 +259,7 @@ if __name__ == '__main__':
     # --- Parámetros de ejecución ---
     TALLER_A_PREDECIR = 1
     # La fecha debe ser un lunes, que es el inicio de la semana según el preproceso.
-    FECHA_INICIO_PREDICCION = "2025-07-07"
+    FECHA_INICIO_PREDICCION = "2025-07-28"
 
     ejecutar_inferencia(
         taller_id=TALLER_A_PREDECIR,

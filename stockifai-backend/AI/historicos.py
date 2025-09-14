@@ -22,8 +22,8 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 from inventario.repositories.movimiento_repo import MovimientoRepo
 
-def _obtener_movimientos_df(taller_id: int) -> pd.DataFrame:
 
+def _obtener_movimientos_df(taller_id: int) -> pd.DataFrame:
     repo = MovimientoRepo()
     qs = repo.get_egresos_ultimos_5_anios(taller_id=taller_id)
     df = pd.DataFrame(list(qs))
@@ -33,7 +33,7 @@ def _obtener_movimientos_df(taller_id: int) -> pd.DataFrame:
 
     df = df.rename(
         columns={
-            "numero_pieza": "NumeroParte",
+            "numero_pieza": "numero_pieza",
             "descripcion": "Descripcion",
             "fecha": "Fecha",
             "cantidad": "Cantidad",
@@ -50,12 +50,13 @@ def _obtener_movimientos_df(taller_id: int) -> pd.DataFrame:
 
     return df
 
+
 def cargar_y_limpiar_datos_desde_repo(taller_id: int) -> pd.DataFrame:
     df = _obtener_movimientos_df(taller_id)
 
     # Setteo de índice temporal
     df = df.sort_values("Fecha").reset_index(drop=True)
-    df["NumeroParte"] = df["NumeroParte"].astype(str)
+    df["numero_pieza"] = df["numero_pieza"].astype(str)
 
     # Semana = lunes como inicio
     df["fecha"] = df["Fecha"].dt.to_period("W").apply(lambda r: r.start_time)
@@ -63,10 +64,11 @@ def cargar_y_limpiar_datos_desde_repo(taller_id: int) -> pd.DataFrame:
 
     # Agregación semanal por SKU
     demanda_semanal = (
-        df.groupby(["NumeroParte", "fecha"], as_index=False)["Cantidad"].sum()
+        df.groupby(["numero_pieza", "fecha"], as_index=False)["Cantidad"].sum()
     )
 
     return demanda_semanal
+
 
 def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
     """
@@ -80,22 +82,22 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
     # Aseguro tipos
     demanda_semanal = demanda_semanal.copy()
     demanda_semanal["fecha"] = pd.to_datetime(demanda_semanal["fecha"])
-    demanda_semanal["NumeroParte"] = demanda_semanal["NumeroParte"].astype(str)
+    demanda_semanal["numero_pieza"] = demanda_semanal["numero_pieza"].astype(str)
 
-    primeras_fechas = demanda_semanal.groupby("NumeroParte")["fecha"].min()
+    primeras_fechas = demanda_semanal.groupby("numero_pieza")["fecha"].min()
     fecha_final = demanda_semanal["fecha"].max()
 
     full_list: List[pd.DataFrame] = []
-    for sku in demanda_semanal["NumeroParte"].unique():
+    for sku in demanda_semanal["numero_pieza"].unique():
         fechas_sku = pd.date_range(start=primeras_fechas[sku], end=fecha_final, freq="W-MON")
-        df_temp = pd.DataFrame({"NumeroParte": sku, "fecha": fechas_sku})
+        df_temp = pd.DataFrame({"numero_pieza": sku, "fecha": fechas_sku})
         full_list.append(df_temp)
 
     df_full = pd.concat(full_list, ignore_index=True)
-    df_full = df_full.merge(demanda_semanal, on=["NumeroParte", "fecha"], how="left").fillna(0)
+    df_full = df_full.merge(demanda_semanal, on=["numero_pieza", "fecha"], how="left").fillna(0)
 
     volumen_historico = (
-        df_full.groupby("NumeroParte")
+        df_full.groupby("numero_pieza")
         .agg(
             volumen_total=("Cantidad", "sum"),
             semanas_con_venta=("Cantidad", lambda x: (x > 0).sum()),
@@ -104,7 +106,7 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     volumen_historico["intermitencia"] = 1 - (
-        volumen_historico["semanas_con_venta"] / volumen_historico["total_semanas_registradas"]
+            volumen_historico["semanas_con_venta"] / volumen_historico["total_semanas_registradas"]
     )
 
     def segmento_demanda(row):
@@ -112,15 +114,15 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
             return "sin_venta"
         elif row["total_semanas_registradas"] < 26:
             return "nuevo"
-        elif row["intermitencia"] >= 0.75: # o sea que si vendio el 25% de las semanas es frecuencia alta
+        elif row["intermitencia"] >= 0.75:  # o sea que si vendio el 25% de las semanas es frecuencia alta
             return "intermitente"
         else:
             return "frecuencia_alta"
 
     volumen_historico["segmento_demanda"] = volumen_historico.apply(segmento_demanda, axis=1)
     df_full = df_full.merge(
-        volumen_historico[["NumeroParte", "segmento_demanda"]],
-        on="NumeroParte",
+        volumen_historico[["numero_pieza", "segmento_demanda"]],
+        on="numero_pieza",
         how="left",
     )
 
@@ -129,20 +131,24 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
 
     return df_full
 
-def generar_caracteristicas(df_full: pd.DataFrame) -> pd.DataFrame:
+
+def generar_caracteristicas(df_segment: pd.DataFrame) -> pd.DataFrame:
     """
     Genera variables de calendario, feriados, lags y rolling stats por segmento.
+    Esta versión se enfoca en un solo segmento a la vez.
     """
-    print("\n--- PASO 3: INGENIERÍA DE CARACTERÍSTICAS POR SEGMENTO ---")
+    if df_segment.empty:
+        raise ValueError("El DataFrame de segmento está vacío.")
 
-    if df_full.empty:
-        raise ValueError("df_full está vacío.")
+    df_s = df_segment.copy()
+    df_s["fecha"] = pd.to_datetime(df_s["fecha"])
 
-    df_full = df_full.copy()
-    df_full["fecha"] = pd.to_datetime(df_full["fecha"])
+    segmento = df_s["segmento_demanda"].iloc[0]
+    print(f"Procesando características para segmento: '{segmento}'")
 
+    # Fechas y feriados
     ar_holidays = holidays.AR(
-        years=np.arange(df_full["fecha"].dt.year.min(), df_full["fecha"].dt.year.max() + 2)
+        years=np.arange(df_s["fecha"].dt.year.min(), df_s["fecha"].dt.year.max() + 2)
     )
     fechas_feriados = sorted(list(ar_holidays.keys()))
     feriados_semana = {pd.Timestamp(fecha).to_period("W").start_time for fecha in fechas_feriados}
@@ -153,80 +159,60 @@ def generar_caracteristicas(df_full: pd.DataFrame) -> pd.DataFrame:
             return 365
         return (proximos_feriados[0] - fecha.date()).days
 
-    def generar_features_por_segmento(df_segment: pd.DataFrame) -> pd.DataFrame:
-        segmento = df_segment["segmento_demanda"].iloc[0]
-        df_s = df_segment.copy().sort_values(["NumeroParte", "fecha"])
+    # Dummies de calendario
+    df_s["mes"] = df_s["fecha"].dt.month
+    df_s["semana_anio"] = df_s["fecha"].dt.isocalendar().week.astype(int)
+    df_s["trimestre"] = df_s["fecha"].dt.quarter
 
-        print(f"Procesando características para segmento: '{segmento}'")
+    mes_dummies = pd.get_dummies(df_s["mes"], prefix="mes", dtype=int)
+    semana_dummies = pd.get_dummies(df_s["semana_anio"], prefix="semana", dtype=int)
+    trimestre_dummies = pd.get_dummies(df_s["trimestre"], prefix="trimestre", dtype=int)
 
-        # Dummies de mes
-        df_s["mes"] = df_s["fecha"].dt.month
-        mes_dummies = pd.get_dummies(df_s["mes"], prefix="mes", dtype=int)
-        df_s = pd.concat([df_s, mes_dummies], axis=1).drop(columns=["mes"])
+    df_s = pd.concat([df_s, mes_dummies, semana_dummies, trimestre_dummies], axis=1)
+    df_s = df_s.drop(columns=["mes", "semana_anio", "trimestre"])
 
-        # Dummies de semana del año
-        df_s["semana_anio"] = df_s["fecha"].dt.isocalendar().week.astype(int)
-        semana_dummies = pd.get_dummies(df_s["semana_anio"], prefix="semana", dtype=int)
-        df_s = pd.concat([df_s, semana_dummies], axis=1).drop(columns=["semana_anio"])
+    # Feriados y ventas
+    df_s["es_semana_feriado"] = df_s["fecha"].isin(feriados_semana).astype(int)
+    df_s["hubo_venta"] = (df_s["Cantidad"] > 0).astype(int)
+    df_s["dias_hasta_feriado"] = df_s["fecha"].apply(dias_hasta_feriado)
 
-        # Dummies de trimestre
-        df_s["trimestre"] = df_s["fecha"].dt.quarter
-        trimestre_dummies = pd.get_dummies(df_s["trimestre"], prefix="trimestre", dtype=int)
-        df_s = pd.concat([df_s, trimestre_dummies], axis=1).drop(columns=["trimestre"])
+    # Configuración de lags y rolling stats por segmento
+    if segmento == "frecuencia_alta":
+        max_lag = 52
+        windows = [4, 8, 12, 26, 52]
+        lags_to_generate = list(range(1, max_lag + 1))
+    elif segmento == "intermitente":
+        max_lag = 26
+        windows = [4, 8, 12]
+        lags_to_generate = list(range(1, max_lag + 1))
+    else:
+        windows = []
+        lags_to_generate = []
 
-        # Feriados y ventas
-        df_s["es_semana_feriado"] = df_s["fecha"].isin(feriados_semana).astype(int)
-        df_s["hubo_venta"] = (df_s["Cantidad"] > 0).astype(int)
-        df_s["dias_hasta_feriado"] = df_s["fecha"].apply(dias_hasta_feriado)
+    # Lags de ventas
+    for lag in lags_to_generate:
+        df_s[f"ventas_t_{lag}"] = df_s.groupby("numero_pieza")["Cantidad"].shift(lag)
 
-        # Config por segmento
-        if segmento == "frecuencia_alta":
-            max_lag = 52
-            windows = [4, 8, 12, 26, 52]
-            lags_to_generate = list(range(1, max_lag + 1))
-        elif segmento == "intermitente":
-            max_lag = 12
-            windows = [4, 8, 12]
-            lags_to_generate = list(range(1, max_lag + 1))
-        else:  # 'nuevo' (y 'sin_venta' no se usa para entrenar)
-            windows = []
-            lags_to_generate = []
+    # Rolling stats
+    for window in windows:
+        rolling_series = df_s.groupby("numero_pieza")["Cantidad"].shift(1).rolling(window, min_periods=2)
+        df_s[f"media_ultimas_{window}"] = rolling_series.mean()
+        df_s[f"std_pasada_{window}_semanas"] = rolling_series.std()
 
-        # Lags de ventas
-        for lag in lags_to_generate:
-            df_s[f"ventas_t_{lag}"] = df_s.groupby("NumeroParte")["Cantidad"].shift(lag)
+        mean_col = f"media_ultimas_{window}"
+        std_col = f"std_pasada_{window}_semanas"
+        coef_var_col = f"coef_var_{window}"
+        df_s[coef_var_col] = df_s[std_col] / (df_s[mean_col].replace(0, 1e-6) + 1e-6)
 
-        # Rolling stats sobre Cantidad (shift(1) para evitar fuga de info)
-        for window in windows:
-            rolling_series = df_s.groupby("NumeroParte")["Cantidad"].shift(1).rolling(window, min_periods=2)
-            df_s[f"media_ultimas_{window}"] = rolling_series.mean()
-            df_s[f"std_pasada_{window}_semanas"] = rolling_series.std()
-            mean_col = f"media_ultimas_{window}"
-            std_col = f"std_pasada_{window}_semanas"
-            coef_var_col = f"coef_var_{window}"
-            df_s[coef_var_col] = df_s[std_col] / (df_s[mean_col].replace(0, 1e-6) + 1e-6)
-
-        return df_s
-
-    dataframes_procesados = [
-        generar_features_por_segmento(df_segmento)
-        for _, df_segmento in df_full.groupby("segmento_demanda", dropna=False)
-    ]
-    df_modelo = pd.concat(dataframes_procesados, ignore_index=True)
-    df_modelo = df_modelo.sort_values(["NumeroParte", "fecha"]).reset_index(drop=True)
-    return df_modelo
+    return df_s
 
 
-def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
+def integrar_datos_externos_base() -> pd.DataFrame:
     """
-    Obtiene datos externos desde las funciones helper, calcula features
-    (lags, EMAs, deltas) y los integra al DataFrame principal.
+    Obtiene datos externos, calcula features y los retorna.
+    Esta función NO fusiona con los datos de demanda.
     """
-    print("\n--- Integrando datos externos desde las funciones helper ---")
-
-    df_full_con_externos = df_full.copy()
-    df_full_con_externos["fecha"] = pd.to_datetime(df_full_con_externos["fecha"])
-
+    print("\n--- Procesando datos externos para su futura integración ---")
     modelos_externos = [
         {"function": obtener_todas_las_inflaciones, "nombre": "inflacion", "tipo": "mensual"},
         {"function": obtener_todos_los_patentamientos, "nombre": "patentamientos", "tipo": "anual"},
@@ -236,16 +222,16 @@ def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
         {"function": obtener_todos_los_tipos_cambio, "nombre": "tipo_de_cambio", "tipo": "mensual"},
     ]
 
+    df_final = pd.DataFrame()
     for config in modelos_externos:
         helper_function = config["function"]
         new_col_name = config["nombre"]
         print(f" - Procesando: {helper_function.__name__}...")
 
         try:
-            # --- 2. Extraer datos del modelo usando la función helper ---
             data_list = helper_function()
             if not data_list:
-                warnings.warn(f"No se encontraron datos usando la función '{helper_function.__name__}'. Se omite.")
+                warnings.warn(f"No se encontraron datos usando '{helper_function.__name__}'. Se omite.")
                 continue
 
             df_ext = pd.DataFrame(data_list)
@@ -267,7 +253,6 @@ def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
             df_ext[new_col_name] = pd.to_numeric(df_ext[new_col_name], errors='coerce')
             df_ext = df_ext.dropna().sort_values("fecha")
 
-            # --- 3. Generar Características (Lags, EMAs, Deltas) ---
             if config["tipo"] == "anual":
                 lags = [12, 24, 36]
                 ema_spans = [12, 24]
@@ -275,41 +260,31 @@ def integrar_datos_externos(df_full: pd.DataFrame) -> pd.DataFrame:
                 lags = [1, 2, 3, 6]
                 ema_spans = [3, 6, 12]
 
-            # Generate lagged features using a simple shift based on the index,
-            # as the DataFrame is already sorted by date.
             for lag in lags:
                 df_ext[f"{new_col_name}_lag_{lag}"] = df_ext[new_col_name].shift(lag)
             for span in ema_spans:
                 df_ext[f"{new_col_name}_ema_{span}"] = df_ext[new_col_name].ewm(span=span, adjust=False).mean()
             df_ext[f"{new_col_name}_delta"] = df_ext[new_col_name].diff()
 
-            # --- 4. Fusionar con el DataFrame principal ---
-            df_ext_to_merge = df_ext.drop(columns=[new_col_name])
-            df_full_con_externos = pd.merge_asof(
-                df_full_con_externos.sort_values("fecha"),
-                df_ext_to_merge.sort_values("fecha"),
-                on="fecha",
-                direction="backward",
-            )
+            df_ext = df_ext.drop(columns=[new_col_name])
+            if df_final.empty:
+                df_final = df_ext
+            else:
+                df_final = pd.merge_asof(
+                    df_final.sort_values("fecha"),
+                    df_ext.sort_values("fecha"),
+                    on="fecha",
+                    direction="backward"
+                )
         except Exception as e:
-            warnings.warn(f"Error procesando la función '{helper_function.__name__}': {e}. Se omite.")
+            warnings.warn(f"Error procesando '{helper_function.__name__}': {e}. Se omite.")
             continue
 
-    cols_nucleares = {"NumeroParte", "fecha", "Cantidad", "segmento_demanda"}
-    cols_a_propagar = [col for col in df_full_con_externos.columns if col not in cols_nucleares]
+    return df_final
 
-    if cols_a_propagar:
-        df_full_con_externos[cols_a_propagar] = df_full_con_externos.groupby("NumeroParte")[cols_a_propagar].ffill()
-
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.expand_frame_repr', False)
-    print(df_full_con_externos.head())
-    print("✓ Integración de datos externos completada.")
-    return df_full_con_externos
 
 def dividir_datos(
-    df: pd.DataFrame, n_semanas_val: int = 4, n_semanas_test: int = 4
+        df: pd.DataFrame, n_semanas_val: int = 4, n_semanas_test: int = 4
 ) -> Dict[str, pd.DataFrame]:
     """
     Divide en train/val/test por semanas, respetando el orden temporal.
@@ -346,44 +321,57 @@ def dividir_datos(
 
     return {"train": train_df, "val": val_df, "test": test_df}
 
-def ejecutar_preproceso(
-    taller_id: int,
-    output_dir_base: str = "models",
-) -> Dict[str, Dict[str, pd.DataFrame]]:
 
+def ejecutar_preproceso(
+        taller_id: int,
+        output_dir_base: str = "models",
+) -> Dict[str, Dict[str, pd.DataFrame]]:
     print(f"\n--- INICIANDO PIPELINE DE PREPROCESAMIENTO PARA EL TALLER: (id={taller_id}) ---")
 
     # 1) Extraer y agregar semanal
-    demanda_semanal = cargar_y_limpiar_datos_desde_repo(taller_id)
-    if demanda_semanal.empty:
-        raise ValueError("No hay datos de demanda semanal.")
+    try:
+        demanda_semanal = cargar_y_limpiar_datos_desde_repo(taller_id)
+        if demanda_semanal.empty:
+            raise ValueError("No hay datos de demanda semanal.")
+    except ValueError as e:
+        print(f"Error: {e}")
+        return {}
 
     # 2) Clasificar
     df_full = clasificar_demanda(demanda_semanal)
 
-    # 3) Externos
-    df_full = integrar_datos_externos(df_full)
+    # 3) Obtener y preprocesar los datos externos una sola vez
+    df_externos = integrar_datos_externos_base()
 
-    # 4) Features
-    df_modelo = generar_caracteristicas(df_full)
-
-    # 5) Split + guardado por segmento (excepto 'sin_venta' y 'nuevo')
-    print("\n--- PASO 4: DIVIDIENDO DATOS Y GUARDANDO EN CARPETAS POR SEGMENTO ---")
+    # 4) Bucle por cada segmento
+    print("\n--- PASO 3: PROCESANDO DATOS Y GUARDANDO EN CARPETAS POR SEGMENTO ---")
     resultados: Dict[str, Dict[str, pd.DataFrame]] = {}
 
-    for segmento, df_segmento in df_modelo.groupby("segmento_demanda", dropna=False):
-        ruta_segmento = os.path.join(output_dir_base,str(taller_id), segmento)
-        os.makedirs(ruta_segmento, exist_ok=True)
+    for segmento, df_segmento in df_full.groupby("segmento_demanda", dropna=False):
 
-        # Segmentos que no se entrenan
+        # Ignorar segmentos que no se usan para el entrenamiento
         if segmento in ["sin_venta", "nuevo"]:
             continue
 
+        ruta_segmento = os.path.join(output_dir_base, str(taller_id), segmento)
+        os.makedirs(ruta_segmento, exist_ok=True)
+
         try:
-            split_data = dividir_datos(df_segmento)
+            # Integra los datos externos al segmento actual
+            df_segmento = pd.merge_asof(
+                df_segmento.sort_values("fecha"),
+                df_externos.sort_values("fecha"),
+                on="fecha",
+                direction="backward"
+            )
+
+            # Genera las características específicas del segmento
+            df_modelo_segmento = generar_caracteristicas(df_segmento)
+
+            # Divide y guarda el resultado
+            split_data = dividir_datos(df_modelo_segmento)
             resultados[segmento] = split_data
 
-            # Guarda csv
             for part_name, part_df in split_data.items():
                 nombre_archivo = f"demanda_preprocesada_{segmento}_{part_name}.csv"
                 ruta_guardado = os.path.join(ruta_segmento, nombre_archivo)
@@ -393,7 +381,7 @@ def ejecutar_preproceso(
                     f"con {part_df.shape[0]} filas."
                 )
         except ValueError as e:
-            print(f"Advertencia: No se pudo dividir el segmento '{segmento}': {e}")
+            print(f"Advertencia: No se pudo procesar el segmento '{segmento}': {e}")
             continue
 
     print("\n--- PROCESO COMPLETADO ---")
@@ -403,7 +391,7 @@ def ejecutar_preproceso(
 if __name__ == "__main__":
     # parametros para probar
     TALLER_ID = 1
-    OUTPUT_DIR = "models" # donde se guardan los modelos
+    OUTPUT_DIR = "models"  # donde se guardan los modelos
 
     ejecutar_preproceso(
         taller_id=TALLER_ID,

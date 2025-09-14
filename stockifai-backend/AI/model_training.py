@@ -5,13 +5,18 @@ import lightgbm as lgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import joblib
 import warnings
-
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+django.setup()
+from d_externo.models import RegistroEntrenamiento_Frecuencia_Alta
 
 from d_externo.repositories.dataexterna import guardar_registroentrenamiento_frecuencia_alta, \
-    guardar_registroentrenamiento_intermitente
+    guardar_registroentrenamiento_intermitente, borrar_registroentrenamiento_frecuencia_alta, \
+    borrar_registroentrenamiento_intermitente
 from user.models import Taller
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 RUTA_BASE_MODELOS = "models"
 
@@ -53,12 +58,22 @@ def guardar_ultimo_registro_a_db(df: pd.DataFrame, segmento: str, taller_id: int
     Guarda el último registro de cada SKU en la base de datos de Django
     usando los modelos correspondientes según el segmento.
     """
-    print("\nIniciando la carga del último registro de cada SKU a la base de datos...")
     taller = Taller.objects.get(id=taller_id)
+    # --- LÓGICA DE BORRADO: Vaciar los registros previos antes de guardar los nuevos datos ---
+    try:
+        if segmento == "frecuencia_alta":
+            borrar_registroentrenamiento_frecuencia_alta(taller)
+        elif segmento == "intermitente":
+            borrar_registroentrenamiento_intermitente(taller)
+    except Exception as e:
+        print(f"Advertencia: No se pudo borrar la tabla '{segmento}': {e}")
+
+    print("\nIniciando la carga del último registro de cada SKU a la base de datos...")
+
     try:
         # Obtenemos el último registro (última fecha) para cada SKU
         df_ultimo_registro = df.sort_values('fecha').drop_duplicates(
-            subset=['NumeroParte'], keep='last'
+            subset=['numero_pieza'], keep='last'
         )
 
         # Iteramos fila por fila y guardamos en el modelo correcto
@@ -67,6 +82,11 @@ def guardar_ultimo_registro_a_db(df: pd.DataFrame, segmento: str, taller_id: int
 
             # Normalizamos nombres de columnas (coincidir con modelo Django)
             datos = {k.lower(): v for k, v in datos.items()}
+
+            # --- CORRECCIÓN: Convertir NaN a None para MySQL ---
+            for k, v in datos.items():
+                if pd.isna(v):
+                    datos[k] = None
 
             if segmento == "frecuencia_alta":
                 guardar_registroentrenamiento_frecuencia_alta(datos, taller)
@@ -173,9 +193,6 @@ def train_segment_model(taller: int, segmento: str):
         y_pred_test = lgb_final_model.predict(X_test)
         y_pred_clipped_test = np.maximum(0, y_pred_test).round().astype(int)
 
-        df_test['pred'] = y_pred_clipped_test
-        df_test['error_abs'] = (df_test['Cantidad'] - df_test['pred']).abs()
-
         mae_final = mean_absolute_error(y_test, y_pred_clipped_test)
         rmse_final = np.sqrt(mean_squared_error(y_test, y_pred_clipped_test))
 
@@ -189,7 +206,7 @@ def train_segment_model(taller: int, segmento: str):
         print(f"Modelo final para '{segmento}' guardado en '{ruta_guardado_modelo}'.")
 
         # Guardar resultados en DB
-        guardar_ultimo_registro_a_db(df_test, taller_id=taller)
+        guardar_ultimo_registro_a_db(df_test, segmento, taller_id=taller)
 
     except Exception as e:
         print(f"Error durante el entrenamiento del segmento '{segmento}': {e}")
