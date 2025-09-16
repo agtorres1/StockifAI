@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
+import { Taller } from '../../../core/models/taller';
 import { StockService } from '../../../core/services/stock.service';
 import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
@@ -17,6 +18,7 @@ export class MovimientosComponent implements OnInit {
 
     depositos: Deposito[] = [];
     movimientos: Movimiento[] = [];
+    taller?: Taller;
     loading: boolean = false;
     errorMessage: string = '';
 
@@ -35,7 +37,7 @@ export class MovimientosComponent implements OnInit {
 
     private search$ = new Subject<string>();
 
-    importarStockInicial: boolean = false;
+    stockInicialCargado: boolean = true;
 
     constructor(
         private titleService: TitleService,
@@ -50,10 +52,13 @@ export class MovimientosComponent implements OnInit {
         this.loading = true;
 
         forkJoin({
+            taller: this.talleresService.getTallerData(this.tallerId),
             depositos: this.talleresService.getDepositos(this.tallerId),
             movimientos: this.stockService.getMovimientos(this.tallerId, this.page, this.pageSize, this.filtro),
         }).subscribe({
-            next: ({ depositos, movimientos }) => {
+            next: ({ taller, depositos, movimientos }) => {
+                this.taller = taller;
+                this.stockInicialCargado = taller.stock_inicial_cargado;
                 this.depositos = depositos;
                 this.movimientos = movimientos.results;
                 this.totalPages = movimientos.total_pages;
@@ -165,18 +170,7 @@ export class MovimientosComponent implements OnInit {
         this.loadingArchivo = true;
         this.errorMsg = '';
         try {
-            if (this.importarStockInicial) {
-                const res = await firstValueFrom(
-                    this.stockService.importarStockInicial(this.tallerId, this.archivo)
-                );
-                if (res.errores && res.errores.length > 0) {
-                    this.erroresImport = res.errores;
-                }
-                if (res.procesados > 0) {
-                    this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
-                }
-                
-            } else {
+            if (this.stockInicialCargado) {
                 const res = await firstValueFrom(
                     this.stockService.importarMovimientos(this.tallerId, this.archivo, this.fecha)
                 );
@@ -185,6 +179,14 @@ export class MovimientosComponent implements OnInit {
                 }
                 if (res.insertados > 0) {
                     this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
+                }
+            } else {
+                const res = await firstValueFrom(this.stockService.importarStockInicial(this.tallerId, this.archivo));
+                if (res.errores && res.errores.length > 0) {
+                    this.erroresImport = res.errores;
+                }
+                if (res.procesados > 0) {
+                    this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
                 }
             }
 
@@ -195,10 +197,12 @@ export class MovimientosComponent implements OnInit {
         }
     }
 
-    closeImportModal() {
+    closeImportModal(refresh: boolean = true) {
         this.loadingArchivo = false;
         this.erroresImport = [];
         this.successMsg = '';
-        this.cargarPagina(1);
+        if (refresh) {
+            this.cargarPagina(1);
+        }
     }
 }

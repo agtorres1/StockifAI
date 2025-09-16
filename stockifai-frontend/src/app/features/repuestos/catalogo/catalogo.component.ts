@@ -166,7 +166,9 @@ export class CatalogoComponent implements OnInit {
                 this.erroresImport = res.errores;
             }
             if (res.creados > 0 || res.actualizados > 0 || res.ignorados > 0) {
-                this.successMsg = `Se importaron ${res.creados + res.actualizados + res.ignorados} repuestos correctamente`;
+                this.successMsg = `Se importaron ${
+                    res.creados + res.actualizados + res.ignorados
+                } repuestos correctamente`;
             }
             this.loadingArchivo = false;
         } catch (err) {
@@ -175,10 +177,12 @@ export class CatalogoComponent implements OnInit {
         }
     }
 
-    closeImportModal() {
+    closeImportModal(refresh: boolean = true) {
         this.loadingArchivo = false;
         this.erroresImport = [];
         this.successMsg = '';
-        this.cargarPagina(1);
+        if (refresh) {
+            this.cargarPagina(1);
+        }
     }
 }

@@ -8,6 +8,8 @@ import { TalleresGruposComponent } from './features/talleres/grupos/grupos.compo
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.component';
+import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
+import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -22,6 +24,8 @@ const routes: Routes = [
     { path: 'forecasting', component: ForecastingComponent },
     { path: 'stock', component: StockComponent },
     { path: 'catalogo', component: CatalogoComponent },
+    { path: 'marcas', component: MarcasComponent },
+    { path: 'categorias', component: CategoriasComponent },
   ]},
   { path: '**', redirectTo: 'dashboard' },
 ];

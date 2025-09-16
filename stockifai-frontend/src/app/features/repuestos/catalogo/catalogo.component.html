@@ -149,7 +149,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" (click)="closeImportModal()">Cancelar</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" (click)="closeImportModal(false)">Cancelar</button>
                 <button type="button" class="btn btn-primary" (click)="submitArchivo()"
                     [disabled]="!archivo || loadingArchivo">
                     <div *ngIf="loadingArchivo" class="spinner-border spinner-border-sm me-2" role="status"

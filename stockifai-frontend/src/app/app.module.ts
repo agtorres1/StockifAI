@@ -16,6 +16,8 @@ import { TalleresGruposComponent } from './features/talleres/grupos/grupos.compo
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { LayoutComponent } from './layout/layout.component';
+import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
+import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
 
 @NgModule({
     declarations: [
@@ -29,6 +31,8 @@ import { LayoutComponent } from './layout/layout.component';
         TalleresListadoComponent,
         TalleresUsuariosComponent,
         CatalogoComponent,
+        MarcasComponent,
+        CategoriasComponent
     ],
     imports: [
         BrowserModule,
