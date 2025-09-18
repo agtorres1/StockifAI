@@ -36,7 +36,7 @@ class StockPorDeposito(models.Model):
         related_name='stocks'
     )
     cantidad = models.IntegerField(default=0)
-    cantidad_minima = models.IntegerField(default=0)
+
 
     class Meta:
         unique_together = [('repuesto_taller', 'deposito')]
