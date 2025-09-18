@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from catalogo.models import Repuesto, Categoria, Marca
 from inventario.models import Deposito, Movimiento
-
+from catalogo.models import RepuestoTaller
+from user.models import Taller
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -69,3 +70,42 @@ class MovimientosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movimiento
         fields = ["id", "fecha", "tipo", "cantidad", "externo_id", "documento", "deposito", "repuesto"]
+
+class TallerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Taller
+        fields = ["id", "nombre"]
+
+class RepuestoTallerSerializer(serializers.ModelSerializer):
+    repuesto = RepuestoSerializer(read_only=True)
+    taller = TallerSerializer(read_only=True)
+    cantidad_minima = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RepuestoTaller
+        fields = [
+            "id_repuesto_taller",
+            "repuesto",
+            "taller",
+            "precio",
+            "costo",
+            "original",
+            "pred_1",
+            "pred_2",
+            "pred_3",
+            "pred_4",
+            "cantidad_minima",
+        ]
+
+    def get_cantidad_minima(self, obj):
+        # Por defecto, igual a pred_1 si existe
+        return obj.pred_1
+
+class StockDepositoDetalleSerializer(serializers.Serializer):
+    deposito = DepositoSerializer()
+    cantidad = serializers.IntegerField()
+
+class RepuestoStockSerializer(serializers.Serializer):
+    repuesto_taller = RepuestoTallerSerializer()
+    stock_total = serializers.IntegerField()
+    depositos = StockDepositoDetalleSerializer(many=True)
