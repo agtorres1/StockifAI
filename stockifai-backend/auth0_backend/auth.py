@@ -10,8 +10,8 @@ class Auth0JWTAuthentication(BaseAuthentication):
             return None  # deja que Django maneje otras rutas (/admin/)
 
         auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            raise AuthenticationFailed("Token requerido")
+        #if not auth_header:
+        #    raise AuthenticationFailed("Token requerido")
 
         parts = auth_header.split()
         if parts[0].lower() != "bearer" or len(parts) != 2:

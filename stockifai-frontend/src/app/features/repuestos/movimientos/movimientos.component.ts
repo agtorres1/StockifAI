@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
@@ -42,13 +43,16 @@ export class MovimientosComponent implements OnInit {
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
-        private talleresService: TalleresService
+        private talleresService: TalleresService,
+        private route: ActivatedRoute,
+        private router: Router
     ) {
         this.titleService.setTitle('Movimientos');
         this.fecha = new Date().toISOString().split('T')[0];
     }
 
     ngOnInit(): void {
+        this.getQueryParams();
         this.loading = true;
 
         forkJoin({
@@ -94,6 +98,14 @@ export class MovimientosComponent implements OnInit {
 
     private cargarPagina(p: number) {
         if (p < 1 || p > this.totalPages) return;
+
+        this.page = p;
+
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: this.buildQueryParams(),
+            replaceUrl: true,
+        });
 
         this.loading = true;
         this.stockService.getMovimientos(this.tallerId, p, this.pageSize, this.filtro).subscribe({
@@ -146,6 +158,34 @@ export class MovimientosComponent implements OnInit {
         items.push(total);
 
         return items;
+    }
+
+    private buildQueryParams(): Params {
+        const qp: any = {};
+
+        if (this.filtro.searchText?.trim()) qp.search = this.filtro.searchText.trim();
+        if (this.filtro.idDeposito) qp.deposito = this.filtro.idDeposito;
+        if (this.filtro.desde) qp.desde = this.filtro.desde;
+        if (this.filtro.hasta) qp.hasta = this.filtro.hasta;
+
+        if (this.page && this.page !== 1) qp.page = this.page;
+        if (this.pageSize && this.pageSize !== 10) qp.pageSize = this.pageSize;
+
+        return qp;
+    }
+
+    private getQueryParams() {
+        const qp = this.route.snapshot.queryParamMap;
+
+        this.filtro.idDeposito = qp.get('deposito') ?? this.filtro.idDeposito;
+        this.filtro.searchText = qp.get('search') ?? this.filtro.searchText;
+        this.filtro.desde = qp.get('desde') ?? this.filtro.desde;
+        this.filtro.hasta = qp.get('hasta') ?? this.filtro.hasta;
+
+        const p = parseInt(qp.get('page') ?? '', 10);
+        const ps = parseInt(qp.get('pageSize') ?? '', 10);
+        if (!Number.isNaN(p) && p > 0) this.page = p;
+        if (!Number.isNaN(ps) && ps > 0) this.pageSize = ps;
     }
 
     // IMPORT MOVIMIENTOS MODAL

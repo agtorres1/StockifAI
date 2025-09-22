@@ -1,0 +1,27 @@
+.sfa-table {
+    border-radius: 0.8rem;
+    overflow: hidden;
+}
+
+.sfa-row.is-open {
+    td {
+        border-bottom-color: transparent;
+    }
+}
+
+.sfa-detail-list .list-group-item {
+    background: transparent;
+}
+
+.sfa-row {
+    cursor: pointer;
+}
+
+.px-7 {
+    padding-right: 4rem !important;
+    padding-left: 4rem !important;
+}
+
+.bg-orange {
+    background-color: var(--bs-orange) !important;
+}

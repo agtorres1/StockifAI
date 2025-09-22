@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Movimiento } from '../models/movimiento';
 import { PagedResponse } from '../models/paged-response';
 import { RestService } from './rest.service';
+import { RepuestoStock } from '../models/repuesto-stock';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
@@ -42,5 +43,19 @@ export class StockService {
         formData.append('file', file);
 
         return this.restService.upload('importaciones/stock', formData);
+    }
+
+    getStock(
+        tallerId: number,
+        page = 1,
+        pageSize = 10,
+        filtro?: { idDeposito: string; searchText: string, desde?: string, hasta?: string }
+    ): Observable<PagedResponse<RepuestoStock>> {
+        let params = new HttpParams().set('page', page).set('page_size', pageSize);
+        
+        if (filtro?.searchText) params = params.set('q', filtro.searchText);
+        if (filtro?.idDeposito) params = params.set('deposito_id', filtro.idDeposito);
+
+        return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/stock`, params);
     }
 }

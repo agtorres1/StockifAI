@@ -79,10 +79,12 @@
                         <th>Nombre</th>
                         <th>SKU</th>
                         <th>Categoría</th>
-                        <th>Stock</th>
-                        <th>Predicción</th>
-                        <th>Días restantes</th>
-                        <th></th>
+                        <th>Dias de stock restantes</th>
+                        <th>Mes anterior</th>
+                        <th>Mes actual</th>
+                        <th>Proyeccion a 1 semana</th>
+                        <th>Proyeccion a 1 mes</th>
+                        <th style="width: 50px"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,10 +92,12 @@
                         <td>{{ item.nombre }}</td>
                         <td>{{ item.sku }}</td>
                         <td>{{ item.categoria }}</td>
+                        <td>4</td>
                         <td>{{ item.stock }}</td>
                         <td>{{ item.prediccion }}</td>
-                        <td>{{ item.diasRestantes }}</td>
-                        <td class="text-center">
+                        <td>17</td>
+                        <td>20</td>
+                        <td class="text-center" style="width: 50px;">
                             <button class="btn btn-link p-0" (click)="goToDetail(item)" data-bs-toggle="tooltip"
                                 data-bs-placement="top" title="Ver detalle">
                                 <i class="fa-solid fa-magnifying-glass-chart"></i>
