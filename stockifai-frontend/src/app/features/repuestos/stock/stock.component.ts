@@ -43,8 +43,7 @@ export class StockComponent implements OnInit {
             stock: this.stockService.getStock(this.tallerId, this.page, this.pageSize, this.filtro),
         }).subscribe({
             next: ({ stock }) => {
-                //this.stock = stock.results.map((i) => this.procesarRepuestoStock(i));
-                this.stock = REPUESTOS_STOCK_MOCK.map((i) => this.procesarRepuestoStock(i));
+                this.stock = stock.results.map((i) => this.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(stock.count / this.pageSize);
                 this.loading = false;
                 this.errorMessage = '';

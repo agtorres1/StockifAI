@@ -243,6 +243,16 @@ export class MovimientosComponent implements OnInit {
         this.successMsg = '';
         if (refresh) {
             this.cargarPagina(1);
+
+            this.talleresService.getTallerData(this.tallerId).subscribe({
+                next: (data) => {
+                    this.taller = data;
+                    this.stockInicialCargado = data.stock_inicial_cargado;
+                },
+                error: (err) => {
+                    this.errorMsg = 'Error al cargar los datos del taller';
+                },
+            });
         }
     }
 }

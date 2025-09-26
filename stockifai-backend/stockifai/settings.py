@@ -43,12 +43,12 @@ WSGI_APPLICATION = "stockifai.wsgi.application"
 
 
 
-#DATABASES = {"default":{
+# DATABASES = {"default":{
 #  "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
 #   "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
 #   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
 #   "OPTIONS":{"charset":"utf8mb4"}
-#}}
+# }}
 
 DATABASES = {
      'default': {
@@ -58,20 +58,19 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORDAWS'),
         'HOST': os.getenv('DB_HOSTAWS'),
         'PORT': os.getenv('DB_PORTAWS'),
-        'CONN_MAX_AGE': 3600,  # 1 hora - reutilizar conexiones agresivamente
+        'CONN_MAX_AGE': 3600,
         'CONN_HEALTH_CHECKS': True,
          'OPTIONS': {
              'connect_timeout': 30,
-             'read_timeout': 300,  # 5 minutos
-             'write_timeout': 300,  # 5 minutos
-             # Para MySQL:
+             'read_timeout': 300,
+             'write_timeout': 300,
              'init_command': "SET SESSION net_write_timeout=300, net_read_timeout=300",
              'charset': 'utf8mb4',
          },
         'POOL_OPTIONS': {
             'POOL_SIZE': 10,
             'MAX_OVERFLOW': 20,
-            'RECYCLE': 3600,  # 1 hora
+            'RECYCLE': 3600,
         }
      }
 }
