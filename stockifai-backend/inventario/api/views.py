@@ -8,6 +8,7 @@ from ..models import Deposito
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
 from django.conf import settings
+from decimal import Decimal, ROUND_HALF_UP
 
 from ..services.import_stock import importar_stock
 from django.db.models import Sum, Q, Prefetch
@@ -170,14 +171,56 @@ class ConsultarStockView(APIView):
                     "cantidad": spd.cantidad,
                 })
 
+            stock_total = Decimal(rt.stock_total or 0)
+            forecast_semanas = [
+                Decimal(rt.pred_1 or 0),
+                Decimal(rt.pred_2 or 0),
+                Decimal(rt.pred_3 or 0),
+                Decimal(rt.pred_4 or 0),
+            ]
+
+            mos_en_semanas = calcular_mos(stock_total, forecast_semanas)
+
             item = {
                 "repuesto_taller": RepuestoTallerSerializer(rt).data,
                 "stock_total": rt.stock_total or 0,
                 "depositos": depositos_detalle,
+                "mos_en_semanas": float(mos_en_semanas) if mos_en_semanas else None,
             }
             payload.append(item)
 
-        # Si querés validar contra RepuestoStockSerializer, se puede:
-        # ser = RepuestoStockSerializer(payload, many=True)
-        # return paginator.get_paginated_response(ser.data)
         return paginator.get_paginated_response(payload)
+
+def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
+    """
+    Calcula el MOS (semanas de cobertura):
+    - Consume stock semana a semana.
+    - Si la demanda de una semana es 0, se usa el promedio.
+    - Si todas las predicciones son 0/None, devuelve None.
+    """
+    stock = Decimal(stock or 0)
+
+    no_nulas = [w for w in weeks if w > 0]
+    if not no_nulas:
+        return None  # Si no hay predicciones, no se puede calcular
+
+    # Para extender más allá de la 4
+    tail_rate = sum(no_nulas)/len(no_nulas)
+
+    semanas = Decimal(0)
+    restante = stock
+
+    for w in weeks:
+        demanda = w if w > 0 else tail_rate
+        if restante >= demanda:
+            restante -= demanda
+            semanas += 1
+        else:
+            semanas += restante / demanda
+            return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    # Si sobra stock después de las 4 semanas, extender con tail_rate
+    if restante > 0:
+        semanas += restante / tail_rate
+
+    return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
