@@ -1,14 +1,22 @@
-﻿venv/
+# Virtualenvs
+venv/
 .venv/
 stockifai-backend/.venv/
+
+# IDE
 .vscode/
-__pycache__/
 
-**/db.sqlite3
-
-**/.env
-
+# Python cache/bytecode
+**/__pycache__/
 *.pyc
 *.pyo
-
 *.pyd
+
+# DB local
+**/db.sqlite3
+
+# Environment files
+**/.env
+
+# Logs
+*.log
