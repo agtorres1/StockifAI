@@ -16,10 +16,6 @@ __pycache__/
 db.sqlite3
 **/db.sqlite3
 
-# Env
-.env
-**/.env
-
 # Logs
 *.log
 stockifai-backend/import_debug.log
