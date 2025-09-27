@@ -36,7 +36,8 @@ class StockPorDeposito(models.Model):
         related_name='stocks'
     )
     cantidad = models.IntegerField(default=0)
-
+    ubicacion = models.CharField(max_length=120, null=True, blank=True)
+    notas = models.TextField(null=True, blank=True)
 
     class Meta:
         unique_together = [('repuesto_taller', 'deposito')]
