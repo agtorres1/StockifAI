@@ -88,6 +88,7 @@ class ConsultarStockView(APIView):
       - exact: 1|0 (default 1)
       - original: true|false|1|0
       - deposito_id: filtra por depósito
+      - categoria_id: filtra por categoría del repuesto
       - con_stock: 1|true => solo stock_total > 0
       - ordering: numero_pieza | -numero_pieza | stock_total | -stock_total
       - page, page_size
@@ -100,6 +101,7 @@ class ConsultarStockView(APIView):
         exact = request.query_params.get("exact", "1")
         original = request.query_params.get("original")
         deposito_id = request.query_params.get("deposito_id")
+        categoria_id = request.query_params.get("categoria_id")
         con_stock = request.query_params.get("con_stock")
         ordering = request.query_params.get("ordering")
 
@@ -127,6 +129,9 @@ class ConsultarStockView(APIView):
                 rt_qs = rt_qs.filter(repuesto__numero_pieza=numero_pieza)
             else:
                 rt_qs = rt_qs.filter(repuesto__numero_pieza__icontains=numero_pieza)
+
+        if categoria_id:
+            rt_qs = rt_qs.filter(repuesto__categoria_id=categoria_id)
 
         if original in ("true", "false", "1", "0"):
             rt_qs = rt_qs.filter(original=original in ("true", "1"))
