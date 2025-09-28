@@ -6,19 +6,23 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import joblib
 import warnings
 import django
+from django.db import transaction  # Import transaction
+
+# --- CONFIGURACIÓN DE ENTORNO DJANGO ---
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
 django.setup()
-from d_externo.models import RegistroEntrenamiento_Frecuencia_Alta
+# ----------------------------------------
 
-from d_externo.repositories.dataexterna import guardar_registroentrenamiento_frecuencia_alta, \
-    guardar_registroentrenamiento_intermitente, borrar_registroentrenamiento_frecuencia_alta, \
+from d_externo.models import RegistroEntrenamiento_Frecuencia_Alta, RegistroEntrenamiento_intermitente
+from d_externo.repositories.dataexterna import borrar_registroentrenamiento_frecuencia_alta, \
     borrar_registroentrenamiento_intermitente
 from user.models import Taller
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-
+CHUNK_SIZE = 1000
 RUTA_BASE_MODELOS = "models"
+
 
 def get_features_for_segment(segmento: str, df_columns: list) -> list:
     """
@@ -28,26 +32,29 @@ def get_features_for_segment(segmento: str, df_columns: list) -> list:
     features_mes = [f'mes_{i}' for i in range(1, 13)]
     features_semana = [f'semana_{i}' for i in range(1, 53)]
     features_trimestre = [f'trimestre_{i}' for i in range(1, 4)]
-    features_externas = [c for c in df_columns if any(c.startswith(prefix) for prefix in [
-        'Inflacion', 'Ipsa', 'Patentamientos', 'Prendas', 'Tasa_de_interes', 'Tipo_de_cambio'
-    ]) and not c.endswith('_original')]
+
+    # Se ajusta la búsqueda a minúsculas, ya que el preproceso las normaliza internamente
+    prefixes = ['inflacion', 'ipsa', 'patentamientos', 'prenda', 'tasa_de_interes', 'tipo_de_cambio']
+    features_externas = [c for c in df_columns if any(c.lower().startswith(prefix) for prefix in prefixes)]
 
     if segmento == 'frecuencia_alta':
         features_lags = [f'ventas_t_{i}' for i in range(1, 53)]
         features_rolling = [f'media_ultimas_{i}' for i in [4, 8, 12, 26, 52]] + \
                            [f'std_pasada_{i}_semanas' for i in [4, 8, 12, 26, 52]] + \
                            [f'coef_var_{i}' for i in [4, 8, 12, 26, 52]]
-        all_possible_features = features_base + features_externas + features_mes + features_semana + features_trimestre + features_lags + features_rolling
-
     elif segmento == 'intermitente':
         features_lags = [f'ventas_t_{i}' for i in range(1, 29)]
         features_rolling = [f'media_ultimas_{i}' for i in [4, 8, 12, 26, 52]] + \
                            [f'std_pasada_{i}_semanas' for i in [4, 8, 12, 26, 52]] + \
                            [f'coef_var_{i}' for i in [4, 8, 12, 26, 52]]
-        all_possible_features = features_base + features_externas + features_mes + features_semana + features_trimestre + features_lags + features_rolling
-
     else:
-        all_possible_features = features_base + features_externas + features_mes + features_semana + features_trimestre
+        features_lags = []
+        features_rolling = []
+
+    all_possible_features = (
+            features_base + features_externas + features_mes + features_semana +
+            features_trimestre + features_lags + features_rolling
+    )
 
     final_features = [col for col in all_possible_features if col in df_columns]
     return final_features
@@ -56,50 +63,95 @@ def get_features_for_segment(segmento: str, df_columns: list) -> list:
 def guardar_ultimo_registro_a_db(df: pd.DataFrame, segmento: str, taller_id: int):
     """
     Guarda el último registro de cada SKU en la base de datos de Django
-    usando los modelos correspondientes según el segmento.
+    usando bulk_create, asegurando que solo los campos válidos se pasen al constructor.
     """
-    taller = Taller.objects.get(id=taller_id)
-    # --- LÓGICA DE BORRADO: Vaciar los registros previos antes de guardar los nuevos datos ---
+    try:
+        taller = Taller.objects.get(id=taller_id)
+    except Taller.DoesNotExist:
+        print(f"Error: No se encontró el Taller con ID {taller_id}.")
+        return
+
+    # --- LÓGICA DE BORRADO Y DEFINICIÓN DEL MODELO ---
     try:
         if segmento == "frecuencia_alta":
             borrar_registroentrenamiento_frecuencia_alta(taller)
+            Modelo = RegistroEntrenamiento_Frecuencia_Alta
         elif segmento == "intermitente":
             borrar_registroentrenamiento_intermitente(taller)
+            Modelo = RegistroEntrenamiento_intermitente
+        else:
+            print(f"Segmento '{segmento}' no soportado. Operación cancelada.")
+            return
     except Exception as e:
         print(f"Advertencia: No se pudo borrar la tabla '{segmento}': {e}")
+        return
 
-    print("\nIniciando la carga del último registro de cada SKU a la base de datos...")
+    print(f"\nIniciando la carga BULK del último registro de cada SKU ({segmento}) a la base de datos...")
+
+    # --- OBTENER NOMBRES DE CAMPOS DEL MODELO DJANGO ---
+    # Esto es CRUCIAL para evitar el TypeError en el constructor
+    campo_nombres = {f.name for f in Modelo._meta.get_fields()}
+    campo_nombres.discard('id')  # No necesitamos el campo ID
+    campo_nombres.discard('taller')  # Manejado explícitamente
 
     try:
-        # Obtenemos el último registro (última fecha) para cada SKU
+        # 1. Obtener el último registro (última fecha) para cada SKU
         df_ultimo_registro = df.sort_values('fecha').drop_duplicates(
             subset=['numero_pieza'], keep='last'
-        )
+        ).copy()
 
-        # Iteramos fila por fila y guardamos en el modelo correcto
+        objetos_a_crear = []
+
+        # 2. Preparar los objetos Django
         for _, row in df_ultimo_registro.iterrows():
             datos = row.to_dict()
 
-            # Normalizamos nombres de columnas (coincidir con modelo Django)
-            datos = {k.lower(): v for k, v in datos.items()}
-
-            # --- CORRECCIÓN: Convertir NaN a None para MySQL ---
+            datos_limpios = {}
+            # Normalizamos nombres a minúsculas, filtramos contra campos Django y limpiamos NaN
             for k, v in datos.items():
-                if pd.isna(v):
-                    datos[k] = None
+                k_lower = k.lower()
 
-            if segmento == "frecuencia_alta":
-                guardar_registroentrenamiento_frecuencia_alta(datos, taller)
-            elif segmento == "intermitente":
-                guardar_registroentrenamiento_intermitente(datos, taller)
-            else:
-                print(f"Segmento '{segmento}' no soportado. Registro no guardado.")
+                # SOLO incluimos el campo si está en la lista de campos del modelo
+                if k_lower in campo_nombres:
+                    datos_limpios[k_lower] = None if pd.isna(v) else v
+
+            # Extraer campos clave que se pasan por nombre
+            numero_pieza = datos_limpios.pop('numero_pieza', None)
+
+            if not numero_pieza:
+                warnings.warn(f"Registro sin 'numero_pieza' encontrado y saltado.")
                 continue
 
-        print(f"Últimos registros de {len(df_ultimo_registro)} SKUs guardados con éxito en '{segmento}'.")
+            # Crear instancia del modelo
+            instancia = Modelo(
+                taller=taller,
+                numero_pieza=numero_pieza,
+                **datos_limpios  # Ahora solo contiene los campos válidos restantes
+            )
+            objetos_a_crear.append(instancia)
+
+        # 3. Realizar el Bulk Create por chunks DENTRO de una transacción atómica
+        if objetos_a_crear:
+            print(f"Total de objetos a guardar: {len(objetos_a_crear)}")
+
+            with transaction.atomic():
+                for i in range(0, len(objetos_a_crear), CHUNK_SIZE):
+                    chunk = objetos_a_crear[i:i + CHUNK_SIZE]
+
+                    Modelo.objects.bulk_create(
+                        chunk,
+                        batch_size=CHUNK_SIZE,
+                        ignore_conflicts=False
+                    )
+
+        total_guardados = len(objetos_a_crear)
+        print(f"Últimos registros de {total_guardados} SKUs guardados con éxito mediante BULK CREATE en '{segmento}'.")
 
     except Exception as e:
-        print(f"Error al guardar los últimos registros en la base de datos: {e}")
+        # Si ocurre un error, la transacción.atomic() automáticamente hace rollback.
+        # Imprimir el error exacto es vital para la depuración.
+        print(
+            f"Error al guardar los últimos registros en la base de datos mediante bulk_create. Se ha realizado ROLLBACK: {e}")
 
 
 def train_segment_model(taller: int, segmento: str):
@@ -111,7 +163,8 @@ def train_segment_model(taller: int, segmento: str):
     ruta_archivo_val = os.path.join(ruta_segmento_data, f"demanda_preprocesada_{segmento}_val.csv")
     ruta_archivo_test = os.path.join(ruta_segmento_data, f"demanda_preprocesada_{segmento}_test.csv")
 
-    if not os.path.isfile(ruta_archivo_train) or not os.path.isfile(ruta_archivo_val) or not os.path.isfile(ruta_archivo_test):
+    if not os.path.isfile(ruta_archivo_train) or not os.path.isfile(ruta_archivo_val) or not os.path.isfile(
+            ruta_archivo_test):
         print(f"Advertencia: No se encontraron todos los archivos de datos para el segmento '{segmento}'. Saltando.")
         return
 
@@ -132,7 +185,7 @@ def train_segment_model(taller: int, segmento: str):
             print(f"Error: No se encontraron las columnas necesarias en los archivos de datos para '{segmento}'.")
             return
 
-        # Validación (rolling forecast)
+        # Validación (rolling forecast) - Se mantiene el código de entrenamiento y validación
         fechas_val_unicas = sorted(df_val['fecha'].unique())
         all_val_predictions = pd.DataFrame()
 
@@ -206,6 +259,7 @@ def train_segment_model(taller: int, segmento: str):
         print(f"Modelo final para '{segmento}' guardado en '{ruta_guardado_modelo}'.")
 
         # Guardar resultados en DB
+        # Esto usará la función corregida con whitelisting
         guardar_ultimo_registro_a_db(df_test, segmento, taller_id=taller)
 
     except Exception as e:
@@ -213,7 +267,7 @@ def train_segment_model(taller: int, segmento: str):
         return
 
     else:
-        # Solo si  fue exitoso, eliminar archivos CSV
+        # Solo si fue exitoso, eliminar archivos CSV
         for ruta in [ruta_archivo_train, ruta_archivo_val, ruta_archivo_test]:
             try:
                 os.remove(ruta)
@@ -233,21 +287,20 @@ def ejecutar_pipeline_entrenamiento(taller_id: int):
         print(f"Error: No se encontró la carpeta del taller en '{ruta_taller_output}'.")
         return
 
+    # Se busca las carpetas de segmentos (excluyendo 'validacion', 'nuevo', 'sin_venta')
     segmentos = [d for d in os.listdir(ruta_taller_output) if
-                 os.path.isdir(os.path.join(ruta_taller_output, d)) and d != 'validacion']
+                 os.path.isdir(os.path.join(ruta_taller_output, d)) and d not in ['validacion', 'nuevo', 'sin_venta']]
 
     if not segmentos:
-        print(f"No se encontraron subcarpetas de segmentos en '{ruta_taller_output}'.")
+        print(f"No se encontraron subcarpetas de segmentos entrenables en '{ruta_taller_output}'.")
         return
 
     for segmento in segmentos:
-        if segmento in ['nuevo', 'sin_venta']:
-            continue
         train_segment_model(taller_id, segmento)
 
     print("\n--- PROCESO DE ENTRENAMIENTO COMPLETO ---")
 
 
 if __name__ == '__main__':
-    taller_id =  1
+    taller_id = 1
     ejecutar_pipeline_entrenamiento(taller_id)
