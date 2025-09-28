@@ -19,7 +19,7 @@
                         #collapseDiv [class.show]="isSubItemActive(collapseDiv, item.subItems)">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li *ngFor="let sub of item.subItems" class="">
-                                <a [routerLink]="sub.route" routerLinkActive="active"
+                                <a [routerLink]="sub.route" routerLinkActive="active" [state]="{fromMenu: true}"
                                     class="sidebar-link sub-link d-inline-flex align-items-center rounded ps-4">
                                     {{ sub.title }}
                                 </a>

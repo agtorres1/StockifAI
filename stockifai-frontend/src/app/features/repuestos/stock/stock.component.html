@@ -85,13 +85,13 @@
                             <div class="d-flex flex-column">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="fw-bold">{{ item.repuesto_taller.repuesto.numero_pieza }}</span>
-                                    <span *ngIf="item.repuesto_taller.cantidad_minima === null || true"
-                                        class="badge rounded-pill bg-primary">
-                                        Nuevo
+
+                                    <span *ngIf="item.repuesto_taller.frecuencia as freq">
+                                        <span class="badge rounded-pill" [ngClass]="(freq | frecuenciaRotacion).css">
+                                            {{ (freq | frecuenciaRotacion).label }}
+                                        </span>
                                     </span>
-                                    <span *ngIf="i % 5 == 0" class="badge rounded-pill bg-orange">
-                                        Rotación alta
-                                    </span>
+                                    
                                 </div>
                                 <span class="text-muted">{{ item.repuesto_taller.repuesto.descripcion }}</span>
                             </div>

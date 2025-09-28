@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, forkJoin, Subject } from 'rxjs';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Params, Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged, filter, forkJoin, Subject, Subscription } from 'rxjs';
 import { Categoria } from '../../../core/models/categoria';
 import { Deposito } from '../../../core/models/deposito';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
@@ -15,7 +15,7 @@ import { TitleService } from '../../../core/services/title.service';
     templateUrl: './stock.component.html',
     styleUrl: './stock.component.scss',
 })
-export class StockComponent implements OnInit, AfterViewInit {
+export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     open = new Set<number>();
 
     repuestos = REPUESTOS_STOCK_MOCK;
@@ -34,6 +34,9 @@ export class StockComponent implements OnInit, AfterViewInit {
     totalPages: number = 0;
 
     @ViewChild('searchInput') searchInput!: ElementRef;
+
+    private navigationSub?: Subscription;
+    navFromMenu: boolean = false;
 
     private search$ = new Subject<string>();
 
@@ -73,6 +76,25 @@ export class StockComponent implements OnInit, AfterViewInit {
             this.filtro.searchText = text;
             this.cargarPagina(this.page);
         });
+
+        this.navigationSub = this.router.events
+            .pipe(filter((ev) => ev instanceof NavigationStart || ev instanceof NavigationEnd))
+            .subscribe((ev) => {
+                if (ev instanceof NavigationStart) {
+                    const nav = this.router.getCurrentNavigation();
+                    this.navFromMenu = !!nav?.extras?.state?.['fromMenu'];
+                    return;
+                }
+                if (ev instanceof NavigationEnd) {
+                    const url = ev.urlAfterRedirects || ev.url;
+                    if (this.navFromMenu && url.endsWith('/stock')) {
+                        this.navFromMenu = false;
+                        this.filtro = { idCategoria: '', searchText: '' };
+                        this.page = 1;
+                        this.cargarPagina(1);
+                    }
+                }
+            });
     }
 
     ngAfterViewInit(): void {
@@ -165,6 +187,10 @@ export class StockComponent implements OnInit, AfterViewInit {
     onPageSizeChange(size: number) {
         this.pageSize = +size;
         this.cargarPagina(1);
+    }
+
+    ngOnDestroy(): void {
+        this.navigationSub?.unsubscribe();
     }
 
     get paginationItems(): Array<number | '…'> {

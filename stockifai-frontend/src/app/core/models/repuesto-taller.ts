@@ -8,6 +8,7 @@ export interface RepuestoTaller {
     precio: number;
     costo: number;
     original: boolean;
+    frecuencia?: string; // MUERTO | OBSOLETO | LENTO | INTERMEDIO | ALTA_ROTACION
 
     // Predicciones
     pred_1?: number;
