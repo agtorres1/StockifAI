@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, forkJoin, Subject } from 'rxjs';
+import { Categoria } from '../../../core/models/categoria';
 import { Deposito } from '../../../core/models/deposito';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
 import { RepuestoTaller } from '../../../core/models/repuesto-taller';
 import { Taller } from '../../../core/models/taller';
+import { RepuestosService } from '../../../core/services/repuestos.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
 
@@ -13,14 +15,15 @@ import { TitleService } from '../../../core/services/title.service';
     templateUrl: './stock.component.html',
     styleUrl: './stock.component.scss',
 })
-export class StockComponent implements OnInit {
+export class StockComponent implements OnInit, AfterViewInit {
     open = new Set<number>();
 
     repuestos = REPUESTOS_STOCK_MOCK;
 
-    filtro: any = {};
+    filtro: any = { idCategoria: '', searchText: '' };
 
     tallerId: number = 1;
+    categorias: Categoria[] = [];
 
     loading: boolean = false;
     errorMessage: string = '';
@@ -30,21 +33,32 @@ export class StockComponent implements OnInit {
     pageSize: number = 10;
     totalPages: number = 0;
 
+    @ViewChild('searchInput') searchInput!: ElementRef;
+
     private search$ = new Subject<string>();
 
-    constructor(private titleService: TitleService, private stockService: StockService, private router: Router) {
+    constructor(
+        private titleService: TitleService,
+        private stockService: StockService,
+        private repuestosService: RepuestosService,
+        private router: Router,
+        private route: ActivatedRoute
+    ) {
         this.titleService.setTitle('Stock');
     }
 
     ngOnInit(): void {
         this.loading = true;
+        this.getQueryParams();
 
         forkJoin({
             stock: this.stockService.getStock(this.tallerId, this.page, this.pageSize, this.filtro),
+            categorias: this.repuestosService.getCategorias(),
         }).subscribe({
-            next: ({ stock }) => {
+            next: ({ stock, categorias }) => {
                 this.stock = stock.results.map((i) => this.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(stock.count / this.pageSize);
+                this.categorias = categorias;
                 this.loading = false;
                 this.errorMessage = '';
             },
@@ -61,6 +75,10 @@ export class StockComponent implements OnInit {
         });
     }
 
+    ngAfterViewInit(): void {
+        this.searchInput.nativeElement.focus();
+    }
+
     viewMovimientos(repuestoStock: RepuestoTaller, deposito: Deposito) {
         this.router.navigate(['/repuestos/movimientos'], {
             queryParams: {
@@ -74,6 +92,7 @@ export class StockComponent implements OnInit {
         this.router.navigate(['/repuestos/forecasting'], {
             queryParams: {
                 search: repuestoStock.repuesto.numero_pieza,
+                categoria: this.filtro.idCategoria || null,
             },
         });
     }
@@ -95,6 +114,14 @@ export class StockComponent implements OnInit {
 
     private cargarPagina(p: number) {
         if (p < 1 || (this.totalPages > 0 && p > this.totalPages)) return;
+
+        this.page = p;
+
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: this.buildQueryParams(),
+            replaceUrl: true,
+        });
 
         this.loading = true;
         this.stockService.getStock(this.tallerId, p, this.pageSize, this.filtro).subscribe({
@@ -118,6 +145,11 @@ export class StockComponent implements OnInit {
             item.estaBajoMinimo = item.stock_total < min;
         }
         return item;
+    }
+
+    filtrar() {
+        this.page = 1;
+        this.cargarPagina(this.page);
     }
 
     goPreviousPage() {
@@ -154,6 +186,30 @@ export class StockComponent implements OnInit {
         items.push(total);
 
         return items;
+    }
+
+    private buildQueryParams(): Params {
+        const qp: any = {};
+
+        if (this.filtro.searchText?.trim()) qp.search = this.filtro.searchText.trim();
+        if (this.filtro.idCategoria) qp.categoria = this.filtro.idCategoria;
+
+        if (this.page && this.page !== 1) qp.page = this.page;
+        if (this.pageSize && this.pageSize !== 10) qp.pageSize = this.pageSize;
+
+        return qp;
+    }
+
+    private getQueryParams() {
+        const qp = this.route.snapshot.queryParamMap;
+
+        this.filtro.searchText = qp.get('search') ?? this.filtro.searchText;
+        this.filtro.idCategoria = qp.get('categoria') ?? this.filtro.idCategoria;
+
+        const p = parseInt(qp.get('page') ?? '', 10);
+        const ps = parseInt(qp.get('pageSize') ?? '', 10);
+        if (!Number.isNaN(p) && p > 0) this.page = p;
+        if (!Number.isNaN(ps) && ps > 0) this.pageSize = ps;
     }
 }
 
