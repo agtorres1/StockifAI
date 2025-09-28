@@ -11,6 +11,7 @@ import django
 import numpy as np
 import pandas as pd
 import holidays
+from django.db import transaction
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
 django.setup()
@@ -21,7 +22,12 @@ from d_externo.repositories.dataexterna import obtener_todas_las_inflaciones, ob
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 from inventario.repositories.movimiento_repo import MovimientoRepo
+from catalogo.models import Repuesto
+from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
+from user.models import Taller
+from catalogo.models import RepuestoTaller
 
+CHUNK_SIZE = 1000
 
 def _obtener_movimientos_df(taller_id: int) -> pd.DataFrame:
     repo = MovimientoRepo()
@@ -66,7 +72,6 @@ def cargar_y_limpiar_datos_desde_repo(taller_id: int) -> pd.DataFrame:
     demanda_semanal = (
         df.groupby(["numero_pieza", "fecha"], as_index=False)["Cantidad"].sum()
     )
-
     return demanda_semanal
 
 
@@ -99,11 +104,22 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
     volumen_historico = (
         df_full.groupby("numero_pieza")
         .agg(
+            fecha_inicio_registro=("fecha", "min"),
             volumen_total=("Cantidad", "sum"),
             semanas_con_venta=("Cantidad", lambda x: (x > 0).sum()),
             total_semanas_registradas=("fecha", "count"),
         )
         .reset_index()
+    )
+    # Obtener la fecha de la última venta (solo si Cantidad > 0)
+    fecha_ultima_venta = (
+        df_full[df_full["Cantidad"] > 0]
+        .groupby("numero_pieza")["fecha"]
+        .max()
+        .rename("fecha_ultima_venta")
+    )
+    volumen_historico = volumen_historico.merge(
+        fecha_ultima_venta, on="numero_pieza", how="left"
     )
     volumen_historico["intermitencia"] = 1 - (
             volumen_historico["semanas_con_venta"] / volumen_historico["total_semanas_registradas"]
@@ -111,25 +127,161 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
 
     def segmento_demanda(row):
         if row["volumen_total"] == 0:
+            if row["total_semanas_registradas"] < 26:
+                return "nuevo"
             return "sin_venta"
-        elif row["total_semanas_registradas"] < 26:
-            return "nuevo"
         elif row["intermitencia"] >= 0.75:  # o sea que si vendio el 25% de las semanas es frecuencia alta
             return "intermitente"
         else:
             return "frecuencia_alta"
 
     volumen_historico["segmento_demanda"] = volumen_historico.apply(segmento_demanda, axis=1)
+
+    def frecuencia_rotacion(row, fecha_final):
+        # Determinar la fecha de referencia para el cálculo de obsolescencia
+        # Si vendió, es la última venta. Si nunca vendió, es el inicio de registro.
+        if pd.isna(row["fecha_ultima_venta"]):
+            fecha_referencia = row["fecha_inicio_registro"]
+        else:
+            fecha_referencia = row["fecha_ultima_venta"]
+
+        dias_sin_movimiento = (fecha_final - fecha_referencia).days
+
+        # 2. Casos de Obsolescencia y Rotación (Se aplica si registro >= 6 meses)
+
+        # MUERTO (> 2 años sin movimiento)
+        if dias_sin_movimiento > 730:
+            return "MUERTO"
+
+        # OBSOLETO (> 1 año sin movimiento)
+        if dias_sin_movimiento > 365:
+            return "OBSOLETO"
+
+        # LENTO (> 6 meses y <= 1 año)
+        if dias_sin_movimiento > 180:
+            return "LENTO"
+
+        # INTERMEDIO (> 2 meses y <= 6 meses)
+        if dias_sin_movimiento > 60:
+            return "INTERMEDIO"
+
+        # ALTA ROTACION (<= 2 meses)
+        if dias_sin_movimiento <= 60:
+            return "ALTA_ROTACION"
+
+        return "ERROR_CLASIFICACION"  # Fallback, no debería ocurrir  # Si cae fuera de las categorías explícitas
+
+    volumen_historico["frecuencia_rotacion"] = volumen_historico.apply(
+        lambda row: frecuencia_rotacion(row, fecha_final), axis=1
+    )
+
     df_full = df_full.merge(
         volumen_historico[["numero_pieza", "segmento_demanda"]],
         on="numero_pieza",
         how="left",
     )
 
-    print("Distribución de segmentos generada:")
+    print("Distribución de segmentos generada (ML):")
     print(volumen_historico["segmento_demanda"].value_counts(normalize=True))
+    print("\nDistribución de 'frecuencia_rotacion' (Gestión) generada:")
+    print(volumen_historico["frecuencia_rotacion"].value_counts(normalize=True))
 
-    return df_full
+    return df_full, volumen_historico[["numero_pieza", "frecuencia_rotacion"]]
+
+
+def guardar_clasificacion_rotacion_en_db(
+        taller_id: int,
+        clasificacion_rotacion_df: pd.DataFrame
+):
+    if clasificacion_rotacion_df.empty:
+        print("No hay datos de clasificación de rotación para guardar en DB.")
+        return
+
+    print(f"\n--- GUARDANDO CLASIFICACIÓN DE ROTACIÓN EN DB PARA TALLER ID: {taller_id} (USANDO BULK) ---")
+
+    try:
+        taller = Taller.objects.get(id=taller_id)
+    except Taller.DoesNotExist:
+        print(f"Error: Taller con ID {taller_id} no encontrado.")
+        return
+
+    repo = RepuestoTallerRepo()
+
+    # 1. Obtener SKUs a procesar y mapeo ID -> SKU
+    skus_a_procesar = clasificacion_rotacion_df["numero_pieza"].unique()
+
+    repuestos_existentes = Repuesto.objects.filter(
+        numero_pieza__in=skus_a_procesar
+    ).values("id", "numero_pieza")
+
+    sku_to_repuesto_id = {r["numero_pieza"]: r["id"] for r in repuestos_existentes}
+
+    # Prepara el DataFrame final con IDs de Repuesto (solo los que existen)
+    df_merged = clasificacion_rotacion_df.copy()
+    df_merged['repuesto_id'] = df_merged['numero_pieza'].map(sku_to_repuesto_id)
+    df_merged = df_merged.dropna(subset=['repuesto_id']).astype({'repuesto_id': int})
+
+    # 2. Obtener los objetos RepuestoTaller existentes
+    repuesto_ids_a_procesar = df_merged['repuesto_id'].tolist()
+
+    rt_existentes = repo.list_by_taller_and_repuestos(taller=taller, repuesto_ids=repuesto_ids_a_procesar)
+    # Mapeo: (repuesto_id -> RepuestoTaller object)
+    rt_map = {rt.repuesto_id: rt for rt in rt_existentes}
+
+    a_crear: List[RepuestoTaller] = []
+    a_actualizar: List[RepuestoTaller] = []
+
+    # 3. Preparar listas para bulk_create y bulk_update
+    for _, row in df_merged.iterrows():
+        repuesto_id = row['repuesto_id']
+        frecuencia = row['frecuencia_rotacion']
+
+        # Buscar el objeto RepuestoTaller existente
+        rt_obj = rt_map.get(repuesto_id)
+
+        if rt_obj:
+            # Si existe, lo añadimos a la lista de actualización
+            rt_obj.frecuencia = frecuencia
+            a_actualizar.append(rt_obj)
+        else:
+            # Si NO existe, lo añadimos a la lista de creación
+            # Necesitamos el objeto Repuesto para el Foreign Key
+            try:
+                repuesto_obj = Repuesto.objects.get(id=repuesto_id)
+                a_crear.append(
+                    RepuestoTaller(
+                        taller=taller,
+                        repuesto=repuesto_obj,
+                        frecuencia=frecuencia
+                    )
+                )
+            except Repuesto.DoesNotExist:
+                warnings.warn(f"Repuesto con ID {repuesto_id} no encontrado para crear RepuestoTaller.")
+                continue
+
+    # 4. Ejecución de Bulk Operations en bloques
+    with transaction.atomic():
+
+        # 4a. Bulk Update (Actualiza existentes)
+        if a_actualizar:
+            print(f"-> Ejecutando bulk_update para {len(a_actualizar)} registros existentes.")
+            # **IMPORTANTE:** El campo 'frecuencia' debe existir en RepuestoTaller
+            RepuestoTaller.objects.bulk_update(
+                a_actualizar,
+                fields=['frecuencia'],
+                batch_size=CHUNK_SIZE
+            )
+
+        # 4b. Bulk Create (Crea nuevos)
+        if a_crear:
+            print(f"-> Ejecutando bulk_create para {len(a_crear)} registros nuevos.")
+            RepuestoTaller.objects.bulk_create(
+                a_crear,
+                batch_size=CHUNK_SIZE
+            )
+
+    total_guardados = len(a_actualizar) + len(a_crear)
+    print(f"Clasificación de rotación guardada en DB (Bulk) para {total_guardados} repuestos/taller.")
 
 
 def generar_caracteristicas(df_segment: pd.DataFrame) -> pd.DataFrame:
@@ -338,12 +490,15 @@ def ejecutar_preproceso(
         return {}
 
     # 2) Clasificar
-    df_full = clasificar_demanda(demanda_semanal)
+    df_full, clasificacion_rotacion_df = clasificar_demanda(demanda_semanal)
+    print("Guardando clasificaciones...")
+    # 3) Guardar la clasificación de rotación en la DB
+    guardar_clasificacion_rotacion_en_db(taller_id, clasificacion_rotacion_df)
 
-    # 3) Obtener y preprocesar los datos externos una sola vez
+    # 4) Obtener y preprocesar los datos externos una sola vez
     df_externos = integrar_datos_externos_base()
 
-    # 4) Bucle por cada segmento
+    # 5) Bucle por cada segmento (ML: frecuencia_alta, intermitente)
     print("\n--- PASO 3: PROCESANDO DATOS Y GUARDANDO EN CARPETAS POR SEGMENTO ---")
     resultados: Dict[str, Dict[str, pd.DataFrame]] = {}
 

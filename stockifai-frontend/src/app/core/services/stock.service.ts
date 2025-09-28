@@ -49,12 +49,12 @@ export class StockService {
         tallerId: number,
         page = 1,
         pageSize = 10,
-        filtro?: { searchText: string, idCategoria: string }
+        filtro?: { idDeposito: string; searchText: string, desde?: string, hasta?: string }
     ): Observable<PagedResponse<RepuestoStock>> {
         let params = new HttpParams().set('page', page).set('page_size', pageSize);
         
         if (filtro?.searchText) params = params.set('q', filtro.searchText);
-        if (filtro?.idCategoria) params = params.set('categoria_id', filtro.idCategoria);
+        if (filtro?.idDeposito) params = params.set('deposito_id', filtro.idDeposito);
 
         return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/stock`, params);
     }

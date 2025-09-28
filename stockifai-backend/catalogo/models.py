@@ -44,6 +44,7 @@ class RepuestoTaller(models.Model):
     id_repuesto_taller = models.AutoField(primary_key=True)
     repuesto = models.ForeignKey('catalogo.Repuesto', on_delete=models.PROTECT)
     taller = models.ForeignKey('user.Taller', on_delete=models.PROTECT)
+    frecuencia = models.CharField(max_length=100, null=True, blank=True)
     precio = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     costo = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     original = models.BooleanField(default=True)
