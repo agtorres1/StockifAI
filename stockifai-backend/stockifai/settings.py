@@ -58,19 +58,24 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORDAWS'),
         'HOST': os.getenv('DB_HOSTAWS'),
         'PORT': os.getenv('DB_PORTAWS'),
-        'CONN_MAX_AGE': 3600,
+        'CONN_MAX_AGE': 1800,
         'CONN_HEALTH_CHECKS': True,
          'OPTIONS': {
-             'connect_timeout': 30,
-             'read_timeout': 300,
-             'write_timeout': 300,
-             'init_command': "SET SESSION net_write_timeout=300, net_read_timeout=300",
+             'connect_timeout': 10,
+             'read_timeout': 600,
+             'write_timeout': 600,
+             'init_command': "SET SESSION sql_mode='TRADITIONAL', autocommit=1, net_write_timeout=60, net_read_timeout=60",
              'charset': 'utf8mb4',
+             'sql_mode': 'TRADITIONAL',
+             'isolation_level': 'READ COMMITTED',
          },
         'POOL_OPTIONS': {
-            'POOL_SIZE': 10,
-            'MAX_OVERFLOW': 20,
-            'RECYCLE': 3600,
+            'POOL_SIZE': 3,
+            'MAX_OVERFLOW': 2,
+            'RECYCLE': 1800,
+            'PRE_PING': True,
+            'POOL_TIMEOUT': 10,
+            'POOL_RECYCLE': 1800,
         }
      }
 }
