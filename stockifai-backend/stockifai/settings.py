@@ -62,8 +62,8 @@ DATABASES = {
         'CONN_HEALTH_CHECKS': True,
          'OPTIONS': {
              'connect_timeout': 10,
-             'read_timeout': 60,
-             'write_timeout': 60,
+             'read_timeout': 600,
+             'write_timeout': 600,
              'init_command': "SET SESSION sql_mode='TRADITIONAL', autocommit=1, net_write_timeout=60, net_read_timeout=60",
              'charset': 'utf8mb4',
              'sql_mode': 'TRADITIONAL',
@@ -74,7 +74,7 @@ DATABASES = {
             'MAX_OVERFLOW': 2,
             'RECYCLE': 1800,
             'PRE_PING': True,
-            'POOL_TIMEOUT': 10,
+            'POOL_TIMEOUT': 60,
             'POOL_RECYCLE': 1800,
         }
      }

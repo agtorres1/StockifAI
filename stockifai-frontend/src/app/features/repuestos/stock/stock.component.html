@@ -56,8 +56,13 @@
                     <th style="width:50px;"></th>
                     <th>Repuesto</th>
                     <th>Categoría</th>
-                    <th class="text-end">Precio</th>
-                    <th class="text-end">Costo</th>
+                    <th class="text-center">Precio</th>
+                    <th class="text-center">Costo</th>
+                    <th class="text-center">
+                        MOS
+                        <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                            title="Indica cuántas semanas de demanda futura se pueden cubrir con el stock actual."></i>
+                    </th>
                     <th class="text-end">Stock total</th>
                     <th style="width:50px;"></th>
                 </tr>
@@ -95,8 +100,20 @@
                         </td>
 
                         <td>{{ item.repuesto_taller.repuesto.categoria?.descripcion ?? '-' }}</td>
-                        <td class="text-end">{{ item.repuesto_taller.precio | currency:'$':'symbol':'1.0-0' }}</td>
-                        <td class="text-end">{{ item.repuesto_taller.costo | currency:'$':'symbol':'1.0-0' }}</td>
+                        <td class="text-center">{{ item.repuesto_taller.precio | currency:'$':'symbol':'1.0-0' }}</td>
+                        <td class="text-center">{{ item.repuesto_taller.costo | currency:'$':'symbol':'1.0-0' }}</td>
+
+                        <td class="text-center">
+                            <span style="font-size: 0.8rem;" *ngIf="!item.mos_en_semanas" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom" title="Sin demanda proyectada.">N/A</span>
+                            <span class="fw-bold" *ngIf="item.mos_en_semanas">
+                                {{ item.mos_en_semanas | number:'1.1-2' }}
+                                <br>
+                                <span *ngIf="item.mos_en_semanas < 1" class="badge rounded-pill bg-red mos-tag">Critico</span>
+                                <span *ngIf="item.mos_en_semanas > 1 && item.mos_en_semanas < 2" class="badge rounded-pill bg-orange mos-tag">Bajo</span>
+                                <span *ngIf="item.mos_en_semanas > 4" class="badge rounded-pill bg-blue mos-tag">Alto</span>
+                            </span>
+                        </td>
 
                         <td class="text-end">
                             <span class="fw-semibold fs-4" [class.text-danger]="item.estaBajoMinimo === true"
