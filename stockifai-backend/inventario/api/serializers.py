@@ -3,7 +3,7 @@ from rest_framework import serializers
 from catalogo.models import Repuesto, Categoria, Marca
 from inventario.models import Deposito, Movimiento
 from catalogo.models import RepuestoTaller
-from user.models import Taller
+from user.api.models.models import Taller
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -11,7 +11,7 @@ class MovimientosImportSerializer(serializers.Serializer):
     taller_id = serializers.IntegerField()
     deposito_nombre = serializers.CharField(required=False)
     deposito_id = serializers.IntegerField(required=False)
-    def validate(self, data): return data
+    def validate(seslf, data): return data
 
 class StockImportSerializer(serializers.Serializer):
     file = serializers.FileField()

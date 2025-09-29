@@ -1,5 +1,6 @@
 from .base import NotFoundError
-from user.models import Taller
+from user.api.models.models import Taller
+
 
 class TallerRepo:
     def get(self, taller_id: int) -> Taller:

@@ -1,10 +1,18 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.permissions import AllowAny
 
 from inventario.models import Movimiento
-from user.api.serializers import TallerSerializer
-from user.models import Taller
+from user.api.serializers.taller_serializer import TallerSerializer
+from user.api.models.models import Taller
+
+
+class TallerViewSet(viewsets.ModelViewSet):
+    queryset = Taller.objects.all()
+    serializer_class = TallerSerializer
+    permission_classes = [AllowAny]
 
 
 class TallerView(APIView):

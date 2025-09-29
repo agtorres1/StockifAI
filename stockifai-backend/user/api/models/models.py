@@ -6,10 +6,10 @@ class Direccion(models.Model):
     calle = models.CharField(max_length=255)
     ciudad = models.CharField(max_length=100)
     codigo_postal = models.CharField(max_length=20)
-    pais = models.CharField(max_length=50)
+    
 
     def __str__(self):
-        return f"{self.calle}, {self.ciudad}, {self.pais}"
+        return f"{self.calle}, {self.ciudad}"
 
 class Taller(models.Model):
     nombre = models.CharField(max_length=120)
@@ -46,3 +46,7 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'custom_user'
+
+
+
+

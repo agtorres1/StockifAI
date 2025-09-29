@@ -21,7 +21,8 @@ INSTALLED_APPS = [
     "inventario",
     "corsheaders",
     "user",
-    'd_externo'
+    'd_externo',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -33,8 +34,11 @@ MIDDLEWARE = [
     #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
+
 TEMPLATES = [{
-    "BACKEND":"django.template.backends.django.DjangoTemplates","DIRS":[], "APP_DIRS":True,
+    "BACKEND":"django.template.backends.django.DjangoTemplates",
+    "DIRS": [BASE_DIR / "stockifai-frontend"],
+    "APP_DIRS":True,
     "OPTIONS":{"context_processors":[
         "django.template.context_processors.debug","django.template.context_processors.request",
         "django.contrib.auth.context_processors.auth","django.contrib.messages.context_processors.messages"]},
@@ -49,7 +53,7 @@ WSGI_APPLICATION = "stockifai.wsgi.application"
 #   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
 #   "OPTIONS":{"charset":"utf8mb4"}
 #}}
-
+"""
 DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
@@ -76,11 +80,39 @@ DATABASES = {
      }
 }
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAMEAWS'),
+        'USER': os.getenv('DB_USERAWS'),
+        'PASSWORD': os.getenv('DB_PASSWORDAWS'),
+        'HOST': os.getenv('DB_HOSTAWS'),
+        'PORT': os.getenv('DB_PORTAWS'),
+        'OPTIONS': {
+            'connect_timeout': 30,
+            'read_timeout': 300,
+            'write_timeout': 300,
+            'charset': 'utf8mb4',
+        }
+    }
+}
+"""
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'stockifia_local',   # tu base creada
+        'USER': 'root',              # usuario root
+        'PASSWORD': 'pepegrillo1',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    }
+}
+
 
 LANGUAGE_CODE="es-ar"; TIME_ZONE="America/Argentina/Buenos_Aires"; USE_I18N=True; USE_TZ=True
 STATIC_URL="static/"; DEFAULT_AUTO_FIELD="django.db.models.BigAutoField"
-REST_FRAMEWORK={"DEFAULT_RENDERER_CLASSES":["rest_framework.renderers.JSONRenderer"],
-"DEFAULT_PARSER_CLASSES":["rest_framework.parsers.JSONParser","rest_framework.parsers.FormParser","rest_framework.parsers.MultiPartParser"]}
+
 ALLOW_AUTO_CREATE_REPUESTO=os.getenv("ALLOW_AUTO_CREATE_REPUESTO","False").lower() in ("1","true","yes","y")
 PERMITIR_STOCK_NEGATIVO=os.getenv("PERMITIR_STOCK_NEGATIVO","False").lower() in ("1","true","yes","y")
 CORS_ALLOWED_ORIGINS = [
@@ -89,19 +121,37 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-"""
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],  # desactiva auth temporalmente
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
 }
-"""
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',  # para /admin/
-    ),
-}
+
+#REST_FRAMEWORK = {
+#    'DEFAULT_AUTHENTICATION_CLASSES': (
+#        'rest_framework_simplejwt.authentication.JWTAuthentication',
+#    ),
+#}
+
+
+#REST_FRAMEWORK = {
+#    'DEFAULT_AUTHENTICATION_CLASSES': (
+#        'rest_framework.authentication.SessionAuthentication',
+#    ),
+#    'DEFAULT_PERMISSION_CLASSES': (
+#        'rest_framework.permissions.AllowAny',
+#    ),
+#}
 
 LOGGING = {
     'version': 1,
@@ -133,5 +183,12 @@ AUTH0_CLIENT_ID = env('AUTH0_CLIENT_ID')
 AUTH0_CLIENT_SECRET = env('AUTH0_CLIENT_SECRET')
 AUTH0_AUDIENCE = env('AUTH0_AUDIENCE')
 ALGORITHMS = env.list('AUTH0_ALGORITHMS')
+AUTH0_CALLBACK_URL = "http://127.0.0.1:8000/api/callback/"
+AUTH0_MGMT_CLIENT_ID = env("AUTH0_MGMT_CLIENT_ID")
+AUTH0_MGMT_CLIENT_SECRET = env("AUTH0_MGMT_CLIENT_SECRET")
+AUTH0_MGMT_AUDIENCE = env("AUTH0_MGMT_AUDIENCE")
+AUTH0_MGMT_GRANT_TYPE = env("AUTH0_MGMT_GRANT_TYPE")
 
 #####
+
+

@@ -1,5 +1,5 @@
 from django.db import models
-from user.models import Taller
+from user.api.models.models import Taller
 
 class Inflacion(models.Model):
     fecha = models.DateField()
