@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_crontab",
     "catalogo",
     "inventario",
     "corsheaders",
@@ -139,3 +140,16 @@ AUTH0_AUDIENCE = env('AUTH0_AUDIENCE')
 ALGORITHMS = env.list('AUTH0_ALGORITHMS')
 
 #####
+
+# CRONS
+CRONJOBS = [
+    # Domingo 23:00 → corre el management command 'forecast_all'
+    ('0 23 * * 0', 'django.core.management.call_command', ['forecast_all']),
+
+    # TEST CADA 5 MIN PARA PROBAR
+    ('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
+]
+
+CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'
+
+
