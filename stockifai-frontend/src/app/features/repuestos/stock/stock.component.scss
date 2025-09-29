@@ -1,0 +1,22 @@
+.sfa-table {
+    border-radius: 0.8rem;
+    overflow: hidden;
+}
+
+.sfa-row.is-open {
+    td {
+        border-bottom-color: transparent;
+    }
+}
+
+.sfa-detail-list .list-group-item {
+    background: transparent;
+}
+
+.sfa-row {
+    cursor: pointer;
+}
+
+.mos-tag {
+    font-size: 0.65rem;
+}

@@ -95,6 +95,7 @@ class RepuestoTallerSerializer(serializers.ModelSerializer):
             "pred_3",
             "pred_4",
             "cantidad_minima",
+            "frecuencia"
         ]
 
     def get_cantidad_minima(self, obj):

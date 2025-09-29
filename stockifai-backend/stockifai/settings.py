@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_crontab",
     "catalogo",
     "inventario",
     "corsheaders",
@@ -47,13 +48,15 @@ WSGI_APPLICATION = "stockifai.wsgi.application"
 
 
 
-#DATABASES = {"default":{
+# DATABASES = {"default":{
 #  "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
 #   "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
 #   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
 #   "OPTIONS":{"charset":"utf8mb4"}
 #}}
 """
+# }}
+
 DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
@@ -62,20 +65,24 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORDAWS'),
         'HOST': os.getenv('DB_HOSTAWS'),
         'PORT': os.getenv('DB_PORTAWS'),
-        'CONN_MAX_AGE': 3600,  # 1 hora - reutilizar conexiones agresivamente
+        'CONN_MAX_AGE': 1800,
         'CONN_HEALTH_CHECKS': True,
          'OPTIONS': {
-             'connect_timeout': 30,
-             'read_timeout': 300,  # 5 minutos
-             'write_timeout': 300,  # 5 minutos
-             # Para MySQL:
-             'init_command': "SET SESSION net_write_timeout=300, net_read_timeout=300",
+             'connect_timeout': 10,
+             'read_timeout': 600,
+             'write_timeout': 600,
+             'init_command': "SET SESSION sql_mode='TRADITIONAL', autocommit=1, net_write_timeout=60, net_read_timeout=60",
              'charset': 'utf8mb4',
+             'sql_mode': 'TRADITIONAL',
+             'isolation_level': 'READ COMMITTED',
          },
         'POOL_OPTIONS': {
-            'POOL_SIZE': 10,
-            'MAX_OVERFLOW': 20,
-            'RECYCLE': 3600,  # 1 hora
+            'POOL_SIZE': 3,
+            'MAX_OVERFLOW': 2,
+            'RECYCLE': 1800,
+            'PRE_PING': True,
+            'POOL_TIMEOUT': 60,
+            'POOL_RECYCLE': 1800,
         }
      }
 }
@@ -98,16 +105,16 @@ DATABASES = {
 }
 """
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'stockifia_local',   # tu base creada
-        'USER': 'root',              # usuario root
-        'PASSWORD': 'pepegrillo1',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'stockifia_local',   # tu base creada
+#        'USER': 'root',              # usuario root
+#        'PASSWORD': 'pepegrillo1',
+#        'HOST': '127.0.0.1',
+#        'PORT': '3306',
+#    }
+#}
 
 
 LANGUAGE_CODE="es-ar"; TIME_ZONE="America/Argentina/Buenos_Aires"; USE_I18N=True; USE_TZ=True
@@ -190,5 +197,17 @@ AUTH0_MGMT_AUDIENCE = env("AUTH0_MGMT_AUDIENCE")
 AUTH0_MGMT_GRANT_TYPE = env("AUTH0_MGMT_GRANT_TYPE")
 
 #####
+
+
+CRONJOBS = [
+    # Domingo 23:00 → corre el management command 'forecast_all'
+    ('0 23 * * 0', 'django.core.management.call_command', ['forecast_all']),
+
+    # TEST CADA 5 MIN PARA PROBAR
+    ('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
+]
+
+CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'
+
 
 

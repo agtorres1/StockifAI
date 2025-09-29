@@ -9,9 +9,11 @@ import numpy as np
 import pandas as pd
 import holidays
 import django
+from django.db import transaction
 # --- Configuración de Django (si es necesario para los repositorios) ---
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
-django.setup()
+
+from catalogo.models import RepuestoTaller
+CHUNK_SIZE = 1000
 
 from catalogo.models import Repuesto
 from d_externo.repositories.dataexterna import obtener_registroentrenamiento_intermitente, \
@@ -133,38 +135,112 @@ def generar_features_futuras(df_historia: pd.DataFrame, fecha_a_predecir: pd.Tim
 
 def guardar_predicciones_db(taller_id: int, predicciones: list):
     """
-    Guarda las predicciones usando RepuestoTallerRepo.
+    Guarda las predicciones usando bulk_update para registros existentes
+    y bulk_create para registros nuevos de RepuestoTaller.
     """
+    if not predicciones:
+        print("No hay predicciones para guardar.")
+        return
+
     try:
         taller = Taller.objects.get(id=taller_id)
     except Taller.DoesNotExist:
         print(f"No se encontró un Taller con id={taller_id}")
         return
 
-    if not predicciones:
-        print("No hay predicciones para guardar.")
+    print("\n--- Preparando listas para Bulk Update y Bulk Create ---")
+
+    # 1. Obtener todos los SKUs a procesar
+    skus_a_procesar = [p['numero_pieza'] for p in predicciones if 'numero_pieza' in p]
+    if not skus_a_procesar:
+        print("Advertencia: La lista de predicciones no contiene 'numero_pieza' válidos.")
         return
 
-    repo = RepuestoTallerRepo()
+    # 2. Obtener mapeo Repuesto (SKU -> ID)
+    repuestos_qs = Repuesto.objects.filter(numero_pieza__in=skus_a_procesar).values("id", "numero_pieza")
+    sku_to_repuesto_id = {r["numero_pieza"]: r["id"] for r in repuestos_qs}
 
+    # Mapeo de predicciones por repuesto_id
+    predicciones_por_id = {}
     for pred in predicciones:
-        numero_pieza = pred.get("numero_pieza")
-        if not numero_pieza:
-            continue
-        try:
-            repuesto = Repuesto.objects.get(numero_pieza=numero_pieza)
+        repuesto_id = sku_to_repuesto_id.get(pred['numero_pieza'])
+        if repuesto_id:
+            predicciones_por_id[repuesto_id] = {
+                f'pred_{i}': pred.get(f'pred_semana_{i}') for i in range(1, 5)
+            }
 
-            # Preparamos el diccionario de predicciones en el formato esperado por el repositorio
-            predicciones_para_repo = {f'pred_{i}': pred[f'pred_semana_{i}'] for i in range(1, 5) if
-                                      f'pred_semana_{i}' in pred}
+    # 3. Obtener RepuestoTaller existentes para este taller y SKUs
+    repuesto_ids_a_procesar = list(predicciones_por_id.keys())
+    rt_existentes = RepuestoTaller.objects.filter(
+        taller=taller,
+        repuesto_id__in=repuesto_ids_a_procesar
+    )
+    # Mapeo: {repuesto_id: RepuestoTaller_objeto}
+    rt_map = {rt.repuesto_id: rt for rt in rt_existentes}
 
-            # Llamamos al métod del repositorio para guardar las predicciones
-            repo.set_predicciones(repuesto=repuesto, taller=taller, predicciones=predicciones_para_repo)
+    a_crear = []
+    a_actualizar = []
+    fields_to_update = ['pred_1', 'pred_2', 'pred_3', 'pred_4']
 
-            print(f"Predicciones guardadas para SKU {numero_pieza}")
+    # 4. Clasificar en listas de creación y actualización
+    for repuesto_id, preds in predicciones_por_id.items():
+        rt_obj = rt_map.get(repuesto_id)
 
-        except Repuesto.DoesNotExist:
-            print(f"Repuesto con numero_pieza={numero_pieza} no encontrado.")
+        # Obtener el objeto Repuesto (necesario solo si vamos a crear)
+        repuesto_obj = Repuesto.objects.get(id=repuesto_id)
+
+        # Rellenar con None si falta alguna predicción, aunque no debería ocurrir si el dict se construyó correctamente
+        for field in fields_to_update:
+            preds[field] = preds.get(field, None)
+
+        if rt_obj:
+            # 4a. Actualizar existente
+            for field in fields_to_update:
+                setattr(rt_obj, field, preds[field])
+            a_actualizar.append(rt_obj)
+        else:
+            # 4b. Crear nuevo
+            a_crear.append(
+                RepuestoTaller(
+                    taller=taller,
+                    repuesto=repuesto_obj,
+                    **preds  # Desempacar las predicciones
+                )
+            )
+
+    # 5. Ejecutar Bulk Operations
+    with transaction.atomic():
+        total_actualizados = 0
+        total_creados = 0
+
+        # Bulk Update (Actualiza existentes)
+        if a_actualizar:
+            print(f"-> Ejecutando bulk_update para {len(a_actualizar)} registros existentes.")
+            # chunking
+            for i in range(0, len(a_actualizar), CHUNK_SIZE):
+                chunk = a_actualizar[i:i + CHUNK_SIZE]
+                RepuestoTaller.objects.bulk_update(
+                    chunk,
+                    fields=fields_to_update,
+                    batch_size=CHUNK_SIZE
+                )
+                total_actualizados += len(chunk)
+
+        # Bulk Create (Crea nuevos)
+        if a_crear:
+            print(f"-> Ejecutando bulk_create para {len(a_crear)} registros nuevos.")
+            # chunking
+            for i in range(0, len(a_crear), CHUNK_SIZE):
+                chunk = a_crear[i:i + CHUNK_SIZE]
+                RepuestoTaller.objects.bulk_create(
+                    chunk,
+                    batch_size=CHUNK_SIZE
+                )
+                total_creados += len(chunk)
+
+    total_guardados = total_actualizados + total_creados
+    print(
+        f"Predicciones guardadas en DB (Bulk) para {total_guardados} repuestos/taller. ({total_actualizados} act, {total_creados} cre)")
 
 
 def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
@@ -256,6 +332,10 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
 
 
 if __name__ == '__main__':
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+    django.setup()
+
+
     # --- Parámetros de ejecución ---
     TALLER_A_PREDECIR = 1
     # La fecha debe ser un lunes, que es el inicio de la semana según el preproceso.

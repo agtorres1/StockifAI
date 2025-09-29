@@ -245,8 +245,7 @@ def _create_minimal_entities(processed_data, entities, taller):
             spd_a_crear.append({
                 'repuesto_taller_id': rt.pk,
                 'deposito_id': dep.pk,
-                'cantidad': 0,
-                'cantidad_minima': 0
+                'cantidad': 0
             })
             spd_keys_seen.add(spd_key)
 

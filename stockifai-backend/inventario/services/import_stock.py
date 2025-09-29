@@ -185,7 +185,7 @@ def _create_missing_entities(df, entities, taller):
     crear = [p for p in pairs_needed if p not in ya]
     if crear:
         StockPorDeposito.objects.bulk_create(
-            [StockPorDeposito(repuesto_taller_id=rt_id, deposito_id=dep_id, cantidad=0, cantidad_minima=0)
+            [StockPorDeposito(repuesto_taller_id=rt_id, deposito_id=dep_id, cantidad=0)
              for (rt_id, dep_id) in crear],
             batch_size=CHUNK_SIZE,
             ignore_conflicts=True,

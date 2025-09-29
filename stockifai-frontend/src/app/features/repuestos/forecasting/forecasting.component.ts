@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
 import { ForecastingItem } from '../../../core/models/forecasting-item';
 import { TitleService } from '../../../core/services/title.service';
@@ -11,8 +12,15 @@ type BarChartKind = 'bar';
     templateUrl: './forecasting.component.html',
     styleUrl: './forecasting.component.scss',
 })
-export class ForecastingComponent {
-    filtro = {
+export class ForecastingComponent implements OnInit {
+    filtro: {
+        repuesto: string;
+        fechaDesde: string;
+        fechaHasta: string;
+        marca: string | null;
+        modelo: string | null;
+        categoria: string | null;
+    } = {
         repuesto: '',
         fechaDesde: '',
         fechaHasta: '',
@@ -31,8 +39,12 @@ export class ForecastingComponent {
         Toyota: ['Corolla', 'Hilux'],
     };
 
-    constructor(private titleService: TitleService) {
+    constructor(private titleService: TitleService, private route: ActivatedRoute, private router: Router) {
         this.titleService.setTitle('Forecasting');
+    }
+
+    ngOnInit(): void {
+        this.getQueryParams();
     }
 
     onMarcaChange(): void {
@@ -55,6 +67,30 @@ export class ForecastingComponent {
             categoria: null,
         };
         this.modelos = [];
+    }
+
+    private buildQueryParams(): Params {
+        const qp: any = {};
+
+        if (this.filtro.repuesto?.trim()) qp.search = this.filtro.repuesto.trim();
+        if (this.filtro.marca) qp.marca = this.filtro.marca;
+        if (this.filtro.modelo) qp.modelo = this.filtro.modelo;
+        if (this.filtro.categoria) qp.categoria = this.filtro.categoria;
+        if (this.filtro.fechaDesde) qp.desde = this.filtro.fechaDesde;
+        if (this.filtro.fechaHasta) qp.hasta = this.filtro.fechaHasta;
+
+        return qp;
+    }
+
+    private getQueryParams() {
+        const qp = this.route.snapshot.queryParamMap;
+
+        this.filtro.repuesto = qp.get('search') ?? this.filtro.repuesto;
+        this.filtro.marca = qp.get('marca') ?? this.filtro.marca;
+        this.filtro.modelo = qp.get('modelo') ?? this.filtro.modelo;
+        this.filtro.categoria = qp.get('categoria') ?? this.filtro.categoria;
+        this.filtro.fechaDesde = qp.get('desde') ?? this.filtro.fechaDesde;
+        this.filtro.fechaHasta = qp.get('hasta') ?? this.filtro.fechaHasta;
     }
 
     goToDetail(item: any) {
@@ -309,7 +345,7 @@ export class ForecastingComponent {
     // === GRAFICO BARRAS: STOCK vs DEMANDA PROYECTADA ===
 
     // Semanas (12 de ejemplo; podés extender)
-    stockLabels: string[] = ["Sem 16", "Sem 17", "Sem 18", "Sem 19"];
+    stockLabels: string[] = ['Sem 16', 'Sem 17', 'Sem 18', 'Sem 19'];
 
     // Datos hardcodeados
     private stockSemanal: number[] = [100, 90, 105, 105];

@@ -9,15 +9,17 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.component';
+import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
 import { ForecastingComponent } from './features/repuestos/forecasting/forecasting.component';
+import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
 import { MovimientosComponent } from './features/repuestos/movimientos/movimientos.component';
 import { StockComponent } from './features/repuestos/stock/stock.component';
 import { TalleresGruposComponent } from './features/talleres/grupos/grupos.component';
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { LayoutComponent } from './layout/layout.component';
-import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
-import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
+import { SharedModule } from './shared/shared.module';
+import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
 
 @NgModule({
     declarations: [
@@ -32,7 +34,8 @@ import { CategoriasComponent } from './features/repuestos/categorias/categorias.
         TalleresUsuariosComponent,
         CatalogoComponent,
         MarcasComponent,
-        CategoriasComponent
+        CategoriasComponent,
+        LocalizadorComponent,
     ],
     imports: [
         BrowserModule,
@@ -42,6 +45,7 @@ import { CategoriasComponent } from './features/repuestos/categorias/categorias.
         FormsModule,
         HttpClientModule,
         BaseChartDirective,
+        SharedModule,
     ],
     providers: [provideCharts(withDefaultRegisterables())],
     bootstrap: [AppComponent],

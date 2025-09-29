@@ -27,6 +27,6 @@ class StockRepo:
                 repuesto_taller_id__in=rt_ids,
                 deposito_id__in=deposito_ids
             ).only(
-                "id", "repuesto_taller_id", "deposito_id", "cantidad", "cantidad_minima"
+                "id", "repuesto_taller_id", "deposito_id", "cantidad"
             )
         )

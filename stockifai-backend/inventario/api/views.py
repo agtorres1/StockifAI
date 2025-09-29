@@ -7,7 +7,9 @@ from .serializers import MovimientosImportSerializer, StockImportSerializer, Cat
 from ..models import Deposito
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
+from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
 from django.conf import settings
+from decimal import Decimal, ROUND_HALF_UP
 
 from ..services.import_stock import importar_stock
 from django.db.models import Sum, Q, Prefetch
@@ -20,6 +22,8 @@ from .serializers import (
     StockDepositoDetalleSerializer,
     DepositoSerializer,
 )
+
+
 class ImportarMovimientosView(APIView):
     def post(self, request):
         ser = MovimientosImportSerializer(data=request.data)
@@ -88,6 +92,7 @@ class ConsultarStockView(APIView):
       - exact: 1|0 (default 1)
       - original: true|false|1|0
       - deposito_id: filtra por depósito
+      - categoria_id: filtra por categoría del repuesto
       - con_stock: 1|true => solo stock_total > 0
       - ordering: numero_pieza | -numero_pieza | stock_total | -stock_total
       - page, page_size
@@ -100,6 +105,7 @@ class ConsultarStockView(APIView):
         exact = request.query_params.get("exact", "1")
         original = request.query_params.get("original")
         deposito_id = request.query_params.get("deposito_id")
+        categoria_id = request.query_params.get("categoria_id")
         con_stock = request.query_params.get("con_stock")
         ordering = request.query_params.get("ordering")
 
@@ -127,6 +133,9 @@ class ConsultarStockView(APIView):
                 rt_qs = rt_qs.filter(repuesto__numero_pieza=numero_pieza)
             else:
                 rt_qs = rt_qs.filter(repuesto__numero_pieza__icontains=numero_pieza)
+
+        if categoria_id:
+            rt_qs = rt_qs.filter(repuesto__categoria_id=categoria_id)
 
         if original in ("true", "false", "1", "0"):
             rt_qs = rt_qs.filter(original=original in ("true", "1"))
@@ -165,14 +174,72 @@ class ConsultarStockView(APIView):
                     "cantidad": spd.cantidad,
                 })
 
+            stock_total = Decimal(rt.stock_total or 0)
+            forecast_semanas = [
+                Decimal(rt.pred_1 or 0),
+                Decimal(rt.pred_2 or 0),
+                Decimal(rt.pred_3 or 0),
+                Decimal(rt.pred_4 or 0),
+            ]
+
+            mos_en_semanas = calcular_mos(stock_total, forecast_semanas)
+
             item = {
                 "repuesto_taller": RepuestoTallerSerializer(rt).data,
                 "stock_total": rt.stock_total or 0,
                 "depositos": depositos_detalle,
+                "mos_en_semanas": float(mos_en_semanas) if mos_en_semanas else None,
             }
             payload.append(item)
 
-        # Si querés validar contra RepuestoStockSerializer, se puede:
-        # ser = RepuestoStockSerializer(payload, many=True)
-        # return paginator.get_paginated_response(ser.data)
         return paginator.get_paginated_response(payload)
+
+def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
+    """
+    Calcula el MOS (semanas de cobertura):
+    - Consume stock semana a semana.
+    - Si la demanda de una semana es 0, se usa el promedio.
+    - Si todas las predicciones son 0/None, devuelve None.
+    """
+    stock = Decimal(stock or 0)
+
+    no_nulas = [w for w in weeks if w > 0]
+    if not no_nulas:
+        return None  # Si no hay predicciones, no se puede calcular
+
+    # Para extender más allá de la 4
+    tail_rate = sum(no_nulas)/len(no_nulas)
+
+    semanas = Decimal(0)
+    restante = stock
+
+    for w in weeks:
+        demanda = w if w > 0 else tail_rate
+        if restante >= demanda:
+            restante -= demanda
+            semanas += 1
+        else:
+            semanas += restante / demanda
+            return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    # Si sobra stock después de las 4 semanas, extender con tail_rate
+    if restante > 0:
+        semanas += restante / tail_rate
+
+    return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+
+class EjecutarForecastPorTallerView(APIView):
+    def post(self, request, taller_id: int):
+        fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
+
+        out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
+        return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)
+
+class EjecutarForecastView(APIView):
+    def post(self, request):
+        fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
+
+        out = ejecutar_forecast_talleres(fecha_lunes)
+        return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)

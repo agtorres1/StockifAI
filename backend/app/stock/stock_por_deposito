@@ -1,0 +1,12 @@
+from django.db import models
+
+class StockPorDeposito(models.Model):
+    id_stock_por_deposito = models.AutoField(primary_key=True)
+    id_repuesto_taller = models.ForeignKey(RepuestoTaller, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    cantidad_minima = models.PositiveIntegerField()
+    frecuencia = models.CharField(max_length=50, null=True, blank=True)  # Si es texto tipo 'semanal', 'mensual'
+    id_deposito = models.ForeignKey(Deposito, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.id_repuesto_taller} - {self.cantidad} unidades"
