@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\stockifai-frontend",
+    "\\stockifai-frontend\\public",
+    "\\stockifai-frontend\\src",
+    "\\stockifai-frontend\\src\\app",
+    "\\stockifai-frontend\\src\\app\\core",
+    "\\stockifai-frontend\\src\\app\\core\\models",
+    "\\stockifai-frontend\\src\\app\\core\\services",
+    "\\stockifai-frontend\\src\\app\\features",
+    "\\stockifai-frontend\\src\\app\\features\\repuestos"
+  ],
+  "SelectedNode": "\\stockifai-frontend\\src\\app\\features\\repuestos\\stock",
+  "PreviewInSolutionExplorer": false
+}

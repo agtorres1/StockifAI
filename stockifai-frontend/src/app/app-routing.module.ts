@@ -10,6 +10,7 @@ import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios
 import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.component';
 import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
 import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
+import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -26,6 +27,8 @@ const routes: Routes = [
     { path: 'catalogo', component: CatalogoComponent },
     { path: 'marcas', component: MarcasComponent },
     { path: 'categorias', component: CategoriasComponent },
+    { path: 'localizador', component: LocalizadorComponent },
+
   ]},
   { path: '**', redirectTo: 'dashboard' },
 ];
