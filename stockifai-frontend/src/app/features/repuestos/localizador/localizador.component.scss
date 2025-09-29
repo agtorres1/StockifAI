@@ -1,0 +1,35 @@
+.localizador {
+    .buscador .input-group-text {
+        background: #fff;
+        border-right: 0;
+    }
+    .buscador .form-control {
+        border-left: 0;
+        border-right: 0;
+    }
+    .btn-teal {
+        background-color: #16b1b5;
+        /* ajustá a tu paleta si tenés variable */
+        border-color: #16b1b5;
+        color: #fff;
+    }
+    .btn-teal:hover {
+        filter: brightness(0.95);
+    }
+    .card-header {
+        background: #f8fafc;
+    }
+    .mapa {
+        height: 560px;
+        /* como la captura */
+        width: 100%;
+        border-radius: .5rem;
+    }
+    .nombre {
+        font-size: 1rem;
+    }
+    /* Opcional: achicar levemente badge */
+    .badge {
+        font-weight: 600;
+    }
+}

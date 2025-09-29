@@ -19,6 +19,7 @@ import { TalleresListadoComponent } from './features/talleres/listado/listado.co
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { LayoutComponent } from './layout/layout.component';
 import { SharedModule } from './shared/shared.module';
+import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
 
 @NgModule({
     declarations: [
@@ -34,6 +35,7 @@ import { SharedModule } from './shared/shared.module';
         CatalogoComponent,
         MarcasComponent,
         CategoriasComponent,
+        LocalizadorComponent,
     ],
     imports: [
         BrowserModule,

@@ -31,6 +31,8 @@ export class LayoutComponent {
                 { title: 'Catalogo', icon: 'fas fa-book', route: '/repuestos/catalogo' },
                 { title: 'Marcas', icon: 'fas fa-tags', route: '/repuestos/marcas' },
                 { title: 'Categorias', icon: 'fas fa-car', route: '/repuestos/categorias' },
+                { title: 'Localizador', icon: 'fas fa-search', route: '/repuestos/localizador' },
+
             ],
         },
         { title: 'Configuracion', icon: 'fas fa-gear', route: '/configuracion' },
