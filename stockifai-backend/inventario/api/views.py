@@ -7,6 +7,7 @@ from .serializers import MovimientosImportSerializer, StockImportSerializer, Cat
 from ..models import Deposito
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
+from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
 from django.conf import settings
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -21,6 +22,8 @@ from .serializers import (
     StockDepositoDetalleSerializer,
     DepositoSerializer,
 )
+
+
 class ImportarMovimientosView(APIView):
     def post(self, request):
         ser = MovimientosImportSerializer(data=request.data)
@@ -224,3 +227,19 @@ def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
         semanas += restante / tail_rate
 
     return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+
+class EjecutarForecastPorTallerView(APIView):
+    def post(self, request, taller_id: int):
+        fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
+
+        out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
+        return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)
+
+class EjecutarForecastView(APIView):
+    def post(self, request):
+        fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
+
+        out = ejecutar_forecast_talleres(fecha_lunes)
+        return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)

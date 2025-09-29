@@ -11,8 +11,6 @@ import holidays
 import django
 from django.db import transaction
 # --- Configuración de Django (si es necesario para los repositorios) ---
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
-django.setup()
 
 from catalogo.models import RepuestoTaller
 CHUNK_SIZE = 1000
@@ -334,6 +332,10 @@ def ejecutar_inferencia(taller_id: int, fecha_prediccion_str: str):
 
 
 if __name__ == '__main__':
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+    django.setup()
+
+
     # --- Parámetros de ejecución ---
     TALLER_A_PREDECIR = 1
     # La fecha debe ser un lunes, que es el inicio de la semana según el preproceso.

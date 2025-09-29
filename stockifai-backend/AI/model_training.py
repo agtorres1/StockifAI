@@ -8,11 +8,6 @@ import warnings
 import django
 from django.db import transaction  # Import transaction
 
-# --- CONFIGURACIÓN DE ENTORNO DJANGO ---
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
-django.setup()
-# ----------------------------------------
-
 from d_externo.models import RegistroEntrenamiento_Frecuencia_Alta, RegistroEntrenamiento_intermitente
 from d_externo.repositories.dataexterna import borrar_registroentrenamiento_frecuencia_alta, \
     borrar_registroentrenamiento_intermitente
@@ -302,5 +297,10 @@ def ejecutar_pipeline_entrenamiento(taller_id: int):
 
 
 if __name__ == '__main__':
+    # --- CONFIGURACIÓN DE ENTORNO DJANGO ---
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+    django.setup()
+    # ----------------------------------------
+
     taller_id = 1
     ejecutar_pipeline_entrenamiento(taller_id)

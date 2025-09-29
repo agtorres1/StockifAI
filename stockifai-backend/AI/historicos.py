@@ -13,9 +13,6 @@ import pandas as pd
 import holidays
 from django.db import transaction
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
-django.setup()
-
 from d_externo.repositories.dataexterna import obtener_todas_las_inflaciones, obtener_todos_los_patentamientos, \
     obtener_todos_los_ipsa, obtener_todas_las_prendas, obtener_todas_las_tasas_interes, obtener_todos_los_tipos_cambio
 
@@ -544,6 +541,9 @@ def ejecutar_preproceso(
 
 
 if __name__ == "__main__":
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'stockifai.settings')
+    django.setup()
+
     # parametros para probar
     TALLER_ID = 1
     OUTPUT_DIR = "models"  # donde se guardan los modelos
