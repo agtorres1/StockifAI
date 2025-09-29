@@ -1,0 +1,71 @@
+<div class="container-fluid py-3 localizador">
+    <!-- BARRA DE BÚSQUEDA -->
+    <div class="input-group input-group-lg mb-2 buscador">
+        <span class="input-group-text rounded-start-3">
+        <i class="fas fa-search"></i>
+      </span>
+        <input type="text" class="form-control" placeholder="Número de pieza" [(ngModel)]="query" (keyup.enter)="buscar()" />
+        <button class="btn btn-teal" type="button" (click)="buscar()">Buscar</button>
+        <button class="btn btn-outline-secondary rounded-end-3" type="button" (click)="limpiar()">Limpiar</button>
+    </div>
+
+    <p class="text-muted mb-3 subtitulo">
+        Encontrá rápidamente qué talleres tienen stock disponible del repuesto que necesitás.
+    </p>
+
+    <!-- GRID PRINCIPAL -->
+    <div class="row g-3">
+        <!-- LISTA IZQUIERDA -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">
+                    Talleres con stock
+                    <div class="small text-muted">Número de pieza: {{ query || '—' }}</div>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex align-items-start justify-content-between" *ngFor="let t of resultados">
+                        <div class="me-3">
+                            <div class="fw-semibold nombre">{{ t.nombre }}</div>
+                            <div class="text-muted small">{{ t.direccion }}</div>
+                            <div class="text-muted small mt-1">
+                                <span *ngIf="t.telefono">Tel: {{ t.telefono }}</span>
+                                <span *ngIf="t.email"> &nbsp; Email: {{ t.email }}</span>
+                            </div>
+
+                            <div class="mt-2 d-flex gap-2">
+                                <!-- Botón WhatsApp -->
+                                <a *ngIf="t.telefonoE164" class="btn btn-success btn-sm" [href]="whatsappUrl(t)" target="_blank" rel="noopener">
+                                    <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="text-nowrap">
+                            <span class="badge bg-primary rounded-pill px-3 py-2">
+                  {{ t.cantidad }} en stock
+                </span>
+                        </div>
+                    </div>
+
+                    <div class="list-group-item text-muted" *ngIf="!cargando && !resultados.length">
+                        Sin resultados
+                    </div>
+                    <div class="list-group-item" *ngIf="cargando">
+                        Buscando…
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAPA DERECHA -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">Mapa de disponibilidad</div>
+                <div class="card-body p-0">
+                    <div id="mapa" class="mapa"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
