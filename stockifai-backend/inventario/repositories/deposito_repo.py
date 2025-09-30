@@ -1,6 +1,6 @@
 from .base import RepoResult
 from inventario.models import Deposito
-from user.api.models.models import Taller
+from user.models import Taller
 
 
 

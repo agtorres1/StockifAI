@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from user.api.models.models import Grupo, GrupoTaller
+from user.models import Grupo, GrupoTaller
 from user.api.serializers.grupo_serializer import GrupoSerializer, GrupoTallerSerializer
 
 class GrupoViewSet(viewsets.ModelViewSet):

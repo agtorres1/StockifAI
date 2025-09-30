@@ -1,5 +1,5 @@
 from .base import NotFoundError
-from user.api.models.models import Taller
+from user.models import Taller
 
 
 class TallerRepo:

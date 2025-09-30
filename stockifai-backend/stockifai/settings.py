@@ -46,17 +46,6 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "stockifai.wsgi.application"
 
-
-
-# DATABASES = {"default":{
-#  "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
-#   "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
-#   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
-#   "OPTIONS":{"charset":"utf8mb4"}
-#}}
-"""
-# }}
-
 DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
@@ -86,35 +75,6 @@ DATABASES = {
         }
      }
 }
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAMEAWS'),
-        'USER': os.getenv('DB_USERAWS'),
-        'PASSWORD': os.getenv('DB_PASSWORDAWS'),
-        'HOST': os.getenv('DB_HOSTAWS'),
-        'PORT': os.getenv('DB_PORTAWS'),
-        'OPTIONS': {
-            'connect_timeout': 30,
-            'read_timeout': 300,
-            'write_timeout': 300,
-            'charset': 'utf8mb4',
-        }
-    }
-}
-"""
-
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.mysql',
-#        'NAME': 'stockifia_local',   # tu base creada
-#        'USER': 'root',              # usuario root
-#        'PASSWORD': 'pepegrillo1',
-#        'HOST': '127.0.0.1',
-#        'PORT': '3306',
-#    }
-#}
 
 
 LANGUAGE_CODE="es-ar"; TIME_ZONE="America/Argentina/Buenos_Aires"; USE_I18N=True; USE_TZ=True
@@ -204,7 +164,7 @@ CRONJOBS = [
     ('0 23 * * 0', 'django.core.management.call_command', ['forecast_all']),
 
     # TEST CADA 5 MIN PARA PROBAR
-    ('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
+    #('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
 ]
 
 CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'

@@ -17,8 +17,15 @@ class Command(BaseCommand):
         result = ejecutar_forecast_talleres(fecha_lunes)
 
         self.stdout.write(self.style.SUCCESS("Forecast OK"))
-        self.stdout.write(
-            f"Talleres procesados: {len(result.get('ok', []))}, errores: {len(result.get('errores', []))}")
+
+        ok = result.get("ok", [])
+        errores = result.get("errores", [])
+
+        for item in ok:
+            self.stdout.write(f"Taller OK: {item.get('taller_id')}")
+
+        for item in errores:
+            self.stdout.write(self.style.ERROR(f"Taller ERROR: {item.get('taller_id')} - {item.get('error')}"))
 
 
 def next_monday_str() -> datetime:

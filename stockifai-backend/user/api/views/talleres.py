@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 
 from inventario.models import Movimiento
 from user.api.serializers.taller_serializer import TallerSerializer
-from user.api.models.models import Taller
+from user.models import Taller
 
 
 class TallerViewSet(viewsets.ModelViewSet):

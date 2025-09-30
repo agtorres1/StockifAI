@@ -1,22 +1,11 @@
-
-from django.shortcuts import redirect
-from django.http import JsonResponse
-from django.conf import settings
-from auth0_backend.jwt_utils import decode_jwt
-from user.api.models.models import User, Direccion
-from django.contrib.auth import login
+from user.models import User, Direccion
 import jwt
 
 # user/views.py
 
-from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
-
 
 # user/views.py
-from django.shortcuts import render, redirect
-from django.conf import settings
-
+from django.shortcuts import redirect
 
 from ...forms import RegisterForm
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user.api.models.models import Taller
+from user.models import Taller
 
 
 class TallerSerializer(serializers.ModelSerializer):

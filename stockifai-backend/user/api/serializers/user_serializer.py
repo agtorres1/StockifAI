@@ -1,14 +1,5 @@
 from rest_framework import serializers
-from user.api.models.models import User, Direccion, Taller, Grupo
-
-
-
-
-
-
-
-
-
+from user.models import User, Direccion
 
 
 class DireccionSerializer(serializers.ModelSerializer):

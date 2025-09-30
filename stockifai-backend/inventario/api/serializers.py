@@ -3,7 +3,7 @@ from rest_framework import serializers
 from catalogo.models import Repuesto, Categoria, Marca
 from inventario.models import Deposito, Movimiento
 from catalogo.models import RepuestoTaller
-from user.api.models.models import Taller
+from user.models import Taller
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
