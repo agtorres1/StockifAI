@@ -205,7 +205,11 @@ def get_mgmt_token():
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = (
+        User.objects
+            .select_related('direccion', 'taller', 'grupo')
+            .all()
+    )
     serializer_class = UserSerializer
 
 

@@ -20,6 +20,7 @@ import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios
 import { LayoutComponent } from './layout/layout.component';
 import { SharedModule } from './shared/shared.module';
 import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
+import { EditUsuarioComponent } from './features/talleres/usuarios/edit/edit-usuario.component';
 
 @NgModule({
     declarations: [
@@ -36,6 +37,7 @@ import { LocalizadorComponent } from './features/repuestos/localizador/localizad
         MarcasComponent,
         CategoriasComponent,
         LocalizadorComponent,
+        EditUsuarioComponent
     ],
     imports: [
         BrowserModule,

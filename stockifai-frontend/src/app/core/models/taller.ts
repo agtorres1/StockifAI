@@ -1,5 +1,5 @@
 export interface Taller {
-    id: number;
+    id?: number;
     nombre: string;
     direccion: string;
     telefono: string;

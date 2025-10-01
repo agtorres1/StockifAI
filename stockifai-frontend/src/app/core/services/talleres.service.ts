@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Deposito } from '../models/deposito';
-import { RestService } from './rest.service';
 import { Observable } from 'rxjs';
+import { Deposito } from '../models/deposito';
 import { Taller } from '../models/taller';
+import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
 export class TalleresService {
@@ -13,6 +13,22 @@ export class TalleresService {
     }
 
     getTallerData(tallerId: number): Observable<Taller> {
-        return this.restService.get<Taller>(`talleres/${tallerId}`);
+        return this.restService.get<Taller>(`taller-data/${tallerId}`);
+    }
+
+    getTalleres(): Observable<Taller[]> {
+        return this.restService.get<Taller[]>(`talleres/`);
+    }
+
+    crearTaller(taller: Taller): Observable<Taller> {
+        return this.restService.post<Taller>(`talleres/`, taller);
+    }
+
+    editarTaller(tallerId: number, taller: Taller): Observable<Taller> {
+        return this.restService.put<Taller>(`talleres/${tallerId}/`, taller);
+    }
+
+    eliminarTaller(tallerId: number): Observable<any> {
+        return this.restService.delete<any>(`talleres/${tallerId}/`);
     }
 }
