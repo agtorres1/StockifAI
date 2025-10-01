@@ -7,8 +7,19 @@ export interface Usuario {
     last_name: string;
     email: string;
     telefono: string;
-    direccion: string;
+    direccion?: Direccion;
 
     taller?: Taller;
     grupo?: any;
+
+    id_grupo?: number;
+    id_taller?: number;
+}
+
+export interface Direccion {
+  id_direccion?: number;
+  calle?: string;
+  ciudad?: string;
+  codigo_postal?: string;
+  pais?: string;
 }

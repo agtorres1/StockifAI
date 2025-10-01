@@ -1,7 +1,10 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { NgForm } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
+import { Grupo } from '../../../../core/models/grupo';
+import { Taller } from '../../../../core/models/taller';
 import { Usuario } from '../../../../core/models/usuario';
+import { TalleresService } from '../../../../core/services/talleres.service';
 import { UsuariosService } from '../../../../core/services/usuarios.service';
 
 @Component({
@@ -9,7 +12,7 @@ import { UsuariosService } from '../../../../core/services/usuarios.service';
     templateUrl: './edit-usuario.component.html',
     styleUrl: './edit-usuario.component.scss',
 })
-export class EditUsuarioComponent implements OnChanges {
+export class EditUsuarioComponent implements OnChanges, OnInit {
     @Input() isEdit: boolean = false;
     @Input() usuario!: Usuario;
 
@@ -20,13 +23,37 @@ export class EditUsuarioComponent implements OnChanges {
     errorMessage: string = '';
     successMessage: string = '';
 
-    constructor(private usuariosService: UsuariosService) {}
+    scopeType: 'taller' | 'grupo' = 'taller';
+    talleres: Taller[] = [];
+    grupos: Grupo[] = [];
+    loadingTalleres: boolean = false;
+
+    constructor(private usuariosService: UsuariosService, private talleresService: TalleresService) {}
+
+    ngOnInit(): void {
+        this.loadingTalleres = true;
+        forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
+            ([grupos, talleres]) => {
+                this.grupos = grupos;
+                this.talleres = talleres;
+                this.loadingTalleres = false;
+            }
+        );
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
-        console.log("changes", changes);
         if (!this.isEdit) {
-            this.usuario = { username: '', email: '', first_name: '', last_name: '', telefono: '', direccion: ''};
+            this.usuario = {
+                username: '',
+                email: '',
+                first_name: '',
+                last_name: '',
+                telefono: '',
+            };
         }
+        this.usuario.direccion = { pais: 'Argentina' };
+        if(this.usuario.taller) this.scopeType = 'taller';
+        if(this.usuario.grupo) this.scopeType = 'grupo';
     }
 
     async submitUsuarioForm(form: NgForm) {
@@ -54,6 +81,15 @@ export class EditUsuarioComponent implements OnChanges {
         } catch (error: any) {
             this.errorMessage = error?.message ?? 'Error al crear usuario';
             this.loading = false;
+        }
+    }
+
+    onScopeChange(next: 'taller' | 'grupo') {
+        this.scopeType = next;
+        if (next === 'taller') {
+            this.usuario.grupo = undefined;
+        } else {
+            this.usuario.taller = undefined;
         }
     }
 

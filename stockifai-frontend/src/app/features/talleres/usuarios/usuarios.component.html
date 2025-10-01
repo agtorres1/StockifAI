@@ -43,8 +43,8 @@
                         <td>{{ usuario.username }}</td>
                         <td>{{ usuario.email }}</td>
                         <td>{{ usuario.telefono }}</td>
-                        <td>{{ usuario.taller }}</td>
-                        <td>{{ usuario.grupo }}</td>
+                        <td>{{ usuario.taller?.nombre }}</td>
+                        <td>{{ usuario.grupo?.nombre }}</td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-1">
                                 <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"

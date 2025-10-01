@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Grupo } from '../models/grupo';
 import { Usuario } from '../models/usuario';
 import { RestService } from './rest.service';
 
@@ -21,5 +22,9 @@ export class UsuariosService {
 
     eliminarUsuario(usuarioId: number): Observable<any> {
         return this.restService.delete<any>(`usuarios/${usuarioId}/`);
+    }
+
+    getGrupos(): Observable<Grupo[]> {
+        return this.restService.get<Grupo[]>(`grupos/`);
     }
 }

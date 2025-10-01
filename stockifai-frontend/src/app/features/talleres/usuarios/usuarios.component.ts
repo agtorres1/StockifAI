@@ -51,7 +51,10 @@ export class TalleresUsuariosComponent implements OnInit {
     }
 
     onEditUsuarioClick(usuario: Usuario) {
-        this.selectedUser = usuario;
+        if(usuario.taller) usuario.id_taller = usuario.taller.id;
+        if(usuario.grupo) usuario.id_grupo = usuario.grupo.id_grupo;
+        this.selectedUser = Object.assign({}, usuario);
+        console.log("edit usuario", usuario);
         this.isEditMode = true;
         this.openModal();
     }
