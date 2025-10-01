@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Taller } from '../../../core/models/taller';
@@ -11,7 +11,7 @@ declare const bootstrap: any;
     templateUrl: './listado.component.html',
     styleUrl: './listado.component.scss',
 })
-export class TalleresListadoComponent {
+export class TalleresListadoComponent implements OnInit {
     talleres: Taller[] = [];
     loading: boolean = false;
     errorMessage: string = '';

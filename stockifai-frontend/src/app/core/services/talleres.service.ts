@@ -13,7 +13,7 @@ export class TalleresService {
     }
 
     getTallerData(tallerId: number): Observable<Taller> {
-        return this.restService.get<Taller>(`talleres/${tallerId}`);
+        return this.restService.get<Taller>(`taller-data/${tallerId}`);
     }
 
     getTalleres(): Observable<Taller[]> {
