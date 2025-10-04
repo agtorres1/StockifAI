@@ -2,7 +2,7 @@ from django.urls import path
 
 from .movimientos import MovimientosListView
 from .views import ImportarMovimientosView, ImportarStockView, ImportarCatalogoView, DepositosPorTallerView, \
-    ConsultarStockView, EjecutarForecastPorTallerView, EjecutarForecastView
+    ConsultarStockView, EjecutarForecastPorTallerView, EjecutarForecastView, DetalleForecastingView, ConsultarForecastingListView
 
 urlpatterns = [
     path('importaciones/movimientos', ImportarMovimientosView.as_view(), name='importar-movimientos'),
@@ -13,6 +13,8 @@ urlpatterns = [
     path("talleres/<int:taller_id>/stock", ConsultarStockView.as_view(), name="consultar-stock"),
     path("talleres/<int:taller_id>/forecast/run", EjecutarForecastPorTallerView.as_view(), name="forecast-run-taller"),
     path("talleres/forecast/run", EjecutarForecastView.as_view(), name="forecast-run"),
+    path("talleres/<int:taller_id>/forecasting", ConsultarForecastingListView.as_view(), name="forecasting-list"),
+    path("talleres/<int:taller_id>/repuestos/<int:repuesto_taller_id>/forecasting",DetalleForecastingView.as_view(),name="detalle-forecasting"),
 ]
 
 
