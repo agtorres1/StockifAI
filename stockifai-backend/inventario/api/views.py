@@ -536,3 +536,147 @@ def compute_trend_line(series: List[Union[float, int, None]]) -> List[float]:
 
     # Genera los valores de la línea de tendencia para toda la serie
     return [round(intercept + slope * (i + 1), 2) for i in range(len(series))]
+
+
+class AlertsListView(APIView):
+    """
+    GET /talleres/<taller_id>/alertas/
+
+    Si se usa ?summary=1, devuelve el conteo de alertas urgentes para la insignia.
+    De lo contrario, devuelve la lista consolidada de TODAS las alertas activas (dashboard).
+    """
+
+    def get(self, request, taller_id: int):
+
+        # Detecta si se pide el resumen (para el badge) o la lista completa (para la pantalla)
+        summary_mode = request.query_params.get("summary") == "1"
+
+        try:
+            rt_qs = (
+                RepuestoTaller.objects
+                .filter(taller_id=taller_id)
+                .annotate(
+                    stock_total=Sum("stocks__cantidad", filter=Q(stocks__deposito__taller_id=taller_id))
+                )
+                .select_related('repuesto')
+                .all()
+            )
+        except NameError:
+            return Response(
+                {"detail": "Error interno: Modelos RepuestoTaller o sus dependencias no están disponibles."},
+                status=500)
+        except Exception as e:
+            return Response({"detail": f"Error al consultar el inventario: {str(e)}"}, status=500)
+
+        consolidated_alerts: List[Dict[str, Any]] = []
+        alert_counts = {"CRÍTICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
+
+        for rt in rt_qs:
+            stock_total = Decimal(rt.stock_total or 0)
+
+            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
+            forecast_semanas = [
+                pred_1,
+                Decimal(getattr(rt, 'pred_2', 0) or 0),
+                Decimal(getattr(rt, 'pred_3', 0) or 0),
+                Decimal(getattr(rt, 'pred_4', 0) or 0),
+            ]
+            frecuencia_rotacion = getattr(rt, 'frecuencia', 'DESCONOCIDA')
+
+            # --- Cálculo de MOS y Alertas ---
+            mos_en_semanas = calcular_mos(stock_total, forecast_semanas)
+
+            alertas_activas = generar_alertas_inventario(
+                stock_total=stock_total,
+                pred_1=pred_1,
+                mos_en_semanas=mos_en_semanas,
+                frecuencia_rotacion=frecuencia_rotacion
+            )
+
+            # 3. Consolidar o Contar
+            if alertas_activas:
+                repuesto_obj = getattr(rt, 'repuesto', None)
+                numero_pieza = getattr(repuesto_obj, 'numero_pieza', 'N/A')
+                descripcion = getattr(repuesto_obj, 'descripcion', 'N/A')
+
+                for alerta in alertas_activas:
+                    nivel = alerta['nivel']
+
+                    # 3.1. Modo Resumen: Contar las alertas
+                    if nivel in alert_counts:
+                        alert_counts[nivel] += 1
+
+                    # 3.2. Modo Detalle: Agregar la alerta a la lista de respuesta
+                    if not summary_mode:
+                        consolidated_alerts.append({
+                            "id_repuesto": getattr(rt, 'id', getattr(rt, 'pk', 'N/A')),
+                            "numero_pieza": numero_pieza,
+                            "descripcion": descripcion,
+                            "stock_total": float(stock_total),
+                            "mos_en_semanas": float(mos_en_semanas) if mos_en_semanas else None,
+                            "alerta": alerta  # El diccionario de alerta (nivel, color, codigo, mensaje)
+                        })
+
+        # 4. Devolver la respuesta
+        if summary_mode:
+            total_urgente = alert_counts["CRÍTICO"] + alert_counts["MEDIO"]
+            return Response({
+                "CRÍTICO": alert_counts["CRÍTICO"],
+                "MEDIO": alert_counts["MEDIO"],
+                "ADVERTENCIA": alert_counts["ADVERTENCIA"],
+                "INFORMATIVO": alert_counts["INFORMATIVO"],
+                "TOTAL_URGENTE": total_urgente
+            })
+        else:
+            return Response(consolidated_alerts)
+
+
+def generar_alertas_inventario(
+        stock_total: Union[int, float, Decimal],
+        pred_1: Union[int, float, Decimal],
+        mos_en_semanas: Optional[Union[int, float, Decimal]],
+        frecuencia_rotacion: str
+) -> List[Dict[str, str]]:
+    """
+    Genera una lista de alertas activas (CRÍTICO, MEDIO, INFORMATIVO, ADVERTENCIA).
+    """
+    alertas_activas: List[Dict[str, str]] = []
+
+    stock_d = Decimal(str(stock_total))
+    pred_1_d = Decimal(str(pred_1))
+    mos_d = Decimal(str(mos_en_semanas)) if mos_en_semanas is not None else None
+
+    # 1. ALERTA CRÍTICA: Quiebre de Stock Inmediato (Rojo)
+    if stock_d < pred_1_d:
+        alertas_activas.append({
+            "nivel": "CRÍTICO",
+            "codigo": "ACCION_INMEDIATA",
+            "mensaje": (
+                f"Quiebre Inminente. Stock ({stock_d}) no cubre la demanda de la próxima semana ({pred_1_d}). "
+            )
+        })
+
+    # 2. ALERTA MEDIA: Bajo MOS (Naranja)
+    if mos_d is not None and mos_d > Decimal('1') and mos_d <= Decimal('2.5') and not (stock_d < pred_1_d):
+        alertas_activas.append({
+            "nivel": "MEDIO",
+            "codigo": "MOS_BAJO_REORDENAR",
+            "mensaje": f"Bajo MOS. La cobertura es de {mos_d:.2f} semanas. "
+        })
+
+    # 3. ALERTA INFORMATIVA: Sobre-Abastecimiento o Riesgo de Lento (Azul)
+    if mos_d is not None:
+        es_lento_o_intermedio = frecuencia_rotacion in ["LENTO", "INTERMEDIO", "OBSOLETO", "MUERTO"]
+        sobre_stock_general = mos_d >= Decimal('12')
+        sobre_stock_riesgoso = mos_d >= Decimal('4') and es_lento_o_intermedio
+
+        if sobre_stock_general or sobre_stock_riesgoso:
+            alertas_activas.append({
+                "nivel": "INFORMATIVO",
+                "codigo": "SOBRE_STOCK_RIESGO",
+                "mensaje": (
+                    f"Capital Inmovilizado. Cobertura de {mos_d:.2f} semanas ({frecuencia_rotacion}). "
+                )
+            })
+
+    return alertas_activas
