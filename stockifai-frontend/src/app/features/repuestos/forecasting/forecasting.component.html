@@ -21,72 +21,104 @@
     </div>
 </div>
 
-<!-- Filtros avanzados - No los estamos usando actualmente -->
-<!-- <form (ngSubmit)="filtrar()">
-            <div class="d-flex flex-wrap justify-content-between gap-4">
+<div *ngIf="loadingDetails" class="alert alert-info d-flex justify-content-center align-items-center m-2 p-2">
+    <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+    <span>Cargando detalles...</span>
+</div>
 
-                <div class="flex-grow-1">
-                    <div class="row gy-1">
-                        <div class="col-md-6">
-                            <label for="repuesto" class="form-label">Repuesto</label>
-                            <input type="text" class="form-control form-control-sm" name="repuesto"
-                                [(ngModel)]="filtro.repuesto" placeholder="Nombre o SKU" />
-                        </div>
-                        <div class="col-md-3">
-                            <label for="fechaDesde" class="form-label">Desde</label>
-                            <input type="date" class="form-control form-control-sm" name="fechaDesde"
-                                [(ngModel)]="filtro.fechaDesde" />
-                        </div>
-                        <div class="col-md-3">
-                            <label for="fechaHasta" class="form-label">Hasta</label>
-                            <input type="date" class="form-control form-control-sm" name="fechaHasta"
-                                [(ngModel)]="filtro.fechaHasta" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="marca" class="form-label">Marca</label>
-                            <select class="form-select form-select-sm" name="marca" [(ngModel)]="filtro.marca"
-                                (change)="onMarcaChange()">
-                                <option *ngFor="let m of marcas" [value]="m">{{ m }}</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="modelo" class="form-label">Modelo</label>
-                            <select class="form-select form-select-sm" name="modelo" [(ngModel)]="filtro.modelo">
-                                <option *ngFor="let mod of modelos" [value]="mod">{{ mod }}</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="categoria" class="form-label">Categoria</label>
-                            <select class="form-select form-select-sm" name="categoria" [(ngModel)]="filtro.categoria">
-                                <option *ngFor="let c of categorias" [value]="c">{{ c }}</option>
-                            </select>
-                        </div>
+
+<!-- SECCIÓN DETALLE REPUESTO -->
+<div *ngIf="repuesto" class="card shadow-sm mb-4 repuesto-detalle">
+    <div class="card-body pb-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+            <div>
+                <h5 class="mb-1 repuesto-detalle__titulo">{{ repuesto.repuesto_taller.repuesto.numero_pieza }} - {{
+                    repuesto.repuesto_taller.repuesto.descripcion }}</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    <span *ngIf="repuesto.repuesto_taller.frecuencia as freq">
+                        <span class="badge rounded-pill" [ngClass]="(freq | frecuenciaRotacion).css">
+                            {{ (freq | frecuenciaRotacion).label }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-outline-dark btn-sm" (click)="repuesto = undefined">
+                    <i class="fa fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row row-cols-2 row-cols-md-4 g-2 mb-3">
+            <div class="col">
+                <div class="kpi">
+                    <div class="kpi-label">Stock actual</div>
+                    <div class="kpi-value">{{forecastRepuesto?.stock_actual}} u.</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kpi">
+                    <div class="kpi-label">Demanda 1 sem</div>
+                    <div class="kpi-value">{{forecastRepuesto?.repuesto_info?.pred_1}} u.</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kpi">
+                    <div class="kpi-label">Demanda 4 sem</div>
+                    <div class="kpi-value">{{forecastRepuesto?.repuesto_info?.pred_4}} u.</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="kpi">
+                    <div class="kpi-label">
+                        MOS
+                        <i class="fa-regular fa-circle-question" title="Semanas de cobertura con el stock actual"
+                            data-bs-toggle="tooltip" data-bs-placement="bottom"></i>
+                    </div>
+                    <span class="kpi-value" *ngIf="!repuesto.mos_en_semanas" data-bs-toggle="tooltip"
+                        data-bs-placement="bottom" title="Sin demanda proyectada.">N/A</span>
+                    <span class="kpi-value fw-bold" *ngIf="repuesto.mos_en_semanas">
+                        {{ repuesto.mos_en_semanas | number:'1.1-2' }}
+                        <span *ngIf="repuesto.mos_en_semanas < 1"
+                            class="badge rounded-pill bg-red label-mos-tag">Critico</span>
+                        <span *ngIf="repuesto.mos_en_semanas > 1 && repuesto.mos_en_semanas < 2"
+                            class="badge rounded-pill bg-orange label-mos-tag">Bajo</span>
+                        <span *ngIf="repuesto.mos_en_semanas > 4"
+                            class="badge rounded-pill bg-blue label-mos-tag">Alto</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row g-3">
+            <div class="col-12 col-lg-6">
+                <div class="chart-card text-center">
+                    <div class="chart-title">Proyección de Stock y Cobertura (Próximas Semanas)</div>
+
+                    <canvas baseChart [data]="coberturaData" [options]="coberturaOptions">
+                    </canvas>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="chart-card text-center">
+                    <div class="chart-title mb-2 fw-semibold text-muted">
+                        Demanda histórica vs. forecast
+                    </div>
+                    <div class="chart-placeholder">
+                        [Placeholder gráfico de líneas]
                     </div>
                 </div>
-
-                <div class="d-flex flex-column justify-content-center gap-2">
-                    <button type="submit" class="btn btn-sm btn-primary">Aplicar filtros</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetear()">Limpiar</button>
-                </div>
-
             </div>
-        </form> -->
-
-<div class="d-flex gap-2" *ngIf="showCharts">
-    <div class="card shadow-sm" style="width: 60%;">
-        <div class="chart-wrap">
-            <canvas baseChart [type]="'line'" [data]="data" [options]="options"></canvas>
         </div>
     </div>
-
-    <div class="card shadow-sm" style="width: 40%;">
-        <div class="chart-wrap">
-            <canvas baseChart [type]="stockChartType" [data]="stockChartData" [options]="stockChartOptions">
-            </canvas>
-        </div>
-    </div>
-
 </div>
+
+
+
 
 
 <div class="card shadow-sm mt-4">
@@ -128,8 +160,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let item of forecast" class="pointer"
-                        [ngClass]="{'table-primary': repuestoSeleccionado === item.repuesto_taller.repuesto.numero_pieza}"
+                    <tr *ngFor="let item of forecast" class="pointer" [ngClass]="{'table-primary': repuesto === item}"
                         (click)="viewDetail(item)">
                         <td class="text-start">
                             <!-- Mismo que stock.component.html -->

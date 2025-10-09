@@ -1,7 +1,8 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Params, Router } from '@angular/router';
-import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartDataset, ChartOptions } from 'chart.js';
 import { debounceTime, distinctUntilChanged, filter, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
+import { ForecastResponse, GraficoCobertura } from '../../../core/models/forecast-response';
 import { ForecastingItem } from '../../../core/models/forecasting-item';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
 import { RepuestosService } from '../../../core/services/repuestos.service';
@@ -21,6 +22,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     tallerId: number = 1;
     loading: boolean = false;
     showCharts: boolean = false;
+    loadingDetails: boolean = false;
 
     forecast: RepuestoStock[] = [];
     page: number = 1;
@@ -35,7 +37,9 @@ export class ForecastingComponent implements OnInit, OnDestroy {
 
     private search$ = new Subject<string>();
 
-    repuestoSeleccionado: string = '';
+    // Detalle
+    repuesto?: RepuestoStock;
+    forecastRepuesto?: ForecastResponse;
 
     constructor(
         private titleService: TitleService,
@@ -52,7 +56,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         this.getQueryParams();
 
         forkJoin({
-            forecast: this.stockService.getForecastingList(this.tallerId, this.page, this.pageSize, this.filtro)
+            forecast: this.stockService.getForecastingList(this.tallerId, this.page, this.pageSize, this.filtro),
         }).subscribe({
             next: ({ forecast }) => {
                 this.forecast = forecast.results.map((i) => this.stockService.procesarRepuestoStock(i));
@@ -75,21 +79,20 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         this.navigationSub = this.router.events
             .pipe(filter((ev) => ev instanceof NavigationStart || ev instanceof NavigationEnd))
             .subscribe((ev) => {
-                // debugger;
-                // if (ev instanceof NavigationStart) {
-                //     const nav = this.router.getCurrentNavigation();
-                //     this.navFromMenu = !!nav?.extras?.state?.['fromMenu'];
-                //     return;
-                // }
-                // if (ev instanceof NavigationEnd) {
-                //     const url = ev.urlAfterRedirects || ev.url;
-                //     if (this.navFromMenu && url.endsWith('/stock')) {
-                //         this.navFromMenu = false;
-                //         this.filtro = { searchText: '' };
-                //         this.page = 1;
-                //         this.cargarPagina(1);
-                //     }
-                // }
+                if (ev instanceof NavigationStart) {
+                    const nav = this.router.getCurrentNavigation();
+                    this.navFromMenu = !!nav?.extras?.state?.['fromMenu'];
+                    return;
+                }
+                if (ev instanceof NavigationEnd) {
+                    const url = ev.urlAfterRedirects || ev.url;
+                    if (this.navFromMenu && url.endsWith('/stock')) {
+                        this.navFromMenu = false;
+                        this.filtro = { searchText: '' };
+                        this.page = 1;
+                        this.cargarPagina(1);
+                    }
+                }
             });
     }
 
@@ -147,19 +150,101 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     }
 
     async viewDetail(item: RepuestoStock) {
-        this.repuestoSeleccionado = item.repuesto_taller.repuesto.numero_pieza;
+        this.loadingDetails = true;
+        this.repuesto = item;
         console.log('detail', item);
 
         try {
-            const res = await firstValueFrom(this.stockService.getRepuestoTallerForecast(this.tallerId, item.repuesto_taller.id_repuesto_taller));
-            console.log("Repuesto taller forecast", res)
-        } catch(error){
-
+            const res = await firstValueFrom(
+                this.stockService.getRepuestoTallerForecast(this.tallerId, item.repuesto_taller.id_repuesto_taller)
+            );
+            console.log('Repuesto taller forecast', res);
+            this.forecastRepuesto = res;
+            this.setCobertura(this.forecastRepuesto.grafico_cobertura);
+            this.loadingDetails = false;
+        } catch (error: any) {
+            this.errorMessage = error?.message ?? 'No se pudo obtener información extra para este repuesto.';
         }
     }
 
     ngOnDestroy(): void {
         this.navigationSub?.unsubscribe();
+    }
+
+    // CHARTS
+    coberturaData: ChartData<'bar' | 'line'> = {
+        labels: [],
+        datasets: [],
+    };
+
+    coberturaOptions: ChartOptions<'bar' | 'line'> = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                title: { display: true, text: 'Stock (unidades)' },
+                beginAtZero: true,
+                border: { display: false },
+                grace: '15%',
+                ticks: {
+                    precision: 0
+                }
+            },
+            y1: {
+                position: 'right',
+                title: { display: true, text: 'Demanda (unidades)' },
+                beginAtZero: true,
+                grid: { drawOnChartArea: false },
+                border: { display: false },
+                grace: '15%',
+                ticks: {
+                    precision: 0
+                }
+            },
+            x: {
+                border: { display: false },
+            },
+        },
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => {
+                        const v = ctx.parsed.y;
+                        const ds = ctx.dataset.label ?? '';
+                        return `${ds}: ${v ?? 0} u.`;
+                    },
+                },
+            },
+        },
+    };
+
+    private setCobertura(gc: GraficoCobertura) {
+        const labels = gc.labels ?? [];
+        const stock = (gc.stock_proyectado ?? []).map((n) => n ?? 0);
+        const demanda = (gc.demanda_proyectada ?? []).map((n) => n ?? 0);
+
+        const stockDs: ChartDataset<'bar'> = {
+            type: 'bar',
+            label: 'Stock Proyectado (u.)',
+            data: stock,
+            borderRadius: 6,
+        };
+
+        const demandaDs: ChartDataset<'line'> = {
+            type: 'line',
+            label: 'Demanda Proyectada (u.)',
+            data: demanda,
+            yAxisID: 'y1',
+            tension: 0.25,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+        };
+
+        this.coberturaData = {
+            labels,
+            datasets: [stockDs, demandaDs],
+        };
     }
 
     /*

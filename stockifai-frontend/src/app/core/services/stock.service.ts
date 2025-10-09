@@ -1,10 +1,11 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, Observable, shareReplay, throwError } from 'rxjs';
 import { Movimiento } from '../models/movimiento';
 import { PagedResponse } from '../models/paged-response';
 import { RepuestoStock } from '../models/repuesto-stock';
 import { RestService } from './rest.service';
+import { ForecastResponse } from '../models/forecast-response';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
@@ -72,10 +73,35 @@ export class StockService {
         return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/forecasting`, params);
     }
 
-    getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number) {
-        return this.restService.get<PagedResponse<RepuestoStock>>(
+    private cache = new Map<string, { obs$: Observable<ForecastResponse>; exp: number }>();
+    private TTL = 60_000; // 1 minuto (ajustá a gusto)
+
+    getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number): Observable<ForecastResponse>{
+        const url = `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`;
+
+        const now = Date.now();
+        const hit = this.cache.get(url);
+
+        if (hit && hit.exp > now) {
+            return hit.obs$; // devolver lo cacheado
+        }
+
+        const obs$ = this.restService.get<ForecastResponse>(url).pipe(
+            shareReplay(1),
+            catchError((err) => {
+                this.cache.delete(url);
+                return throwError(() => err);
+            })
+        );
+
+        this.cache.set(url, { obs$, exp: now + this.TTL });
+        return obs$;
+
+        /*
+        return this.restService.get<ForecastResponse>(
             `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`
         );
+        */
     }
 
     procesarRepuestoStock(item: RepuestoStock): RepuestoStock {
