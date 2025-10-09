@@ -85,3 +85,23 @@ tbody tr:hover {
     padding-right: 4rem !important;
     padding-left: 4rem !important;
 }
+
+.icon-success {
+    color: var(--bs-green);
+}
+
+.icon-danger {
+    color: var(--bs-red);
+}
+
+.trend-icon {
+    font-size: 28px;
+
+    &__success {
+        color: var(--bs-green);
+    }
+
+    &__danger {
+        color: var(--bs-red);
+    }
+}

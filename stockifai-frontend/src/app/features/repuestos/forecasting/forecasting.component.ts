@@ -1,7 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Params, Router } from '@angular/router';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { debounceTime, distinctUntilChanged, filter, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { ForecastingItem } from '../../../core/models/forecasting-item';
+import { RepuestoStock } from '../../../core/models/repuesto-stock';
+import { RepuestosService } from '../../../core/services/repuestos.service';
+import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
 
 type ChartKind = 'line';
@@ -12,23 +16,153 @@ type BarChartKind = 'bar';
     templateUrl: './forecasting.component.html',
     styleUrl: './forecasting.component.scss',
 })
-export class ForecastingComponent implements OnInit {
-    filtro: {
-        repuesto: string;
-        fechaDesde: string;
-        fechaHasta: string;
-        marca: string | null;
-        modelo: string | null;
-        categoria: string | null;
-    } = {
-        repuesto: '',
-        fechaDesde: '',
-        fechaHasta: '',
-        marca: null,
-        modelo: null,
-        categoria: null,
-    };
+export class ForecastingComponent implements OnInit, OnDestroy {
+    filtro: { searchText: string } = { searchText: '' };
+    tallerId: number = 1;
+    loading: boolean = false;
+    showCharts: boolean = false;
 
+    forecast: RepuestoStock[] = [];
+    page: number = 1;
+    pageSize: number = 10;
+    totalPages: number = 0;
+    errorMessage: string = '';
+
+    @ViewChild('searchInput') searchInput!: ElementRef;
+
+    private navigationSub?: Subscription;
+    navFromMenu: boolean = false;
+
+    private search$ = new Subject<string>();
+
+    repuestoSeleccionado: string = '';
+
+    constructor(
+        private titleService: TitleService,
+        private stockService: StockService,
+        private repuestosService: RepuestosService,
+        private route: ActivatedRoute,
+        private router: Router
+    ) {
+        this.titleService.setTitle('Forecasting');
+    }
+
+    ngOnInit(): void {
+        this.loading = true;
+        this.getQueryParams();
+
+        forkJoin({
+            forecast: this.stockService.getForecastingList(this.tallerId, this.page, this.pageSize, this.filtro)
+        }).subscribe({
+            next: ({ forecast }) => {
+                this.forecast = forecast.results.map((i) => this.stockService.procesarRepuestoStock(i));
+                this.totalPages = Math.ceil(forecast.count / this.pageSize);
+                this.loading = false;
+                this.errorMessage = '';
+            },
+            error: (error) => {
+                this.errorMessage = error?.message ?? 'Error al cargar';
+                this.loading = false;
+            },
+        });
+
+        this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
+            this.page = 1;
+            this.filtro.searchText = text;
+            this.cargarPagina(this.page);
+        });
+
+        this.navigationSub = this.router.events
+            .pipe(filter((ev) => ev instanceof NavigationStart || ev instanceof NavigationEnd))
+            .subscribe((ev) => {
+                // debugger;
+                // if (ev instanceof NavigationStart) {
+                //     const nav = this.router.getCurrentNavigation();
+                //     this.navFromMenu = !!nav?.extras?.state?.['fromMenu'];
+                //     return;
+                // }
+                // if (ev instanceof NavigationEnd) {
+                //     const url = ev.urlAfterRedirects || ev.url;
+                //     if (this.navFromMenu && url.endsWith('/stock')) {
+                //         this.navFromMenu = false;
+                //         this.filtro = { searchText: '' };
+                //         this.page = 1;
+                //         this.cargarPagina(1);
+                //     }
+                // }
+            });
+    }
+
+    onSearchChange(text: string) {
+        this.search$.next(text);
+    }
+
+    filtrar(): void {
+        console.log('Aplicando filtros:', this.filtro);
+    }
+
+    resetear(): void {
+        this.filtro = { searchText: '' };
+    }
+
+    private cargarPagina(p: number) {
+        if (p < 1 || (this.totalPages > 0 && p > this.totalPages)) return;
+
+        this.page = p;
+
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: this.buildQueryParams(),
+            replaceUrl: true,
+        });
+
+        this.loading = true;
+        this.stockService.getForecastingList(this.tallerId, p, this.pageSize, this.filtro).subscribe({
+            next: (resp) => {
+                this.forecast = resp.results.map((i) => this.stockService.procesarRepuestoStock(i));
+                this.totalPages = Math.ceil(resp.count / this.pageSize);
+                this.page = p;
+                this.loading = false;
+                this.errorMessage = '';
+            },
+            error: (err) => {
+                this.errorMessage = err?.message ?? 'Error al cargar';
+                this.loading = false;
+            },
+        });
+    }
+
+    private buildQueryParams(): Params {
+        const qp: any = {};
+
+        if (this.filtro.searchText?.trim()) qp.search = this.filtro.searchText.trim();
+
+        return qp;
+    }
+
+    private getQueryParams() {
+        const qp = this.route.snapshot.queryParamMap;
+
+        this.filtro.searchText = qp.get('search') ?? this.filtro.searchText;
+    }
+
+    async viewDetail(item: RepuestoStock) {
+        this.repuestoSeleccionado = item.repuesto_taller.repuesto.numero_pieza;
+        console.log('detail', item);
+
+        try {
+            const res = await firstValueFrom(this.stockService.getRepuestoTallerForecast(this.tallerId, item.repuesto_taller.id_repuesto_taller));
+            console.log("Repuesto taller forecast", res)
+        } catch(error){
+
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.navigationSub?.unsubscribe();
+    }
+
+    /*
     marcas: string[] = ['Ford', 'Chevrolet', 'Toyota'];
     modelos: string[] = [];
     categorias: string[] = ['Motor', 'Suspensión', 'Frenos'];
@@ -39,63 +173,12 @@ export class ForecastingComponent implements OnInit {
         Toyota: ['Corolla', 'Hilux'],
     };
 
-    constructor(private titleService: TitleService, private route: ActivatedRoute, private router: Router) {
-        this.titleService.setTitle('Forecasting');
-    }
-
-    ngOnInit(): void {
-        this.getQueryParams();
-    }
-
     onMarcaChange(): void {
         const marca = this.filtro.marca;
         this.modelos = marca ? this.modelosPorMarca[marca] || [] : [];
         this.filtro.modelo = null;
-    }
-
-    filtrar(): void {
-        console.log('Aplicando filtros:', this.filtro);
-    }
-
-    resetear(): void {
-        this.filtro = {
-            repuesto: '',
-            fechaDesde: '',
-            fechaHasta: '',
-            marca: null,
-            modelo: null,
-            categoria: null,
-        };
-        this.modelos = [];
-    }
-
-    private buildQueryParams(): Params {
-        const qp: any = {};
-
-        if (this.filtro.repuesto?.trim()) qp.search = this.filtro.repuesto.trim();
-        if (this.filtro.marca) qp.marca = this.filtro.marca;
-        if (this.filtro.modelo) qp.modelo = this.filtro.modelo;
-        if (this.filtro.categoria) qp.categoria = this.filtro.categoria;
-        if (this.filtro.fechaDesde) qp.desde = this.filtro.fechaDesde;
-        if (this.filtro.fechaHasta) qp.hasta = this.filtro.fechaHasta;
-
-        return qp;
-    }
-
-    private getQueryParams() {
-        const qp = this.route.snapshot.queryParamMap;
-
-        this.filtro.repuesto = qp.get('search') ?? this.filtro.repuesto;
-        this.filtro.marca = qp.get('marca') ?? this.filtro.marca;
-        this.filtro.modelo = qp.get('modelo') ?? this.filtro.modelo;
-        this.filtro.categoria = qp.get('categoria') ?? this.filtro.categoria;
-        this.filtro.fechaDesde = qp.get('desde') ?? this.filtro.fechaDesde;
-        this.filtro.fechaHasta = qp.get('hasta') ?? this.filtro.fechaHasta;
-    }
-
-    goToDetail(item: any) {
-        console.log('detail', item);
-    }
+    } 
+    */
 
     resultados: ForecastingItem[] = [
         {

@@ -1,7 +1,28 @@
-<div class="card shadow-sm mb-2">
+<div class="card shadow-sm mb-4">
     <div class="card-body p-3">
+        <form>
+            <div class="d-flex flex-wrap justify-content-between gap-4 mb-4 mt-4">
+                <div class="flex-grow-1">
+                    <div class="row gy-1">
+                        <div class="col-12 mb-3">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                                <input #searchInput type="text" class="form-control" id="repuesto" name="repuesto"
+                                    [(ngModel)]="filtro.searchText" placeholder="Buscar por nombre, descripción, SKU..."
+                                    (ngModelChange)="onSearchChange($event)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
-        <form (ngSubmit)="filtrar()">
+<!-- Filtros avanzados - No los estamos usando actualmente -->
+<!-- <form (ngSubmit)="filtrar()">
             <div class="d-flex flex-wrap justify-content-between gap-4">
 
                 <div class="flex-grow-1">
@@ -49,11 +70,9 @@
                 </div>
 
             </div>
-        </form>
-    </div>
-</div>
+        </form> -->
 
-<div class="d-flex gap-2">
+<div class="d-flex gap-2" *ngIf="showCharts">
     <div class="card shadow-sm" style="width: 60%;">
         <div class="chart-wrap">
             <canvas baseChart [type]="'line'" [data]="data" [options]="options"></canvas>
@@ -72,33 +91,100 @@
 
 <div class="card shadow-sm mt-4">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover align-middle">
-                <thead class="table-light">
+
+        <div *ngIf="loading" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <span>Cargando…</span>
+        </div>
+
+        <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            <span class="text-sm">{{ errorMessage }}</span>
+        </div>
+
+        <div class="table-responsive" *ngIf="!loading">
+            <table class="table table-bordered table-striped table-hover align-middle text-center">
+                <thead class="table-light align-middle">
                     <tr>
-                        <th>Nombre</th>
-                        <th>SKU</th>
-                        <th>Categoría</th>
-                        <th>Dias de stock restantes</th>
+                        <th rowspan="2" style="width: 30%;" class="text-start">Repuesto</th>
+                        <th rowspan="2">Dias de stock <br>
+                            <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                title="Dias restantes."></i>
+                        </th>
+                        <th rowspan="2" class="text-center">
+                            MOS <br>
+                            <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                                title="Indica cuántas semanas de demanda futura se pueden cubrir con el stock actual."></i>
+                        </th>
+                        <th colspan="2">Cantidad vendida</th>
+                        <th colspan="3">Forecast</th>
+                        <th rowspan="2" style="width: 50px"></th>
+                    </tr>
+                    <tr>
                         <th>Mes anterior</th>
                         <th>Mes actual</th>
-                        <th>Proyeccion a 1 semana</th>
-                        <th>Proyeccion a 1 mes</th>
-                        <th style="width: 50px"></th>
+                        <th>a 1 semana</th>
+                        <th>a 1 mes</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let item of resultados" [ngClass]="{'table-primary': item.sku === 'SKU001'}">
-                        <td>{{ item.nombre }}</td>
-                        <td>{{ item.sku }}</td>
-                        <td>{{ item.categoria }}</td>
-                        <td>4</td>
-                        <td>{{ item.stock }}</td>
-                        <td>{{ item.prediccion }}</td>
-                        <td>17</td>
-                        <td>20</td>
+                    <tr *ngFor="let item of forecast" class="pointer"
+                        [ngClass]="{'table-primary': repuestoSeleccionado === item.repuesto_taller.repuesto.numero_pieza}"
+                        (click)="viewDetail(item)">
+                        <td class="text-start">
+                            <!-- Mismo que stock.component.html -->
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold">{{ item.repuesto_taller.repuesto.numero_pieza }}</span>
+
+                                    <span *ngIf="item.repuesto_taller.frecuencia as freq">
+                                        <span class="badge rounded-pill" [ngClass]="(freq | frecuenciaRotacion).css">
+                                            {{ (freq | frecuenciaRotacion).label }}
+                                        </span>
+                                    </span>
+
+                                </div>
+                                <span class="text-muted">{{ item.repuesto_taller.repuesto.descripcion }}</span>
+                            </div>
+                        </td>
+
+                        <td>9999</td>
+
+                        <td class="text-center">
+                            <!-- Mismo que stock.component.html -->
+                            <span style="font-size: 0.8rem;" *ngIf="!item.mos_en_semanas" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom" title="Sin demanda proyectada.">N/A</span>
+                            <span class="fw-bold" *ngIf="item.mos_en_semanas">
+                                {{ item.mos_en_semanas | number:'1.1-2' }}
+                                <br>
+                                <span *ngIf="item.mos_en_semanas < 1"
+                                    class="badge rounded-pill bg-red mos-tag">Critico</span>
+                                <span *ngIf="item.mos_en_semanas > 1 && item.mos_en_semanas < 2"
+                                    class="badge rounded-pill bg-orange mos-tag">Bajo</span>
+                                <span *ngIf="item.mos_en_semanas > 4"
+                                    class="badge rounded-pill bg-blue mos-tag">Alto</span>
+                            </span>
+                        </td>
+
+                        <td>9999</td>
+                        <td>9999</td>
+
+                        <td>{{item.repuesto_taller.pred_1}}</td>
+                        <td>{{item.repuesto_taller.pred_4}}</td>
+
+
+                        <td>
+                            <i *ngIf="item.repuesto_taller && item.repuesto_taller.pred_1! > item.mes_actual!"
+                                class="fa-solid fa-arrow-trend-up trend-icon trend-icon__success"
+                                title="Tendencia hacia arriba"></i>
+                            <i *ngIf="item.repuesto_taller && item.repuesto_taller.pred_1! < item.mes_actual!"
+                                class="fa-solid fa-arrow-trend-down trend-icon trend-icon__danger"
+                                title="Tendencia hacia abajo"></i>
+                            <span *ngIf="item.repuesto_taller?.pred_1 == item.mes_actual">-</span>
+                        </td>
+
                         <td class="text-center" style="width: 50px;">
-                            <button class="btn btn-link p-0" (click)="goToDetail(item)" data-bs-toggle="tooltip"
+                            <button class="btn btn-link p-0" (click)="viewDetail(item)" data-bs-toggle="tooltip"
                                 data-bs-placement="top" title="Ver detalle">
                                 <i class="fa-solid fa-magnifying-glass-chart"></i>
                             </button>

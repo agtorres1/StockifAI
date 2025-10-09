@@ -7,6 +7,9 @@ export interface RepuestoStock {
     depositos: StockDepositoDetalle[];
     mos_en_semanas?: number;
 
-    // Para front
+    // FRONTEND
     estaBajoMinimo?: boolean;
+
+    mes_anterior?: number;
+    mes_actual?: number;
 }

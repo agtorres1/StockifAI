@@ -1,15 +1,22 @@
-.card {
-    background: #fff;
-    border: 1px solid #e9eef3;
-    border-radius: 16px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-    padding: 16px 20px;
-}
 .chart-wrap {
     width: 100%;
     height: 400px;
 }
 
 .row-selected {
-    
+}
+
+.table-light th {
+    vertical-align: middle !important;
+}
+
+thead.table-light th {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+thead.table-light tr:nth-child(2) th {
+    line-height: 1.1;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }

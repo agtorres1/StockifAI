@@ -51,6 +51,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        console.log("stock component")
         this.loading = true;
         this.getQueryParams();
 
@@ -59,7 +60,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
             categorias: this.repuestosService.getCategorias(),
         }).subscribe({
             next: ({ stock, categorias }) => {
-                this.stock = stock.results.map((i) => this.procesarRepuestoStock(i));
+                this.stock = stock.results.map((i) => this.stockService.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(stock.count / this.pageSize);
                 this.categorias = categorias;
                 this.loading = false;
@@ -148,7 +149,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loading = true;
         this.stockService.getStock(this.tallerId, p, this.pageSize, this.filtro).subscribe({
             next: (resp) => {
-                this.stock = resp.results.map((i) => this.procesarRepuestoStock(i));
+                this.stock = resp.results.map((i) => this.stockService.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(resp.count / this.pageSize);
                 this.page = p;
                 this.loading = false;
@@ -159,14 +160,6 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.loading = false;
             },
         });
-    }
-
-    private procesarRepuestoStock(item: RepuestoStock): RepuestoStock {
-        const min = item.repuesto_taller.cantidad_minima;
-        if (min != null) {
-            item.estaBajoMinimo = item.stock_total < min;
-        }
-        return item;
     }
 
     filtrar() {

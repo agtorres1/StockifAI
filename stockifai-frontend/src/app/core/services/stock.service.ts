@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Movimiento } from '../models/movimiento';
 import { PagedResponse } from '../models/paged-response';
-import { RestService } from './rest.service';
 import { RepuestoStock } from '../models/repuesto-stock';
+import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
@@ -14,7 +14,7 @@ export class StockService {
         tallerId: number,
         page = 1,
         pageSize = 10,
-        filtro?: { idDeposito: string; searchText: string, desde?: string, hasta?: string }
+        filtro?: { idDeposito: string; searchText: string; desde?: string; hasta?: string }
     ): Observable<PagedResponse<Movimiento>> {
         let params = new HttpParams().set('page', page).set('page_size', pageSize);
 
@@ -49,13 +49,41 @@ export class StockService {
         tallerId: number,
         page = 1,
         pageSize = 10,
-        filtro?: { searchText: string, idCategoria: string }
+        filtro?: { searchText: string; idCategoria?: string }
     ): Observable<PagedResponse<RepuestoStock>> {
         let params = new HttpParams().set('page', page).set('page_size', pageSize);
-        
+
         if (filtro?.searchText) params = params.set('q', filtro.searchText);
         if (filtro?.idCategoria) params = params.set('categoria_id', filtro.idCategoria);
 
         return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/stock`, params);
+    }
+
+    getForecastingList(
+        tallerId: number,
+        page = 1,
+        pageSize = 10,
+        filtro?: { searchText: string }
+    ): Observable<PagedResponse<RepuestoStock>> {
+        let params = new HttpParams().set('page', page).set('page_size', pageSize);
+
+        if (filtro?.searchText) params = params.set('q', filtro.searchText);
+
+        return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/forecasting`, params);
+    }
+
+    getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number) {
+        return this.restService.get<PagedResponse<RepuestoStock>>(
+            `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`
+        );
+    }
+
+    procesarRepuestoStock(item: RepuestoStock): RepuestoStock {
+        const min = item.repuesto_taller.cantidad_minima;
+        if (min != null) {
+            item.estaBajoMinimo = item.stock_total < min;
+        }
+        item.mes_actual = 0; // TODO - SACARLO, HARDCODEADO PARA PROBAR
+        return item;
     }
 }
