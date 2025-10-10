@@ -1,15 +1,82 @@
-.card {
-    background: #fff;
-    border: 1px solid #e9eef3;
-    border-radius: 16px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-    padding: 16px 20px;
-}
 .chart-wrap {
     width: 100%;
     height: 400px;
 }
 
-.row-selected {
-    
+.table-light th {
+    vertical-align: middle !important;
+}
+
+thead.table-light th {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+thead.table-light tr:nth-child(2) th {
+    line-height: 1.1;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.kpi {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    position: relative;
+}
+
+.kpi-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.kpi-value {
+    font-weight: 600;
+    font-size: 1.5rem;
+    position: relative;
+}
+
+.chart-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    canvas {
+        height: 350px !important;
+    }
+}
+
+.chart-placeholder {
+    color: #adb5bd;
+    font-size: 0.9rem;
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 2rem;
+}
+
+.repuesto-detalle {
+    &__titulo {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+}
+
+.label-mos-tag {
+    position: absolute;
+    transform: translateX(25%);
+    font-size: 0.65rem;
+    margin-top: 10px;
+}
+
+.chart-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    text-align: center;
 }

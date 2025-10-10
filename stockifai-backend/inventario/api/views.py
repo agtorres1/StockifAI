@@ -24,6 +24,10 @@ from .serializers import (
     StockDepositoDetalleSerializer,
     DepositoSerializer,
 )
+
+MESES_ABREV = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+               "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+
 try:
     from django.utils import timezone
     # Helper function para hacer las fechas 'aware' si estamos en Django
@@ -336,7 +340,7 @@ class DetalleForecastingView(APIView):
 
         for i in range(self.NUM_FORECAST_GRAFICO):
             label_date = start_of_next_week + timedelta(weeks=i)
-            forecast_labels.append(label_date.strftime("%d/%m"))
+            forecast_labels.append(f"{label_date.day} {MESES_ABREV[label_date.month - 1]}")
 
         grafico_demanda_payload = {
             "historico": historico_chart_data,
@@ -374,7 +378,7 @@ class DetalleForecastingView(APIView):
         for i in range(num_semanas_cobertura):
             label_date = start_date_cobertura + timedelta(weeks=i)
             # Formato de etiqueta: DD/MM (ej: 01/10)
-            cobertura_labels.append(label_date.strftime("%d/%m"))
+            cobertura_labels.append(f"{label_date.day} {MESES_ABREV[label_date.month - 1]}")
 
         grafico_cobertura_payload = {
             "stock_proyectado": stock_proyectado,
@@ -458,7 +462,7 @@ def get_historical_demand(repuesto_taller_id: int, num_weeks: int = 16) -> Dict[
         final_historical_data.append(demand_value)
 
         # Formato de etiqueta: DD/MM (ej: 01/10)
-        final_historical_labels.append(current_week_start.strftime("%d/%m"))
+        final_historical_labels.append(f"{current_week_start.day} {MESES_ABREV[current_week_start.month - 1]}")
 
         # Mueve a la siguiente semana (SOLO 1 semana)
         current_week_start += timedelta(weeks=1)

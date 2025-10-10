@@ -5,7 +5,6 @@ import { Categoria } from '../../../core/models/categoria';
 import { Deposito } from '../../../core/models/deposito';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
 import { RepuestoTaller } from '../../../core/models/repuesto-taller';
-import { Taller } from '../../../core/models/taller';
 import { RepuestosService } from '../../../core/services/repuestos.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
@@ -17,8 +16,6 @@ import { TitleService } from '../../../core/services/title.service';
 })
 export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     open = new Set<number>();
-
-    repuestos = REPUESTOS_STOCK_MOCK;
 
     filtro: any = { idCategoria: '', searchText: '' };
 
@@ -51,6 +48,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        console.log('stock component');
         this.loading = true;
         this.getQueryParams();
 
@@ -59,7 +57,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
             categorias: this.repuestosService.getCategorias(),
         }).subscribe({
             next: ({ stock, categorias }) => {
-                this.stock = stock.results.map((i) => this.procesarRepuestoStock(i));
+                this.stock = stock.results.map((i) => this.stockService.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(stock.count / this.pageSize);
                 this.categorias = categorias;
                 this.loading = false;
@@ -115,6 +113,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
             queryParams: {
                 search: repuestoStock.repuesto.numero_pieza,
                 categoria: this.filtro.idCategoria || null,
+                viewDetails: true
             },
         });
     }
@@ -148,7 +147,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
         this.loading = true;
         this.stockService.getStock(this.tallerId, p, this.pageSize, this.filtro).subscribe({
             next: (resp) => {
-                this.stock = resp.results.map((i) => this.procesarRepuestoStock(i));
+                this.stock = resp.results.map((i) => this.stockService.procesarRepuestoStock(i));
                 this.totalPages = Math.ceil(resp.count / this.pageSize);
                 this.page = p;
                 this.loading = false;
@@ -161,14 +160,6 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
-    private procesarRepuestoStock(item: RepuestoStock): RepuestoStock {
-        const min = item.repuesto_taller.cantidad_minima;
-        if (min != null) {
-            item.estaBajoMinimo = item.stock_total < min;
-        }
-        return item;
-    }
-
     filtrar() {
         this.page = 1;
         this.cargarPagina(this.page);
@@ -177,9 +168,11 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     goPreviousPage() {
         this.cargarPagina(this.page - 1);
     }
+
     goNextPage() {
         this.cargarPagina(this.page + 1);
     }
+
     goToPage(p: number) {
         this.cargarPagina(p);
     }
@@ -238,68 +231,3 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!Number.isNaN(ps) && ps > 0) this.pageSize = ps;
     }
 }
-
-export const taller1: Taller = {
-    id: 501,
-    nombre: 'Taller A',
-    direccion: '',
-    telefono: '',
-    email: '',
-    fecha_creacion: '',
-    stock_inicial_cargado: false,
-};
-
-export const REPUESTOS_STOCK_MOCK: RepuestoStock[] = [
-    {
-        repuesto_taller: {
-            id_repuesto_taller: 1001,
-            repuesto: {
-                numero_pieza: 'FO-123',
-                descripcion: 'Filtro de aceite',
-                estado: 'activo',
-            },
-            taller: taller1,
-            precio: 12000,
-            costo: 8000,
-            original: true,
-            cantidad_minima: 20,
-        },
-        stock_total: 25,
-        depositos: [
-            {
-                deposito: { id: 9001, nombre: 'Depósito 1' },
-                cantidad: 10,
-            },
-            {
-                deposito: { id: 9002, nombre: 'Depósito 2' },
-                cantidad: 15,
-            },
-        ],
-    },
-    {
-        repuesto_taller: {
-            id_repuesto_taller: 1002,
-            repuesto: {
-                numero_pieza: 'PF-456',
-                descripcion: 'Pastillas de freno',
-                estado: 'activo',
-            },
-            taller: taller1,
-            precio: 18000,
-            costo: 13000,
-            original: false,
-            cantidad_minima: 120,
-        },
-        stock_total: 105,
-        depositos: [
-            {
-                deposito: { id: 9001, nombre: 'Depósito 1' },
-                cantidad: 100,
-            },
-            {
-                deposito: { id: 9002, nombre: 'Depósito 2' },
-                cantidad: 15,
-            },
-        ],
-    },
-];

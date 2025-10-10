@@ -21,9 +21,6 @@ urlpatterns = [
     path('logout/', logout, name='logout'),
     path("callback/", callback, name="callback"),
     path("register/", register_api, name="register"),
-
-#path("talleres/<int:taller_id>", TallerView.as_view(), name="taller-info")
-
-
+    path("taller-data/<int:taller_id>", TallerView.as_view(), name="taller-info"),
     path("", include(router.urls)),
 ]
