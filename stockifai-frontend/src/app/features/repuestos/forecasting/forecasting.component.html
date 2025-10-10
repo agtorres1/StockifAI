@@ -105,12 +105,8 @@
 
             <div class="col-12 col-lg-6">
                 <div class="chart-card text-center">
-                    <div class="chart-title mb-2 fw-semibold text-muted">
-                        Demanda histórica vs. forecast
-                    </div>
-                    <div class="chart-placeholder">
-                        [Placeholder gráfico de líneas]
-                    </div>
+                    <div class="chart-title">Demanda histórica vs. Forecast</div>
+                    <canvas baseChart [data]="demandaData" [options]="demandaOptions" [type]="'line'"></canvas>
                 </div>
             </div>
         </div>
@@ -179,7 +175,7 @@
                             </div>
                         </td>
 
-                        <td>9999</td>
+                        <td>{{getRandom()}}</td>
 
                         <td class="text-center">
                             <!-- Mismo que stock.component.html -->
@@ -197,8 +193,8 @@
                             </span>
                         </td>
 
-                        <td>9999</td>
-                        <td>9999</td>
+                        <td>{{item.repuesto_taller.pred_1}}</td>
+                        <td>{{item.repuesto_taller.pred_4}}</td>
 
                         <td>{{item.repuesto_taller.pred_1}}</td>
                         <td>{{item.repuesto_taller.pred_4}}</td>
@@ -221,7 +217,7 @@
                             </button>
                         </td>
                     </tr>
-                    <tr *ngIf="resultados.length === 0">
+                    <tr *ngIf="forecast.length === 0">
                         <td colspan="8" class="text-center text-muted py-3">No hay resultados para mostrar.</td>
                     </tr>
                 </tbody>
