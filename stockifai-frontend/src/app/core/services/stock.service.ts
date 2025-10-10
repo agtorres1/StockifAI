@@ -1,11 +1,11 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, shareReplay, throwError } from 'rxjs';
+import { ForecastResponse } from '../models/forecast-response';
 import { Movimiento } from '../models/movimiento';
 import { PagedResponse } from '../models/paged-response';
 import { RepuestoStock } from '../models/repuesto-stock';
 import { RestService } from './rest.service';
-import { ForecastResponse } from '../models/forecast-response';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
@@ -76,7 +76,7 @@ export class StockService {
     private cache = new Map<string, { obs$: Observable<ForecastResponse>; exp: number }>();
     private TTL = 60_000; // 1 minuto (ajustá a gusto)
 
-    getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number): Observable<ForecastResponse>{
+    getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number): Observable<ForecastResponse> {
         const url = `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`;
 
         const now = Date.now();
@@ -109,7 +109,22 @@ export class StockService {
         if (min != null) {
             item.estaBajoMinimo = item.stock_total < min;
         }
-        item.mes_actual = 0; // TODO - SACARLO, HARDCODEADO PARA PROBAR
+
+        const repuesto = item.repuesto_taller;
+        repuesto.pred_mensual =
+            (repuesto.pred_1 ?? 0) + (repuesto.pred_2 ?? 0) + (repuesto.pred_3 ?? 0) + (repuesto.pred_4 ?? 0);
+
+        if (repuesto.pred_mensual > 0) {
+            repuesto.promedio_pred_mensual = repuesto.pred_mensual / 4;
+            if (repuesto.pred_1 && repuesto.promedio_pred_mensual > repuesto.pred_1) {
+                repuesto.tendencia = 'ALTA';
+            } else if (repuesto.pred_1 && repuesto.promedio_pred_mensual < repuesto.pred_1) {
+                repuesto.tendencia = 'BAJA';
+            } else {
+                repuesto.tendencia = 'ESTABLE';
+            }
+        }
+
         return item;
     }
 }

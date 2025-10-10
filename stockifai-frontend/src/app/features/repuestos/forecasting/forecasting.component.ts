@@ -1,9 +1,8 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Params, Router } from '@angular/router';
-import { ChartConfiguration, ChartData, ChartDataset, ChartOptions } from 'chart.js';
+import { ChartData, ChartDataset, ChartOptions } from 'chart.js';
 import { debounceTime, distinctUntilChanged, filter, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { ForecastResponse, GraficoCobertura, GraficoDemanda } from '../../../core/models/forecast-response';
-import { ForecastingItem } from '../../../core/models/forecasting-item';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
 import { RepuestosService } from '../../../core/services/repuestos.service';
 import { StockService } from '../../../core/services/stock.service';
@@ -23,6 +22,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     loading: boolean = false;
     showCharts: boolean = false;
     loadingDetails: boolean = false;
+    loadWithDetails: boolean = false;
 
     forecast: RepuestoStock[] = [];
     page: number = 1;
@@ -31,6 +31,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     errorMessage: string = '';
 
     @ViewChild('searchInput') searchInput!: ElementRef;
+    @ViewChild('detalleRepuesto') detalleRepuesto?: ElementRef<HTMLDivElement>;
 
     private navigationSub?: Subscription;
     navFromMenu: boolean = false;
@@ -63,6 +64,10 @@ export class ForecastingComponent implements OnInit, OnDestroy {
                 this.totalPages = Math.ceil(forecast.count / this.pageSize);
                 this.loading = false;
                 this.errorMessage = '';
+
+                if (this.loadWithDetails && this.forecast.length === 1) {
+                    this.viewDetail(this.forecast[0]);
+                }
             },
             error: (error) => {
                 this.errorMessage = error?.message ?? 'Error al cargar';
@@ -86,11 +91,12 @@ export class ForecastingComponent implements OnInit, OnDestroy {
                 }
                 if (ev instanceof NavigationEnd) {
                     const url = ev.urlAfterRedirects || ev.url;
-                    if (this.navFromMenu && url.endsWith('/stock')) {
+                    if (this.navFromMenu && url.endsWith('/forecasting')) {
                         this.navFromMenu = false;
                         this.filtro = { searchText: '' };
                         this.page = 1;
                         this.cargarPagina(1);
+                        this.repuesto = undefined;
                     }
                 }
             });
@@ -98,10 +104,6 @@ export class ForecastingComponent implements OnInit, OnDestroy {
 
     onSearchChange(text: string) {
         this.search$.next(text);
-    }
-
-    filtrar(): void {
-        console.log('Aplicando filtros:', this.filtro);
     }
 
     resetear(): void {
@@ -135,10 +137,6 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         });
     }
 
-    getRandom() {
-        return Math.floor(Math.random() * 3) + 1;
-    }
-
     private buildQueryParams(): Params {
         const qp: any = {};
 
@@ -151,29 +149,82 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         const qp = this.route.snapshot.queryParamMap;
 
         this.filtro.searchText = qp.get('search') ?? this.filtro.searchText;
+        this.loadWithDetails = qp.get('viewDetails') === 'true';
     }
 
     async viewDetail(item: RepuestoStock) {
         this.loadingDetails = true;
         this.repuesto = item;
-        console.log('detail', item);
+
+        this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { search: item.repuesto_taller.repuesto.numero_pieza, viewDetails: true },
+            replaceUrl: true,
+        });
+
+        this.detalleRepuesto?.nativeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
 
         try {
             const res = await firstValueFrom(
                 this.stockService.getRepuestoTallerForecast(this.tallerId, item.repuesto_taller.id_repuesto_taller)
             );
-            console.log('Repuesto taller forecast', res);
             this.forecastRepuesto = res;
             this.setCobertura(this.forecastRepuesto.grafico_cobertura);
             this.setDemanda(this.forecastRepuesto.grafico_demanda);
             this.loadingDetails = false;
         } catch (error: any) {
             this.errorMessage = error?.message ?? 'No se pudo obtener información extra para este repuesto.';
+            this.loadingDetails = false;
         }
+    }
+
+    closeDetail() {
+        this.repuesto = undefined;
     }
 
     ngOnDestroy(): void {
         this.navigationSub?.unsubscribe();
+    }
+
+    goPreviousPage() {
+        this.cargarPagina(this.page - 1);
+    }
+
+    goNextPage() {
+        this.cargarPagina(this.page + 1);
+    }
+
+    goToPage(p: number) {
+        this.cargarPagina(p);
+    }
+
+    onPageSizeChange(size: number) {
+        this.pageSize = +size;
+        this.cargarPagina(1);
+    }
+
+    get paginationItems(): Array<number | '…'> {
+        const windowSize = 2;
+        const total = this.totalPages ?? 0;
+        const current = Math.min(Math.max(this.page ?? 1, 1), Math.max(total, 1));
+
+        if (total <= 7) {
+            return Array.from({ length: total }, (_, i) => i + 1);
+        }
+
+        const left = Math.max(2, current - windowSize);
+        const right = Math.min(total - 1, current + windowSize);
+
+        const items: Array<number | '…'> = [1];
+        if (left > 2) items.push('…');
+        for (let p = left; p <= right; p++) items.push(p);
+        if (right < total - 1) items.push('…');
+        items.push(total);
+
+        return items;
     }
 
     // GRAFICO DE COBERTURA
@@ -187,19 +238,8 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         maintainAspectRatio: false,
         scales: {
             y: {
-                title: { display: true, text: 'Stock (unidades)' },
+                title: { display: true, text: 'Unidades' },
                 beginAtZero: true,
-                border: { display: false },
-                grace: '15%',
-                ticks: {
-                    precision: 0,
-                },
-            },
-            y1: {
-                position: 'right',
-                title: { display: true, text: 'Demanda (unidades)' },
-                beginAtZero: true,
-                grid: { drawOnChartArea: false },
                 border: { display: false },
                 grace: '15%',
                 ticks: {
@@ -231,17 +271,17 @@ export class ForecastingComponent implements OnInit, OnDestroy {
 
         const stockDs: ChartDataset<'bar'> = {
             type: 'bar',
-            label: 'Stock Proyectado (u.)',
+            label: 'Stock Proyectado',
             data: stock,
             borderRadius: 6,
         };
 
         const demandaDs: ChartDataset<'line'> = {
             type: 'line',
-            label: 'Demanda Proyectada (u.)',
+            label: 'Demanda Proyectada',
             data: demanda,
-            yAxisID: 'y1',
             tension: 0.25,
+            borderWidth: 2,
             pointRadius: 3,
             pointHoverRadius: 5,
         };
@@ -271,9 +311,6 @@ export class ForecastingComponent implements OnInit, OnDestroy {
                     precision: 0,
                 },
             },
-            x: {
-                title: { display: true, text: 'Semanas' },
-            },
         },
         plugins: {
             legend: { position: 'top' },
@@ -295,7 +332,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         const split = g.splitIndex ?? hist.length;
 
         this.demandaData = {
-            labels,
+            labels: g.labels,
             datasets: [
                 {
                     label: 'Demanda Histórica',
@@ -320,22 +357,4 @@ export class ForecastingComponent implements OnInit, OnDestroy {
             ],
         };
     }
-
-    /*
-    marcas: string[] = ['Ford', 'Chevrolet', 'Toyota'];
-    modelos: string[] = [];
-    categorias: string[] = ['Motor', 'Suspensión', 'Frenos'];
-
-    modelosPorMarca: { [marca: string]: string[] } = {
-        Ford: ['Focus', 'Fiesta'],
-        Chevrolet: ['Cruze', 'Onix'],
-        Toyota: ['Corolla', 'Hilux'],
-    };
-
-    onMarcaChange(): void {
-        const marca = this.filtro.marca;
-        this.modelos = marca ? this.modelosPorMarca[marca] || [] : [];
-        this.filtro.modelo = null;
-    } 
-    */
 }

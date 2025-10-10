@@ -21,13 +21,9 @@
     </div>
 </div>
 
-<div *ngIf="loadingDetails" class="alert alert-info d-flex justify-content-center align-items-center m-2 p-2">
-    <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
-    <span>Cargando detalles...</span>
-</div>
-
 
 <!-- SECCIÓN DETALLE REPUESTO -->
+<div #detalleRepuesto></div>
 <div *ngIf="repuesto" class="card shadow-sm mb-4 repuesto-detalle">
     <div class="card-body pb-4">
         <!-- Header -->
@@ -44,10 +40,15 @@
                 </div>
             </div>
             <div>
-                <button class="btn btn-outline-dark btn-sm" (click)="repuesto = undefined">
+                <button class="btn btn-outline-dark btn-sm" (click)="closeDetail()">
                     <i class="fa fa-times me-1"></i>Cerrar
                 </button>
             </div>
+        </div>
+
+        <div *ngIf="loadingDetails" class="alert alert-info d-flex justify-content-center align-items-center m-4 p-2">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <span>Cargando detalles...</span>
         </div>
 
         <!-- KPIs -->
@@ -55,21 +56,36 @@
             <div class="col">
                 <div class="kpi">
                     <div class="kpi-label">Stock actual</div>
-                    <div class="kpi-value">{{forecastRepuesto?.stock_actual}} u.</div>
+                    <div *ngIf="!loadingDetails" class="kpi-value">{{forecastRepuesto?.stock_actual}} u.</div>
+                    <div *ngIf="loadingDetails" class="skeleton skeleton-text"
+                        style="width:70px; height:24px; margin:0 auto;"></div>
                 </div>
             </div>
+
             <div class="col">
                 <div class="kpi">
-                    <div class="kpi-label">Demanda 1 sem</div>
-                    <div class="kpi-value">{{forecastRepuesto?.repuesto_info?.pred_1}} u.</div>
+                    <div class="kpi-label">Demanda próxima semana</div>
+                    <div *ngIf="!loadingDetails" class="kpi-value">{{forecastRepuesto?.repuesto_info?.pred_1}} u.</div>
+                    <div *ngIf="loadingDetails" class="skeleton skeleton-text"
+                        style="width:90px; height:24px; margin:0 auto;"></div>
                 </div>
             </div>
+
             <div class="col">
                 <div class="kpi">
-                    <div class="kpi-label">Demanda 4 sem</div>
-                    <div class="kpi-value">{{forecastRepuesto?.repuesto_info?.pred_4}} u.</div>
+                    <div class="kpi-label">Demanda al mes</div>
+                    <div *ngIf="!loadingDetails" class="kpi-value">
+                        {{ (forecastRepuesto?.repuesto_info?.pred_mensual
+                        ?? (forecastRepuesto?.repuesto_info?.pred_1 || 0)
+                        + (forecastRepuesto?.repuesto_info?.pred_2 || 0)
+                        + (forecastRepuesto?.repuesto_info?.pred_3 || 0)
+                        + (forecastRepuesto?.repuesto_info?.pred_4 || 0)) }} u.
+                    </div>
+                    <div *ngIf="loadingDetails" class="skeleton skeleton-text"
+                        style="width:90px; height:24px; margin:0 auto;"></div>
                 </div>
             </div>
+
             <div class="col">
                 <div class="kpi">
                     <div class="kpi-label">
@@ -77,17 +93,22 @@
                         <i class="fa-regular fa-circle-question" title="Semanas de cobertura con el stock actual"
                             data-bs-toggle="tooltip" data-bs-placement="bottom"></i>
                     </div>
-                    <span class="kpi-value" *ngIf="!repuesto.mos_en_semanas" data-bs-toggle="tooltip"
-                        data-bs-placement="bottom" title="Sin demanda proyectada.">N/A</span>
-                    <span class="kpi-value fw-bold" *ngIf="repuesto.mos_en_semanas">
-                        {{ repuesto.mos_en_semanas | number:'1.1-2' }}
-                        <span *ngIf="repuesto.mos_en_semanas < 1"
-                            class="badge rounded-pill bg-red label-mos-tag">Critico</span>
-                        <span *ngIf="repuesto.mos_en_semanas > 1 && repuesto.mos_en_semanas < 2"
-                            class="badge rounded-pill bg-orange label-mos-tag">Bajo</span>
-                        <span *ngIf="repuesto.mos_en_semanas > 4"
-                            class="badge rounded-pill bg-blue label-mos-tag">Alto</span>
-                    </span>
+
+                    <ng-container *ngIf="!loadingDetails; else mosSkeleton">
+                        <span class="kpi-value" *ngIf="!repuesto.mos_en_semanas">N/A</span>
+                        <span class="kpi-value fw-bold" *ngIf="repuesto.mos_en_semanas">
+                            {{ repuesto.mos_en_semanas | number:'1.1-2' }}
+                            <span *ngIf="repuesto.mos_en_semanas < 1"
+                                class="badge rounded-pill bg-red label-mos-tag">Crítico</span>
+                            <span *ngIf="repuesto.mos_en_semanas > 1 && repuesto.mos_en_semanas < 2"
+                                class="badge rounded-pill bg-orange label-mos-tag">Bajo</span>
+                            <span *ngIf="repuesto.mos_en_semanas > 4"
+                                class="badge rounded-pill bg-blue label-mos-tag">Alto</span>
+                        </span>
+                    </ng-container>
+                    <ng-template #mosSkeleton>
+                        <div class="skeleton skeleton-text" style="width:60px; height:24px; margin:0 auto;"></div>
+                    </ng-template>
                 </div>
             </div>
         </div>
@@ -96,17 +117,19 @@
         <div class="row g-3">
             <div class="col-12 col-lg-6">
                 <div class="chart-card text-center">
-                    <div class="chart-title">Proyección de Stock y Cobertura (Próximas Semanas)</div>
-
-                    <canvas baseChart [data]="coberturaData" [options]="coberturaOptions">
-                    </canvas>
+                    <div class="chart-title">Proyección de Stock y Cobertura</div>
+                    <div *ngIf="loadingDetails" class="skeleton skeleton-chart"></div>
+                    <canvas *ngIf="!loadingDetails" baseChart [data]="coberturaData"
+                        [options]="coberturaOptions"></canvas>
                 </div>
             </div>
 
             <div class="col-12 col-lg-6">
                 <div class="chart-card text-center">
                     <div class="chart-title">Demanda histórica vs. Forecast</div>
-                    <canvas baseChart [data]="demandaData" [options]="demandaOptions" [type]="'line'"></canvas>
+                    <div *ngIf="loadingDetails" class="skeleton skeleton-chart"></div>
+                    <canvas *ngIf="!loadingDetails" baseChart [data]="demandaData" [options]="demandaOptions"
+                        [type]="'line'"></canvas>
                 </div>
             </div>
         </div>
@@ -134,6 +157,7 @@
                 <thead class="table-light align-middle">
                     <tr>
                         <th rowspan="2" style="width: 30%;" class="text-start">Repuesto</th>
+                        <th rowspan="2">Stock</th>
                         <th rowspan="2">Dias de stock <br>
                             <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom"
                                 title="Dias restantes."></i>
@@ -175,7 +199,8 @@
                             </div>
                         </td>
 
-                        <td>{{getRandom()}}</td>
+                        <td>{{item.stock_total}}</td>
+                        <td>{{item.dias_de_stock_restantes ?? 'N/A'}}</td>
 
                         <td class="text-center">
                             <!-- Mismo que stock.component.html -->
@@ -193,21 +218,27 @@
                             </span>
                         </td>
 
-                        <td>{{item.repuesto_taller.pred_1}}</td>
-                        <td>{{item.repuesto_taller.pred_4}}</td>
+                        <td>{{item.cantidad_vendida_mes_anterior}}</td>
+                        <td>{{item.cantidad_vendida_mes_actual}}</td>
 
                         <td>{{item.repuesto_taller.pred_1}}</td>
-                        <td>{{item.repuesto_taller.pred_4}}</td>
+                        <td>{{item.repuesto_taller.pred_mensual}}</td>
 
 
                         <td>
-                            <i *ngIf="item.repuesto_taller && item.repuesto_taller.pred_1! > item.mes_actual!"
+                            <i *ngIf="item.repuesto_taller.tendencia === 'ALTA'"
                                 class="fa-solid fa-arrow-trend-up trend-icon trend-icon__success"
-                                title="Tendencia hacia arriba"></i>
-                            <i *ngIf="item.repuesto_taller && item.repuesto_taller.pred_1! < item.mes_actual!"
+                                data-bs-toggle="tooltip" data-bs-custom-class="tooltip-preline"
+                                title="Demanda promedio semanal proyectada en aumento: Próxima semana: {{item.repuesto_taller.pred_1}} u. - Promedio semanal del mes: {{item.repuesto_taller.promedio_pred_mensual}} u."></i>
+                            <i *ngIf="item.repuesto_taller.tendencia === 'BAJA'"
                                 class="fa-solid fa-arrow-trend-down trend-icon trend-icon__danger"
-                                title="Tendencia hacia abajo"></i>
-                            <span *ngIf="item.repuesto_taller?.pred_1 == item.mes_actual">-</span>
+                                data-bs-toggle="tooltip" data-bs-custom-class="tooltip-preline"
+                                title="Demanda promedio semanal proyectada en disminución: Próxima semana: {{item.repuesto_taller.pred_1}} u. - Promedio semanal del mes: {{item.repuesto_taller.promedio_pred_mensual}} u."></i>
+                            <i *ngIf="item.repuesto_taller.tendencia === 'ESTABLE'"
+                                class="fa-solid fa-arrow-right-long trend-icon" data-bs-toggle="tooltip"
+                                data-bs-custom-class="tooltip-preline"
+                                title="Demanda estable: Próxima semana: {{item.repuesto_taller.pred_1}} u. - Promedio semanal del mes: {{item.repuesto_taller.promedio_pred_mensual}} u."></i>
+                            <span *ngIf="!item.repuesto_taller.tendencia">-</span>
                         </td>
 
                         <td class="text-center" style="width: 50px;">
@@ -218,10 +249,39 @@
                         </td>
                     </tr>
                     <tr *ngIf="forecast.length === 0">
-                        <td colspan="8" class="text-center text-muted py-3">No hay resultados para mostrar.</td>
+                        <td colspan="9" class="text-center text-muted py-3">No hay resultados para mostrar.</td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="d-flex align-items-center justify-content-end py-2 mt-2"
+                *ngIf="!loading && forecast.length > 0">
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm" style="width:auto" [ngModel]="pageSize"
+                        (ngModelChange)="onPageSizeChange($event)">
+                        <option [ngValue]="10">10</option>
+                        <option [ngValue]="20">20</option>
+                        <option [ngValue]="50">50</option>
+                        <option [ngValue]="100">100</option>
+                    </select>
+
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" [class.disabled]="page===1">
+                            <button class="page-link" (click)="goPreviousPage()" [disabled]="page===1">Anterior</button>
+                        </li>
+                        <li class="page-item" *ngFor="let item of paginationItems; let i = index;"
+                            [class.active]="item===page" [class.disabled]="item==='…'">
+                            <span class="page-link" *ngIf="item==='…'">&hellip;</span>
+                            <button class="page-link" *ngIf="item!=='…'" (click)="goToPage(+item)">{{ item }}</button>
+                        </li>
+                        <li class="page-item" [class.disabled]="page===totalPages">
+                            <button class="page-link" (click)="goNextPage()"
+                                [disabled]="page===totalPages">Siguiente</button>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
         </div>
     </div>
 </div>

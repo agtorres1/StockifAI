@@ -91,7 +91,7 @@
                                             {{ (freq | frecuenciaRotacion).label }}
                                         </span>
                                     </span>
-                                    
+
                                 </div>
                                 <span class="text-muted">{{ item.repuesto_taller.repuesto.descripcion }}</span>
                             </div>
@@ -126,7 +126,9 @@
                                 data-bs-placement="bottom"
                                 title="{{'Demanda proyectada: ' + item.repuesto_taller.cantidad_minima}}"></i>
                             <i *ngIf="item.estaBajoMinimo === false"
-                                class="fa-solid fa-square-check text-success ms-1 fs-5"></i>
+                                class="fa-solid fa-square-check text-success ms-1 fs-5" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom"
+                                title="{{'Demanda proyectada: ' + item.repuesto_taller.cantidad_minima}}"></i>
                         </td>
 
                         <td class="text-end">

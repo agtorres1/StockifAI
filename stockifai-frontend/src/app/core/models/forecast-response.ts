@@ -17,6 +17,7 @@ export interface GraficoDemanda {
     forecastUpper: NullableNumber[];
     tendencia: number[];
     splitIndex: number;
+    labels: string[];
 }
 
 export interface GraficoCobertura {

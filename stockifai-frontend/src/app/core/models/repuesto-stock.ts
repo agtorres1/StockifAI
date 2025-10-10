@@ -6,10 +6,10 @@ export interface RepuestoStock {
     stock_total: number;
     depositos: StockDepositoDetalle[];
     mos_en_semanas?: number;
+    dias_de_stock_restantes?: number;
+    cantidad_vendida_mes_actual?: number;
+    cantidad_vendida_mes_anterior?: number;
 
     // FRONTEND
     estaBajoMinimo?: boolean;
-
-    mes_anterior?: number;
-    mes_actual?: number;
 }
