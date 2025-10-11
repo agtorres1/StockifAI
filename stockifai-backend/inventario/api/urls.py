@@ -14,7 +14,7 @@ urlpatterns = [
     path("talleres/forecast/run", EjecutarForecastView.as_view(), name="forecast-run"),
     path("talleres/<int:taller_id>/forecasting", ConsultarForecastingListView.as_view(), name="forecasting-list"),
     path("talleres/<int:taller_id>/repuestos/<int:repuesto_taller_id>/forecasting",DetalleForecastingView.as_view(),name="detalle-forecasting"),
-    path("talleres/<int:taller_id>/alertas",AlertsListView.as_view(),name="alertas-list"),
+    path("talleres/<int:taller_id>/alertas/",AlertsListView.as_view(),name="alertas-list"),
     path("alertas/<alerta_id>/dismiss/",DismissAlertView.as_view(),name="alertas-list"),
 
 ]
