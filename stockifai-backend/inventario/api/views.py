@@ -1,11 +1,15 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from datetime import date, timedelta, datetime, time
 from .serializers import MovimientosImportSerializer, StockImportSerializer, CatalogoImportSerializer, \
-    DepositoSerializer
-from ..models import Deposito, Movimiento
+    DepositoSerializer, AlertaSerializer
+from ..models import Deposito, Movimiento, Alerta
+from ..services._helpers import calcular_mos, compute_trend_line, get_month_ranges, batch_calculate_demand, MESES_ABREV, \
+    get_historical_demand
+from ..services.actualizar_alertas import actualizar_alertas_para_repuestos
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
 from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
@@ -13,7 +17,7 @@ from django.conf import settings
 from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Optional, Union, Dict, Any
 from ..services.import_stock import importar_stock
-from django.db.models import Sum, Q, Prefetch
+from django.db.models import Sum, Q, Prefetch, Count
 from django.db.models.functions import TruncWeek
 from rest_framework.pagination import PageNumberPagination
 from catalogo.models import RepuestoTaller
@@ -24,21 +28,6 @@ from .serializers import (
     StockDepositoDetalleSerializer,
     DepositoSerializer,
 )
-
-MESES_ABREV = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-               "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-
-try:
-    from django.utils import timezone
-    # Helper function para hacer las fechas 'aware' si estamos en Django
-    def make_aware_datetime(dt_naive):
-        return timezone.make_aware(dt_naive)
-except ImportError:
-    # Fallback si no se está ejecutando en un entorno Django completo
-    print("WARNING: django.utils.timezone not available. Dates will remain naive.")
-    def make_aware_datetime(dt_naive):
-        return dt_naive
-
 
 class ImportarMovimientosView(APIView):
     def post(self, request):
@@ -53,6 +42,8 @@ class ImportarMovimientosView(APIView):
                 deposito_nombre=ser.validated_data.get("deposito_nombre"),
                 permitir_stock_negativo=getattr(settings, "PERMITIR_STOCK_NEGATIVO", True),
             )
+        if resultado.get("repuestos_afectados_ids"):
+            actualizar_alertas_para_repuestos(resultado["repuestos_afectados_ids"])
         return Response(resultado, status=status.HTTP_200_OK)
 
 class ImportarStockView(APIView):
@@ -208,42 +199,6 @@ class ConsultarStockView(APIView):
 
         return paginator.get_paginated_response(payload)
 
-def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
-    """
-    Calcula el MOS (semanas de cobertura):
-    - Consume stock semana a semana.
-    - Si la demanda de una semana es 0, se usa el promedio.
-    - Si todas las predicciones son 0/None, devuelve None.
-    """
-    stock = Decimal(stock or 0)
-
-    no_nulas = [w for w in weeks if w > 0]
-    if not no_nulas:
-        return None  # Si no hay predicciones, no se puede calcular
-
-    # Para extender más allá de la 4
-    tail_rate = sum(no_nulas)/len(no_nulas)
-
-    semanas = Decimal(0)
-    restante = stock
-
-    for w in weeks:
-        demanda = w if w > 0 else tail_rate
-        if restante >= demanda:
-            restante -= demanda
-            semanas += 1
-        else:
-            semanas += restante / demanda
-            return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-    # Si sobra stock después de las 4 semanas, extender con tail_rate
-    if restante > 0:
-        semanas += restante / tail_rate
-
-    return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-
-
 class EjecutarForecastPorTallerView(APIView):
     def post(self, request, taller_id: int):
         fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
@@ -257,7 +212,6 @@ class EjecutarForecastView(APIView):
 
         out = ejecutar_forecast_talleres(fecha_lunes)
         return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)
-
 
 class DetalleForecastingView(APIView):
     """
@@ -399,346 +353,6 @@ class DetalleForecastingView(APIView):
 
         return Response(payload)
 
-
-def get_historical_demand(repuesto_taller_id: int, num_weeks: int = 16) -> Dict[str, List[Union[float, str]]]:
-    """
-    Calcula la demanda histórica (salidas de inventario) para las últimas 'num_weeks'.
-    Retorna los datos de demanda y las etiquetas de fecha.
-    """
-    # 1. Definir el rango de fechas (últimas N semanas completas)
-    today = date.today()
-    # Encuentra la fecha de inicio de la semana actual (Lunes, asumiendo 0=Lunes)
-    start_of_current_week_date = today - timedelta(days=today.weekday())
-
-    # La fecha de inicio histórica (date object, naive)
-    start_date = start_of_current_week_date - timedelta(weeks=num_weeks)
-
-    # -------------------------------------------------------------------
-    # CORRECCIÓN PARA EL WARNING DE ZONA HORARIA
-    # Convertimos los objetos 'date' a 'datetime' y luego los hacemos 'aware'.
-    # -------------------------------------------------------------------
-    aware_start_date = make_aware_datetime(datetime.combine(start_date, time.min))
-    aware_start_of_current_week = make_aware_datetime(datetime.combine(start_of_current_week_date, time.min))
-    # -------------------------------------------------------------------
-
-    # 2. Consultar y agregar los movimientos de SALIDA
-    try:
-        # En un entorno real de Django/DB, usarías las fechas aware:
-        demand_data = Movimiento.objects.filter(
-            stock_por_deposito__repuesto_taller_id=repuesto_taller_id,
-            tipo='EGRESO',
-            fecha__gte=aware_start_date,  # Usamos la fecha aware
-            fecha__lt=aware_start_of_current_week  # Usamos la fecha aware
-        ).annotate(
-            week=TruncWeek('fecha')
-        ).values('week').annotate(
-            demanda_semanal=Sum('cantidad')
-        ).order_by('week')
-
-        # Placeholder para simular la demanda histórica
-        if not demand_data:
-            if repuesto_taller_id == 5:
-                # Usamos la fecha naive 'start_date' aquí para rellenar
-                demand_data = [{'week': start_date, 'demanda_semanal': 20.0}]
-            else:
-                demand_data = []
-
-    except NameError:
-        # Fallback si Movimiento/TruncWeek no está definido (para que compile)
-        demand_data = []
-
-    # 3. Formatear y rellenar con ceros
-    # NOTA: Los resultados de TruncWeek son aware datetimes (o date si es MySQL).
-    # Por seguridad, convertimos a date para el map, ya que las etiquetas son solo DD/MM.
-    demand_map = {item['week'].date(): float(item['demanda_semanal']) for item in demand_data if item.get('week')}
-
-    final_historical_data: List[float] = []
-    final_historical_labels: List[str] = []
-    current_week_start = start_date  # Volvemos al objeto 'date' para generar etiquetas
-
-    # Itera sobre las N semanas esperadas
-    for _ in range(num_weeks):
-        demand_value = demand_map.get(current_week_start, 0.0)
-        final_historical_data.append(demand_value)
-
-        # Formato de etiqueta: DD/MM (ej: 01/10)
-        final_historical_labels.append(f"{current_week_start.day} {MESES_ABREV[current_week_start.month - 1]}")
-
-        # Mueve a la siguiente semana (SOLO 1 semana)
-        current_week_start += timedelta(weeks=1)
-
-    return {
-        "data": final_historical_data,
-        "labels": final_historical_labels
-    }
-
-
-def compute_trend_line(series: List[Union[float, int, None]]) -> List[float]:
-    """
-    Calcula la línea de regresión lineal. Replica la lógica 'computeTrendLine'
-    que probablemente tienes en tu frontend de Angular.
-    """
-    xs: List[float] = []
-    ys: List[float] = []
-
-    for idx, val in enumerate(series):
-        if val is not None:
-            xs.append(float(idx + 1))
-            ys.append(float(val))
-
-    if len(xs) < 2:
-        return [0.0] * len(series)
-
-    n = len(xs)
-    sumX = sum(xs)
-    sumY = sum(ys)
-    sumXY = sum(x * ys[i] for i, x in enumerate(xs))
-    sumX2 = sum(x * x for x in xs)
-
-    denom = n * sumX2 - sumX * sumX
-
-    if denom == 0:
-        return [round(sumY / n, 2)] * len(series)
-
-    slope = (n * sumXY - sumX * sumY) / denom
-    intercept = (sumY - slope * sumX) / n
-
-    # Genera los valores de la línea de tendencia para toda la serie
-    return [round(intercept + slope * (i + 1), 2) for i in range(len(series))]
-
-
-class AlertsListView(APIView):
-    """
-    GET /talleres/<taller_id>/alertas/
-
-    Si se usa ?summary=1, devuelve el conteo de alertas urgentes para la insignia.
-    De lo contrario, devuelve la lista consolidada de TODAS las alertas activas (dashboard).
-    """
-
-    def get(self, request, taller_id: int):
-
-        # Detecta si se pide el resumen (para el badge) o la lista completa (para la pantalla)
-        summary_mode = request.query_params.get("summary") == "1"
-
-        try:
-            rt_qs = (
-                RepuestoTaller.objects
-                .filter(taller_id=taller_id)
-                .annotate(
-                    stock_total=Sum("stocks__cantidad", filter=Q(stocks__deposito__taller_id=taller_id))
-                )
-                .select_related('repuesto')
-                .all()
-            )
-        except NameError:
-            return Response(
-                {"detail": "Error interno: Modelos RepuestoTaller o sus dependencias no están disponibles."},
-                status=500)
-        except Exception as e:
-            return Response({"detail": f"Error al consultar el inventario: {str(e)}"}, status=500)
-
-        consolidated_alerts: List[Dict[str, Any]] = []
-        alert_counts = {"CRÍTICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
-
-        for rt in rt_qs:
-            stock_total = Decimal(rt.stock_total or 0)
-
-            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
-            forecast_semanas = [
-                pred_1,
-                Decimal(getattr(rt, 'pred_2', 0) or 0),
-                Decimal(getattr(rt, 'pred_3', 0) or 0),
-                Decimal(getattr(rt, 'pred_4', 0) or 0),
-            ]
-            frecuencia_rotacion = getattr(rt, 'frecuencia', 'DESCONOCIDA')
-
-            # --- Cálculo de MOS y Alertas ---
-            mos_en_semanas = calcular_mos(stock_total, forecast_semanas)
-
-            alertas_activas = generar_alertas_inventario(
-                stock_total=stock_total,
-                pred_1=pred_1,
-                mos_en_semanas=mos_en_semanas,
-                frecuencia_rotacion=frecuencia_rotacion
-            )
-
-            # 3. Consolidar o Contar
-            if alertas_activas:
-                repuesto_obj = getattr(rt, 'repuesto', None)
-                numero_pieza = getattr(repuesto_obj, 'numero_pieza', 'N/A')
-                descripcion = getattr(repuesto_obj, 'descripcion', 'N/A')
-
-                for alerta in alertas_activas:
-                    nivel = alerta['nivel']
-
-                    # 3.1. Modo Resumen: Contar las alertas
-                    if nivel in alert_counts:
-                        alert_counts[nivel] += 1
-
-                    # 3.2. Modo Detalle: Agregar la alerta a la lista de respuesta
-                    if not summary_mode:
-                        consolidated_alerts.append({
-                            "id_repuesto": getattr(rt, 'id', getattr(rt, 'pk', 'N/A')),
-                            "numero_pieza": numero_pieza,
-                            "descripcion": descripcion,
-                            "stock_total": float(stock_total),
-                            "mos_en_semanas": float(mos_en_semanas) if mos_en_semanas else None,
-                            "alerta": alerta  # El diccionario de alerta (nivel, color, codigo, mensaje)
-                        })
-
-        # 4. Devolver la respuesta
-        if summary_mode:
-            total_urgente = alert_counts["CRÍTICO"] + alert_counts["MEDIO"]
-            return Response({
-                "CRÍTICO": alert_counts["CRÍTICO"],
-                "MEDIO": alert_counts["MEDIO"],
-                "ADVERTENCIA": alert_counts["ADVERTENCIA"],
-                "INFORMATIVO": alert_counts["INFORMATIVO"],
-                "TOTAL_URGENTE": total_urgente
-            })
-        else:
-            return Response(consolidated_alerts)
-
-
-def generar_alertas_inventario(
-        stock_total: Union[int, float, Decimal],
-        pred_1: Union[int, float, Decimal],
-        mos_en_semanas: Optional[Union[int, float, Decimal]],
-        frecuencia_rotacion: str
-) -> List[Dict[str, str]]:
-    """
-    Genera una lista de alertas activas (CRÍTICO, MEDIO, INFORMATIVO, ADVERTENCIA).
-    """
-    alertas_activas: List[Dict[str, str]] = []
-
-    stock_d = Decimal(str(stock_total))
-    pred_1_d = Decimal(str(pred_1))
-    mos_d = Decimal(str(mos_en_semanas)) if mos_en_semanas is not None else None
-
-    # 1. ALERTA CRÍTICA: Quiebre de Stock Inmediato (Rojo)
-    if stock_d < pred_1_d:
-        alertas_activas.append({
-            "nivel": "CRÍTICO",
-            "codigo": "ACCION_INMEDIATA",
-            "mensaje": (
-                f"Quiebre Inminente. Stock ({stock_d}) no cubre la demanda de la próxima semana ({pred_1_d}). "
-            )
-        })
-
-    # 2. ALERTA MEDIA: Bajo MOS (Naranja)
-    if mos_d is not None and mos_d > Decimal('1') and mos_d <= Decimal('2.5') and not (stock_d < pred_1_d):
-        alertas_activas.append({
-            "nivel": "MEDIO",
-            "codigo": "MOS_BAJO_REORDENAR",
-            "mensaje": f"Bajo MOS. La cobertura es de {mos_d:.2f} semanas. "
-        })
-
-    # 3. ALERTA INFORMATIVA: Sobre-Abastecimiento o Riesgo de Lento (Azul)
-    if mos_d is not None:
-        es_lento_o_intermedio = frecuencia_rotacion in ["LENTO", "INTERMEDIO", "OBSOLETO", "MUERTO"]
-        sobre_stock_general = mos_d >= Decimal('12')
-        sobre_stock_riesgoso = mos_d >= Decimal('4') and es_lento_o_intermedio
-
-        if sobre_stock_general or sobre_stock_riesgoso:
-            alertas_activas.append({
-                "nivel": "INFORMATIVO",
-                "codigo": "SOBRE_STOCK_RIESGO",
-                "mensaje": (
-                    f"Capital Inmovilizado. Cobertura de {mos_d:.2f} semanas ({frecuencia_rotacion}). "
-                )
-            })
-    return alertas_activas
-
-
-def get_month_ranges() -> Dict[str, date]:
-    """Calcula las fechas de inicio y fin para el mes actual y el mes anterior."""
-    today = date.today()
-
-    # Mes actual: Desde el día 1 hasta hoy (inclusive)
-    start_current_month = today.replace(day=1)
-    end_current_month = today
-
-    # Mes anterior:
-    start_current_month = today.replace(day=1)
-    last_day_prev_month = start_current_month - timedelta(days=1)
-    start_prev_month = last_day_prev_month.replace(day=1)
-
-    return {
-        "start_current": start_current_month,
-        "end_current": end_current_month,
-        "start_prev": start_prev_month,
-        "end_prev": last_day_prev_month,
-    }
-
-
-def get_month_ranges() -> Dict[str, date]:
-    """Calcula las fechas de inicio y fin para el mes actual y el mes anterior."""
-    today = date.today()
-
-    # Mes actual: Desde el día 1 hasta hoy (inclusive)
-    start_current_month = today.replace(day=1)
-    end_current_month = today
-
-    # Mes anterior:
-    last_day_prev_month = start_current_month - timedelta(days=1)
-    start_prev_month = last_day_prev_month.replace(day=1)
-
-    return {
-        "start_current": start_current_month,
-        "end_current": end_current_month,
-        "start_prev": start_prev_month,
-        "end_prev": last_day_prev_month,
-    }
-
-
-def batch_calculate_demand(rt_ids: List[int], month_ranges: Dict[str, date]) -> Dict[int, Dict[str, int]]:
-    """
-    OPTIMIZACIÓN: Calcula la Demanda Mensual para toda la página en UNA SOLA consulta.
-    Reemplaza la función get_monthly_demand() que causaba el problema N+1.
-    """
-    if not rt_ids:
-        return {}
-
-    start_prev = month_ranges["start_prev"]
-    end_curr = month_ranges["end_current"]
-
-    try:
-        # Usamos el path completo que se usaba en el filtro original:
-        # stock_por_deposito__repuesto_taller_id__in
-        monthly_demand_data = Movimiento.objects.filter(
-            stock_por_deposito__repuesto_taller_id__in=rt_ids,
-            tipo='EGRESO',
-            fecha__date__range=(start_prev, end_curr)
-        ).values(
-            'stock_por_deposito__repuesto_taller_id'  # Agrupar por ID del repuesto
-        ).annotate(
-            # Demanda del mes anterior
-            demand_prev=Sum(
-                'cantidad',
-                filter=Q(fecha__date__range=(start_prev, month_ranges["end_prev"]))
-            ),
-            # Demanda del mes actual (hasta hoy)
-            demand_curr=Sum(
-                'cantidad',
-                filter=Q(fecha__date__range=(month_ranges["start_current"], end_curr))
-            )
-        )
-    except Exception as e:
-        # Captura si hay un error de campo o importación
-        print(f"Error en batch_calculate_demand: {e}")
-        return {}
-
-        # Mapeo del resultado para acceso rápido O(1)
-    demand_map = {
-        item['stock_por_deposito__repuesto_taller_id']: {
-            'prev': int(round(item['demand_prev'] or 0)),
-            'curr': int(round(item['demand_curr'] or 0)),
-        }
-        for item in monthly_demand_data
-    }
-    return demand_map
-
-
 # --- Vista Principal DRF (Optimizada) ---
 
 class ConsultarForecastingListView(APIView):
@@ -830,3 +444,64 @@ class ConsultarForecastingListView(APIView):
             payload.append(item)
 
         return paginator.get_paginated_response(payload)
+
+class AlertsListView(APIView):
+    """
+    GET /talleres/<taller_id>/alertas/
+
+    - Si se usa ?summary=1, devuelve el conteo de alertas activas.
+    - De lo contrario, devuelve la lista detallada de alertas activas.
+    """
+    def get(self, request, taller_id: int):
+        summary_mode = request.query_params.get("summary") == "1"
+
+        # Excluimos las que el usuario ya descartó o el sistema resolvió.
+        active_alerts_qs = Alerta.objects.filter(
+            repuesto_taller__taller_id=taller_id,
+            estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
+        )
+
+        # MODO RESUMEN (para la campanita de notificaciones)
+        if summary_mode:
+            counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
+
+            alert_counts = {"CRÍTICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
+            for item in counts:
+                alert_counts[item['nivel']] = item['total']
+
+            total_urgente = alert_counts["CRÍTICO"] + alert_counts["MEDIO"]
+            alert_counts["TOTAL_URGENTE"] = total_urgente
+
+            return Response(alert_counts)
+
+        # MODO DETALLE (para el dashboard principal de alertas)
+        else:
+            ordered_alerts = active_alerts_qs.select_related(
+                'repuesto_taller__repuesto'
+            ).order_by('fecha_creacion')
+
+            serializer = AlertaSerializer(ordered_alerts, many=True)
+            return Response(serializer.data)
+
+class DismissAlertView(APIView):
+    """
+    POST /alertas/<alerta_id>/dismiss/
+
+    Cambia el estado de una alerta a 'DESCARTADA' para ocultarla de la vista principal.
+    """
+    def post(self, request, alerta_id: int):
+        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        alerta = get_object_or_404(Alerta, id=alerta_id)
+
+        # Verificación de permisos
+        if alerta.repuesto_taller.taller != request.user.taller:
+            return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
+
+        alerta.estado = Alerta.EstadoAlerta.DESCARTADA
+        alerta.descartada_por = request.user # Asigna el usuario que la descartó
+        alerta.save(update_fields=['estado', 'descartada_por'])
+
+        return Response(
+            {"status": "Alerta descartada correctamente"},
+            status=status.HTTP_200_OK
+        )

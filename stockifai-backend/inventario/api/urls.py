@@ -1,9 +1,8 @@
 from django.urls import path
 
 from .movimientos import MovimientosListView
-from .views import ImportarMovimientosView, ImportarStockView, ImportarCatalogoView, DepositosPorTallerView, \
-    ConsultarStockView, EjecutarForecastPorTallerView, EjecutarForecastView, DetalleForecastingView, ConsultarForecastingListView, AlertsListView
-
+from .views import (ImportarMovimientosView, ImportarStockView, ImportarCatalogoView, DepositosPorTallerView,
+                    ConsultarStockView, EjecutarForecastPorTallerView, EjecutarForecastView, DetalleForecastingView, ConsultarForecastingListView, AlertsListView, DismissAlertView)
 urlpatterns = [
     path('importaciones/movimientos', ImportarMovimientosView.as_view(), name='importar-movimientos'),
     path("importaciones/stock", ImportarStockView.as_view(), name="importar-stock"),
@@ -16,6 +15,8 @@ urlpatterns = [
     path("talleres/<int:taller_id>/forecasting", ConsultarForecastingListView.as_view(), name="forecasting-list"),
     path("talleres/<int:taller_id>/repuestos/<int:repuesto_taller_id>/forecasting",DetalleForecastingView.as_view(),name="detalle-forecasting"),
     path("talleres/<int:taller_id>/alertas",AlertsListView.as_view(),name="alertas-list"),
+    path("alertas/<alerta_id>/dismiss/",DismissAlertView.as_view(),name="alertas-list"),
+
 ]
 
 

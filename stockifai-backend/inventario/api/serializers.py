@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from catalogo.models import Repuesto, Categoria, Marca
-from inventario.models import Deposito, Movimiento
+from inventario.models import Deposito, Movimiento, Alerta
 from catalogo.models import RepuestoTaller
 from user.models import Taller
 
@@ -110,3 +110,22 @@ class RepuestoStockSerializer(serializers.Serializer):
     repuesto_taller = RepuestoTallerSerializer()
     stock_total = serializers.IntegerField()
     depositos = StockDepositoDetalleSerializer(many=True)
+
+class AlertaSerializer(serializers.ModelSerializer):
+    """
+    Serializador principal para el modelo Alerta.
+    """
+    repuesto_taller = RepuestoTallerSerializer(read_only=True)
+
+    class Meta:
+        model = Alerta
+        fields = [
+            'id',
+            'repuesto_taller',
+            'nivel',
+            'codigo',
+            'mensaje',
+            'estado',
+            'fecha_creacion',
+            'datos_snapshot' # El snapshot es clave para el contexto
+        ]

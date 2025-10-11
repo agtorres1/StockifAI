@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.conf import settings
 
 
 
@@ -64,3 +64,55 @@ class Movimiento(models.Model):
     externo_id=models.CharField(max_length=200, null=True, blank=True, db_index=True)
     class Meta: constraints=[models.UniqueConstraint(fields=['stock_por_deposito','externo_id'],name='uq_mov_extid_por_stock',condition=~models.Q(externo_id=None))]
     def __str__(self): return f"{self.tipo} {self.cantidad} @ SPD {self.stock_por_deposito_id}"
+
+
+class Alerta(models.Model):
+    class NivelAlerta(models.TextChoices):
+        CRITICO = 'CRÍTICO', 'Crítico'
+        MEDIO = 'MEDIO', 'Medio'
+        ADVERTENCIA = 'ADVERTENCIA', 'Advertencia'
+        INFORMATIVO = 'INFORMATIVO', 'Informativo'
+
+    class EstadoAlerta(models.TextChoices):
+        NUEVA = 'NUEVA', 'Nueva'
+        VISTA = 'VISTA', 'Vista'  # El usuario la vio pero no la ha descartado
+        DESCARTADA = 'DESCARTADA', 'Descartada'  # El usuario la ocultó temporalmente
+        RESUELTA = 'RESUELTA', 'Resuelta'  # El sistema la resolvió automáticamente
+
+    # Relación con el repuesto que genera la alerta
+    repuesto_taller = models.ForeignKey(
+        'catalogo.RepuestoTaller',
+        on_delete=models.CASCADE,
+        related_name='alertas'
+    )
+
+    # Datos de la alerta
+    nivel = models.CharField(max_length=20, choices=NivelAlerta.choices)
+    codigo = models.CharField(max_length=50)  # Ej: "MOS_BAJO_REORDENAR"
+    mensaje = models.TextField()
+
+    # Gestión del ciclo de vida
+    estado = models.CharField(max_length=20, choices=EstadoAlerta.choices, default=EstadoAlerta.NUEVA)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+
+    # Quién interactuó con la alerta
+    descartada_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
+    # "Foto" de los datos que generaron la alerta (muy útil para análisis a futuro)
+    datos_snapshot = models.JSONField(null=True, blank=True,
+                                      help_text="Stock, forecast, etc. al momento de la creación")
+
+    class Meta:
+        # Evita tener la misma alerta activa varias veces para el mismo repuesto
+        unique_together = ('repuesto_taller', 'codigo', 'estado')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['repuesto_taller', 'codigo'],
+                condition=models.Q(estado__in=['NUEVA', 'VISTA']),
+                name='alerta_activa_unica_por_repuesto_y_codigo'
+            )
+        ]
+
+    def __str__(self):
+        return f"Alerta {self.nivel} para {self.repuesto_taller.repuesto.numero_pieza}"
