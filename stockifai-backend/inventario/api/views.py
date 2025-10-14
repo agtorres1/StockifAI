@@ -445,40 +445,42 @@ class ConsultarForecastingListView(APIView):
 
         return paginator.get_paginated_response(payload)
 
-class AlertsListView(APIView):
-    """
-    GET /talleres/<taller_id>/alertas/
 
-    - Si se usa ?summary=1, devuelve el conteo de alertas activas.
-    - De lo contrario, devuelve la lista detallada de alertas activas.
-    """
+class AlertsListView(APIView):
+    pagination_class = _StockPagination  # O el nombre de tu clase de paginación
+
     def get(self, request, taller_id: int):
         summary_mode = request.query_params.get("summary") == "1"
 
-        # Excluimos las que el usuario ya descartó o el sistema resolvió.
         active_alerts_qs = Alerta.objects.filter(
             repuesto_taller__taller_id=taller_id,
             estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
         )
 
-        # MODO RESUMEN (para la campanita de notificaciones)
         if summary_mode:
+            # CAMPANITA
             counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
-
-            alert_counts = {"CRITICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
+            alert_counts = {
+                Alerta.NivelAlerta.CRITICO: 0, Alerta.NivelAlerta.MEDIO: 0,
+                Alerta.NivelAlerta.ADVERTENCIA: 0, Alerta.NivelAlerta.INFORMATIVO: 0
+            }
             for item in counts:
-                alert_counts[item['nivel']] = item['total']
-
-            total_urgente = alert_counts["CRITICO"] + alert_counts["MEDIO"]
+                if item['nivel'] in alert_counts:
+                    alert_counts[item['nivel']] = item['total']
+            total_urgente = alert_counts[Alerta.NivelAlerta.CRITICO] + alert_counts[Alerta.NivelAlerta.MEDIO]
             alert_counts["TOTAL_URGENTE"] = total_urgente
-
             return Response(alert_counts)
-
-        # MODO DETALLE (para el dashboard principal de alertas)
         else:
-            ordered_alerts = active_alerts_qs.select_related(
-                'repuesto_taller__repuesto'
-            ).order_by('fecha_creacion')
+            niveles_param = request.query_params.get('niveles')
+            if niveles_param:
+                lista_de_niveles = [nivel.strip().upper() for nivel in niveles_param.split(',')]
+                active_alerts_qs = active_alerts_qs.filter(nivel__in=lista_de_niveles)
+            ordered_alerts = active_alerts_qs.select_related('repuesto_taller__repuesto').order_by('-fecha_creacion')
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(ordered_alerts, request, view=self)
+            if page is not None:
+                serializer = AlertaSerializer(page, many=True)
+                return paginator.get_paginated_response(serializer.data)
 
             serializer = AlertaSerializer(ordered_alerts, many=True)
             return Response(serializer.data)
@@ -493,15 +495,37 @@ class DismissAlertView(APIView):
         # Buscamos la alerta. Si no existe, devuelve un error 404.
         alerta = get_object_or_404(Alerta, id=alerta_id)
 
-        # Verificación de permisos
-        #if alerta.repuesto_taller.taller != request.user.taller:
-        #    return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
-
         alerta.estado = Alerta.EstadoAlerta.DESCARTADA
         #alerta.descartada_por = request.user # Asigna el usuario que la descartó
         alerta.save(update_fields=['estado', 'descartada_por'])
 
         return Response(
             {"status": "Alerta descartada correctamente"},
+            status=status.HTTP_200_OK
+        )
+
+
+class MarkAsSeenAlertView(APIView):
+    """
+    POST /alertas/<alerta_id>/mark-as-seen/
+
+    Cambia el estado de una alerta de 'NUEVA' a 'VISTA'.
+    """
+
+    def post(self, request, alerta_id: int):
+        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        alerta = get_object_or_404(Alerta, pk=alerta_id)
+
+        # Opcional: Verificación de permisos
+        # if alerta.repuesto_taller.taller != request.user.taller:
+        #     return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Solo cambiamos el estado si es 'NUEVA' para evitar acciones innecesarias
+        if alerta.estado == Alerta.EstadoAlerta.NUEVA:
+            alerta.estado = Alerta.EstadoAlerta.VISTA
+            alerta.save(update_fields=['estado'])
+
+        return Response(
+            {"status": "Alerta marcada como vista"},
             status=status.HTTP_200_OK
         )
