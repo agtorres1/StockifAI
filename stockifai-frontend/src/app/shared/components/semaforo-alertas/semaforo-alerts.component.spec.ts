@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TalleresListadoComponent } from './listado.component';
+import { SemaforoAlertasComponent } from './semaforo-alertas.component';
 
-describe('TalleresListadoComponent', () => {
-    let component: TalleresListadoComponent;
-    let fixture: ComponentFixture<TalleresListadoComponent>;
+describe('SemaforoAlertasComponent', () => {
+    let component: SemaforoAlertasComponent;
+    let fixture: ComponentFixture<SemaforoAlertasComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [TalleresListadoComponent],
+            imports: [SemaforoAlertasComponent],
         }).compileComponents();
 
-        fixture = TestBed.createComponent(TalleresListadoComponent);
+        fixture = TestBed.createComponent(SemaforoAlertasComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

@@ -1,0 +1,31 @@
+:host {
+    display: inline-flex;
+}
+
+.sem-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon-btn {
+    min-width: 28px;
+    min-height: 28px;
+    line-height: 1;
+}
+
+.badge-counter {
+    position: absolute;
+    top: -0.3rem;
+    right: -0.3rem;
+    transform: translate(25%, -25%);
+    border-radius: 999px;
+    font-size: 0.65rem;
+    min-width: 1.2rem;
+    padding: 0.1rem 0.4rem;
+    text-align: center;
+}
+
+.muted {
+    opacity: 0.75;
+}

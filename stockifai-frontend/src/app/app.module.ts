@@ -21,6 +21,8 @@ import { LayoutComponent } from './layout/layout.component';
 import { SharedModule } from './shared/shared.module';
 import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
 import { EditUsuarioComponent } from './features/talleres/usuarios/edit/edit-usuario.component';
+import { AlertasComponent } from './features/alertas/listado/alertas.component';
+import { AlertaCardComponent } from './features/alertas/card/alerta-card.component';
 
 @NgModule({
     declarations: [
@@ -37,7 +39,9 @@ import { EditUsuarioComponent } from './features/talleres/usuarios/edit/edit-usu
         MarcasComponent,
         CategoriasComponent,
         LocalizadorComponent,
-        EditUsuarioComponent
+        EditUsuarioComponent,
+        AlertasComponent,
+        AlertaCardComponent
     ],
     imports: [
         BrowserModule,

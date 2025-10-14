@@ -465,11 +465,11 @@ class AlertsListView(APIView):
         if summary_mode:
             counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
 
-            alert_counts = {"CRÍTICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
+            alert_counts = {"CRITICO": 0, "MEDIO": 0, "ADVERTENCIA": 0, "INFORMATIVO": 0}
             for item in counts:
                 alert_counts[item['nivel']] = item['total']
 
-            total_urgente = alert_counts["CRÍTICO"] + alert_counts["MEDIO"]
+            total_urgente = alert_counts["CRITICO"] + alert_counts["MEDIO"]
             alert_counts["TOTAL_URGENTE"] = total_urgente
 
             return Response(alert_counts)
@@ -494,11 +494,11 @@ class DismissAlertView(APIView):
         alerta = get_object_or_404(Alerta, id=alerta_id)
 
         # Verificación de permisos
-        if alerta.repuesto_taller.taller != request.user.taller:
-            return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
+        #if alerta.repuesto_taller.taller != request.user.taller:
+        #    return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
 
         alerta.estado = Alerta.EstadoAlerta.DESCARTADA
-        alerta.descartada_por = request.user # Asigna el usuario que la descartó
+        #alerta.descartada_por = request.user # Asigna el usuario que la descartó
         alerta.save(update_fields=['estado', 'descartada_por'])
 
         return Response(

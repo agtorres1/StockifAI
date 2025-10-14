@@ -1,0 +1,60 @@
+<div class="alert-card" [ngClass]="{
+    'alert-card--critico': alerta.nivel === 'CRITICO',
+    'alert-card--medio': alerta.nivel === 'MEDIO',
+    'alert-card--warning': alerta.nivel === 'ADVERTENCIA',
+    'alert-card--info': alerta.nivel === 'INFORMATIVO',
+    'alert-card--dismissed': alerta.estado !== 'NUEVA'}">
+
+    <div class="p-3">
+        <div class="d-flex align-items-start gap-3">
+
+            <div class="flex-shrink-0 fs-3" aria-hidden="true">
+                <i *ngIf="alerta.nivel === 'CRITICO'" class="fa-solid fa-circle-exclamation text-danger"></i>
+                <i *ngIf="alerta.nivel === 'MEDIO'" class="fa-solid fa-circle-exclamation text-medio"></i>
+                <i *ngIf="alerta.nivel === 'ADVERTENCIA'" class="fa-solid fa-triangle-exclamation text-warning"></i>
+                <i *ngIf="alerta.nivel === 'INFORMATIVO'" class="fa-solid fa-circle-info text-info"></i>
+            </div>
+
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <span class="badge chip-nivel border" [attr.data-nivel]="alerta.nivel">
+                        <i class="me-1 fa-solid" [ngClass]="{
+               'fa-fire': alerta.nivel === 'CRITICO',
+               'fa-gauge': alerta.nivel === 'MEDIO',
+               'fa-bell': alerta.nivel === 'ADVERTENCIA',
+               'fa-circle-info': alerta.nivel === 'INFORMATIVO'
+             }"></i>
+                        {{ alerta.nivel | titlecase }}
+                    </span>
+
+                    <span class="badge badge-soft">Código: {{ alerta.codigo }}</span>
+
+                    <span class="meta ms-auto">
+                        <small>{{ alerta.fecha_creacion | date: 'short' }}</small>
+                    </span>
+                </div>
+
+                <p class="repuesto-line mb-1" *ngIf="alerta.repuesto_taller as rt">
+                    <span class="label text-muted me-1">Repuesto:</span>
+                    <strong class="part-number">
+                        {{ rt.repuesto.numero_pieza }}
+                    </strong>
+                    <span class="sep" aria-hidden="true">—</span>
+                    <span class="desc">{{ rt.repuesto.descripcion }}</span>
+                </p>
+
+                <div class="d-flex justify-content-between gap-4">
+                    <h2 class="h6 mb-2">{{ alerta.mensaje }}</h2>
+
+                    <div class="text-nowrap">
+                        <button class="btn btn-compact" (click)="onDismiss()">
+                            <i class="fa-solid fa-xmark me-1"></i>Descartar
+                        </button>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>

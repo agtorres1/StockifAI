@@ -68,7 +68,7 @@ class Movimiento(models.Model):
 
 class Alerta(models.Model):
     class NivelAlerta(models.TextChoices):
-        CRITICO = 'CRÍTICO', 'Crítico'
+        CRITICO = 'CRITICO', 'Crítico'
         MEDIO = 'MEDIO', 'Medio'
         ADVERTENCIA = 'ADVERTENCIA', 'Advertencia'
         INFORMATIVO = 'INFORMATIVO', 'Informativo'
