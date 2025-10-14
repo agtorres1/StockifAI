@@ -1,0 +1,32 @@
+<div class="sem-container" aria-live="polite">
+    <button type="button" class="btn btn-link p-0 position-relative header-icon-btn"
+        [class.muted]="alertas.totalUrgente === 0" (click)="viewAlerts(['CRITICO', 'MEDIO'])"
+        [attr.aria-label]="'Ver alertas urgentes: ' + alertas.totalUrgente" data-bs-toggle="tooltip"
+        data-bs-placement="bottom" title="Ver alertas urgentes" (mousedown)="$event.preventDefault()"
+        data-bs-trigger="hover" data-bs-container="body">
+        <i class="fa-solid fa-circle-exclamation text-danger fa-xl" aria-hidden="true"></i>
+        <span class="notification-badge badge-counter bg-danger text-white">
+            {{ alertas.totalUrgente }}
+        </span>
+    </button>
+
+    <button type="button" class="btn btn-link p-0 position-relative header-icon-btn"
+        [class.muted]="alertas.advertencia === 0" (click)="viewAlerts(['ADVERTENCIA'])" data-bs-toggle="tooltip"
+        data-bs-placement="bottom" title="Ver advertencias" (mousedown)="$event.preventDefault()"
+        data-bs-trigger="hover" data-bs-container="body">
+        <i class="fa-solid fa-exclamation-triangle text-warning fa-xl" aria-hidden="true"></i>
+        <span class="notification-badge badge-counter bg-warning text-dark">
+            {{ alertas.advertencia }}
+        </span>
+    </button>
+
+    <button type="button" class="btn btn-link p-0 position-relative header-icon-btn"
+        [class.muted]="alertas.informativo === 0" (click)="viewAlerts(['INFORMATIVO'])" data-bs-toggle="tooltip"
+        data-bs-placement="bottom" title="Ver alertas informativas" (mousedown)="$event.preventDefault()"
+        data-bs-trigger="hover" data-bs-container="body">
+        <i class="fa-solid fa-circle-info text-info fa-xl" aria-hidden="true"></i>
+        <span class="notification-badge badge-counter bg-info text-dark">
+            {{ alertas.informativo }}
+        </span>
+    </button>
+</div>
