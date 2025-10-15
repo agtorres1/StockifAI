@@ -550,22 +550,29 @@ class MarkAsSeenAlertView(APIView):
 
 class MarkAllAsSeenView(APIView):
     """
-    POST /talleres/alertas/<taller_id>/mark-all-as-seen/
+        POST /talleres/<taller_id>/alertas/mark-visible-as-seen/
 
-    Cambia el estado de TODAS las alertas 'NUEVA' de un taller a 'VISTA',
-    respetando los filtros de nivel aplicados en la URL (ej: ?niveles=CRITICO).
-    """
-
+        Cambia el estado de una lista específica de alertas 'NUEVA' a 'VISTA'.
+        Recibe un array de IDs en el cuerpo de la petición.
+        """
     def post(self, request, taller_id: int):
+        alerta_ids = request.data.get('alerta_ids')
+
+        if not isinstance(alerta_ids, list):
+            return Response(
+                {"error": "Se esperaba una lista de IDs en 'alerta_ids'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if not alerta_ids:
+            return Response(
+                {"status": "No se proporcionaron IDs para marcar."},
+                status=status.HTTP_200_OK
+            )
         alertas_a_marcar = Alerta.objects.filter(
+            pk__in=alerta_ids,
             repuesto_taller__taller_id=taller_id,
             estado=Alerta.EstadoAlerta.NUEVA
         )
-        niveles_raw = request.query_params.getlist('niveles')
-        if niveles_raw:
-            lista_de_niveles = [nivel.strip().upper() for nivel in niveles_raw]
-            alertas_a_marcar = alertas_a_marcar.filter(nivel__in=lista_de_niveles)
-
         count = alertas_a_marcar.update(estado=Alerta.EstadoAlerta.VISTA)
         return Response(
             {"status": f"{count} alertas marcadas como vistas"},
@@ -578,7 +585,7 @@ class AlertsForRepuestoView(APIView):
     Devuelve el historial paginado y filtrable de TODAS las alertas
     para un repuesto específico, ordenado por prioridad de estado.
     """
-    pagination_class = _StockPagination # O el nombre de tu clase
+    pagination_class = _StockPagination
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
         historial_alertas = Alerta.objects.filter(
