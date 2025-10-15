@@ -475,7 +475,7 @@ class AlertsListView(APIView):
             active_alerts_qs = Alerta.objects.filter(
                 repuesto_taller__taller_id=taller_id,
                 estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
-            ).order_by('-fecha_creacion')
+            )
             niveles_param = request.query_params.get('niveles')
             if niveles_param:
                 lista_de_niveles = [nivel.strip().upper() for nivel in niveles_param.split(',')]
@@ -575,25 +575,42 @@ class AlertsForRepuestoView(APIView):
     """
     GET /talleres/<taller_id>/repuestos/<repuesto_taller_id>/alertas/
 
-    Devuelve el historial paginado de TODAS las alertas para un repuesto específico.
+    Devuelve el historial paginado y filtrable de TODAS las alertas
+    para un repuesto específico, ordenado por prioridad de estado.
     """
-    pagination_class = _StockPagination
+    pagination_class = _StockPagination # O el nombre de tu clase
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
-        # Buscamos todas las alertas para ese repuesto, sin importar el estado
         historial_alertas = Alerta.objects.filter(
             repuesto_taller__taller_id=taller_id,
             repuesto_taller_id=repuesto_taller_id
-        ).select_related(
-            'repuesto_taller__repuesto'
-        ).order_by('-fecha_creacion') # Más nuevas primero
+        )
+        niveles_raw = request.query_params.get('niveles')
 
-        # Aplicamos la paginación
+        if niveles_raw:
+            lista_de_niveles = [nivel.strip().upper() for nivel in niveles_raw.split(',')]
+            historial_alertas = historial_alertas.filter(nivel__in=lista_de_niveles)
+
+        ordered_alertas = (
+            historial_alertas
+            .annotate(
+                estado_prio=Case(
+                    When(estado=Alerta.EstadoAlerta.NUEVA, then=Value(0)),
+                    When(estado=Alerta.EstadoAlerta.VISTA, then=Value(1)),
+                    When(estado=Alerta.EstadoAlerta.DESCARTADA, then=Value(3)),
+                    When(estado=Alerta.EstadoAlerta.RESUELTA, then=Value(2)),
+                    default=Value(9),
+                    output_field=IntegerField(),
+                )
+            )
+            .select_related('repuesto_taller__repuesto')
+            .order_by('estado_prio', '-fecha_creacion', '-id')
+        )
         paginator = self.pagination_class()
-        page = paginator.paginate_queryset(historial_alertas, request, view=self)
+        page = paginator.paginate_queryset(ordered_alertas, request, view=self)
         if page is not None:
             serializer = AlertaSerializer(page, many=True)
             return paginator.get_paginated_response(serializer.data)
 
-        serializer = AlertaSerializer(historial_alertas, many=True)
+        serializer = AlertaSerializer(ordered_alertas, many=True)
         return Response(serializer.data)
