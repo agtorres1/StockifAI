@@ -550,7 +550,7 @@ class MarkAsSeenAlertView(APIView):
 
 class MarkAllAsSeenView(APIView):
     """
-        POST /talleres/<taller_id>/alertas/mark-visible-as-seen/
+        POST /talleres/<taller_id>/alertas/mark-all-as-seen/
 
         Cambia el estado de una lista específica de alertas 'NUEVA' a 'VISTA'.
         Recibe un array de IDs en el cuerpo de la petición.
