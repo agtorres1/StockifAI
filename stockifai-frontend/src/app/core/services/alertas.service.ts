@@ -1,8 +1,21 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, distinctUntilChanged, filter, map, merge, Observable, of, shareReplay, Subject, switchMap, timer } from 'rxjs';
+import {
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    merge,
+    Observable,
+    of,
+    shareReplay,
+    Subject,
+    switchMap,
+    timer,
+} from 'rxjs';
 import { Alerta, NivelAlerta } from '../models/alerta';
 import { AlertasResumen } from '../models/alertas-resumen';
+import { PagedResponse } from '../models/paged-response';
 import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
@@ -24,13 +37,22 @@ export class AlertasService {
         );
     }
 
-    getAlertas(tallerId: number, niveles: NivelAlerta[]): Observable<Alerta[]> {
-        const params = new HttpParams().set('niveles', niveles.join(','));
-        return this.restService.get<Alerta[]>(`talleres/${tallerId}/alertas/`, params);
+    getAlertas(
+        tallerId: number,
+        niveles: NivelAlerta[],
+        page: number = 1,
+        pageSize: number = 50
+    ): Observable<PagedResponse<Alerta>> {
+        const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
+        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/alertas/`, params);
     }
 
     dismissAlerta(alertaId: number) {
         return this.restService.post<void>(`alertas/${alertaId}/dismiss/`, {});
+    }
+
+    markAsSeenAlerta(alertaId: number) {
+        return this.restService.post<void>(`alertas/${alertaId}/mark-as-seen/`, {});
     }
 
     triggerResumenRefresh(tallerId: number) {

@@ -1,23 +1,33 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
-import { distinctUntilChanged, firstValueFrom, map, Subscription } from 'rxjs';
+import { firstValueFrom, of, Subject, Subscription } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 import { Alerta, NivelAlerta } from '../../../core/models/alerta';
 import { AlertasService } from '../../../core/services/alertas.service';
 
 @Component({
     selector: 'app-alertas',
     templateUrl: './alertas.component.html',
-    styleUrl: './alertas.component.scss',
+    styleUrls: ['./alertas.component.scss'],
 })
 export class AlertasComponent implements OnInit, OnDestroy {
-    tallerId: number = 1;
+    tallerId = 1;
     nivelesSeleccionados = new Set<NivelAlerta>();
 
     alertas: Alerta[] = [];
-    loading: boolean = false;
-    errorMessage: string = '';
+    loading = false;
+    errorMessage = '';
 
-    private subscription?: Subscription;
+    page = 1;
+    pageSize = 10;
+    hasMore = true;
+    loadingMore = false;
+    private loadedIds = new Set<number>();
+
+    private reqSeq = 0;
+    private dataSub?: Subscription;
+
+    private cambiosFiltros$ = new Subject<Set<NivelAlerta>>();
 
     private NIVEL_VALUES: NivelAlerta[] = ['CRITICO', 'MEDIO', 'ADVERTENCIA', 'INFORMATIVO'];
 
@@ -31,60 +41,131 @@ export class AlertasComponent implements OnInit, OnDestroy {
     constructor(private alertasService: AlertasService, private route: ActivatedRoute, private router: Router) {}
 
     ngOnInit(): void {
+        this.loading = true;
+
         this.nivelesSeleccionados = this.readFromQuery(this.route.snapshot.queryParamMap);
 
-        this.subscription = this.route.queryParamMap
+        this.dataSub = this.cambiosFiltros$
             .pipe(
-                map((qpm) => this.readFromQuery(qpm)),
-                distinctUntilChanged((a, b) => this.setKey(a) === this.setKey(b))
-            )
-            .subscribe((set) => {
-                this.nivelesSeleccionados = set;
-                this.loadData();
-            });
-    }
+                debounceTime(600),
 
-    async loadData() {
-        this.loading = true;
-        try {
-            const niveles = Array.from(this.nivelesSeleccionados);
-            const res = await firstValueFrom(this.alertasService.getAlertas(this.tallerId, niveles));
-            this.alertas = res;
-            this.loading = false;
-        } catch (error: any) {
-            this.errorMessage = error?.message ?? 'Error al cargar las alertas.';
-            this.loading = false;
-        }
+                distinctUntilChanged((a, b) => this.setKey(a) === this.setKey(b)),
+
+                tap((set) => this.writeToUrlFrom(set)),
+                tap(() => {
+                    this.loading = true;
+                    this.errorMessage = '';
+                    this.page = 1;
+                    this.hasMore = true;
+                    this.alertas = [];
+                    this.loadedIds.clear();
+                }),
+
+                switchMap((set) => {
+                    const niveles = Array.from(set);
+                    const seq = ++this.reqSeq;
+                    return this.alertasService.getAlertas(this.tallerId, niveles, this.page, this.pageSize).pipe(
+                        map((res) => ({ kind: 'ok' as const, res, seq })),
+                        catchError((err) => of({ kind: 'err' as const, err, seq }))
+                    );
+                })
+            )
+            .subscribe((msg) => {
+                if (msg.seq !== this.reqSeq) return;
+
+                if (msg.kind === 'err') {
+                    this.errorMessage = msg.err?.message ?? 'Error al cargar las alertas.';
+                    this.loading = false;
+                    return;
+                }
+
+                const res = msg.res;
+                const nuevos = (res?.results ?? []).filter((a) => {
+                    if (this.loadedIds.has(a.id)) return false;
+                    this.loadedIds.add(a.id);
+                    return true;
+                });
+
+                this.alertas = nuevos;
+                this.hasMore =
+                    typeof res?.count === 'number' ? this.alertas.length < res.count : nuevos.length === this.pageSize;
+                this.loading = false;
+            });
+
+        this.cambiosFiltros$.next(new Set(this.nivelesSeleccionados));
     }
 
     toggleNivel(nivel: NivelAlerta) {
         if (this.nivelesSeleccionados.has(nivel)) this.nivelesSeleccionados.delete(nivel);
         else this.nivelesSeleccionados.add(nivel);
 
-        this.writeToUrl();
-        this.loadData();
+        this.loading = true;
+
+        this.cambiosFiltros$.next(new Set(this.nivelesSeleccionados));
+    }
+
+    async loadMore() {
+        if (this.loadingMore || !this.hasMore) return;
+        this.loadingMore = true;
+        this.errorMessage = '';
+
+        try {
+            const niveles = Array.from(this.nivelesSeleccionados);
+            const nextPage = this.page + 1;
+            const res = await firstValueFrom(
+                this.alertasService.getAlertas(this.tallerId, niveles, nextPage, this.pageSize)
+            );
+
+            const nuevos = res.results.filter((a) => {
+                if (this.loadedIds.has(a.id)) return false;
+                this.loadedIds.add(a.id);
+                return true;
+            });
+
+            this.alertas = [...this.alertas, ...nuevos];
+            this.page = nextPage;
+            this.hasMore =
+                typeof res.count === 'number' ? this.alertas.length < res.count : nuevos.length === this.pageSize;
+        } catch (error: any) {
+            this.errorMessage = error?.message ?? 'No se pudieron cargar más alertas.';
+        } finally {
+            this.loadingMore = false;
+        }
     }
 
     isActive(nivel: NivelAlerta) {
         return this.nivelesSeleccionados.has(nivel);
     }
 
-    setNivel(nivel: NivelAlerta | null) {
-        this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: nivel ? { nivel } : { nivel: null },
-            queryParamsHandling: 'merge',
+    onDismiss(alerta: Alerta) {
+        this.alertas = this.alertas.filter((a) => a.id !== alerta.id);
+        this.loadedIds.delete(alerta.id);
+
+        this.alertasService.dismissAlerta(alerta.id).subscribe({
+            next: () => this.alertasService.triggerResumenRefresh(this.tallerId),
+            error: () => {
+                this.errorMessage = 'No se pudo descartar la alerta.';
+            },
         });
+
+        if (this.alertas.length === 0) {
+            this.page = -1;
+            this.loadMore();
+        }
     }
 
-    onDismiss(alerta: Alerta) {
-        this.alertasService.dismissAlerta(alerta.id).subscribe((res) => {
+    onMarkAsSeen(alerta: Alerta) {
+        this.alertasService.markAsSeenAlerta(alerta.id).subscribe(() => {
             this.alertasService.triggerResumenRefresh(this.tallerId);
         });
     }
 
-    private writeToUrl(): void {
-        const niveles = Array.from(this.nivelesSeleccionados);
+    private writeToUrlFrom(set: Set<NivelAlerta>) {
+        const niveles = Array.from(set).sort();
+        const currentKey = this.setKey(this.readFromQuery(this.route.snapshot.queryParamMap));
+        const nextKey = niveles.join(',');
+        if (currentKey === nextKey) return;
+
         this.router.navigate([], {
             relativeTo: this.route,
             queryParams: { nivel: niveles.length ? niveles : null },
@@ -94,8 +175,8 @@ export class AlertasComponent implements OnInit, OnDestroy {
     }
 
     private readFromQuery(qpm: ParamMap): Set<NivelAlerta> {
-        const valores = qpm.getAll('nivel') as NivelAlerta[];
-        return new Set(valores.filter((v) => this.NIVEL_VALUES.includes(v)));
+        const valores = (qpm.getAll('nivel') as NivelAlerta[]).filter((v) => this.NIVEL_VALUES.includes(v));
+        return new Set(valores);
     }
 
     private setKey(s: Set<NivelAlerta>) {
@@ -103,6 +184,6 @@ export class AlertasComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.subscription?.unsubscribe();
+        this.dataSub?.unsubscribe();
     }
 }

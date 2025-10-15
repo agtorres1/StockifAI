@@ -41,9 +41,8 @@
         border-left-color: var(--info);
     }
 
-    &--dismissed {
+    &--seen {
         opacity: 0.5;
-        pointer-events: none;
     }
 }
 

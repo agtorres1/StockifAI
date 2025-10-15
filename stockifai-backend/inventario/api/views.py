@@ -1,3 +1,5 @@
+from django.db.models.expressions import When, Case, Value
+from django.db.models.fields import IntegerField
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -475,7 +477,19 @@ class AlertsListView(APIView):
             if niveles_param:
                 lista_de_niveles = [nivel.strip().upper() for nivel in niveles_param.split(',')]
                 active_alerts_qs = active_alerts_qs.filter(nivel__in=lista_de_niveles)
-            ordered_alerts = active_alerts_qs.select_related('repuesto_taller__repuesto').order_by('-fecha_creacion')
+            ordered_alerts = (
+                active_alerts_qs
+                .annotate(
+                    estado_prio=Case(
+                        When(estado=Alerta.EstadoAlerta.NUEVA, then=Value(0)),
+                        When(estado=Alerta.EstadoAlerta.VISTA, then=Value(1)),
+                        default=Value(9),
+                        output_field=IntegerField(),
+                    )
+                )
+                .select_related('repuesto_taller__repuesto')
+                .order_by('estado_prio', '-fecha_creacion', '-id')
+            )
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(ordered_alerts, request, view=self)
             if page is not None:

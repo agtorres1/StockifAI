@@ -66,11 +66,10 @@ DATABASES = {
              'isolation_level': 'READ COMMITTED',
          },
         'POOL_OPTIONS': {
-            'POOL_SIZE': 3,
-            'MAX_OVERFLOW': 2,
-            'RECYCLE': 1800,
+            'POOL_SIZE': 10,
+            'MAX_OVERFLOW': 20,
             'PRE_PING': True,
-            'POOL_TIMEOUT': 60,
+            'POOL_TIMEOUT': 30,
             'POOL_RECYCLE': 1800,
         }
      }

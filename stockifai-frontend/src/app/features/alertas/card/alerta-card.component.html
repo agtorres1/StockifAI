@@ -3,7 +3,7 @@
     'alert-card--medio': alerta.nivel === 'MEDIO',
     'alert-card--warning': alerta.nivel === 'ADVERTENCIA',
     'alert-card--info': alerta.nivel === 'INFORMATIVO',
-    'alert-card--dismissed': alerta.estado !== 'NUEVA'}">
+    'alert-card--seen': alerta.estado !== 'NUEVA'}">
 
     <div class="p-3">
         <div class="d-flex align-items-start gap-3">
@@ -46,12 +46,20 @@
                 <div class="d-flex justify-content-between gap-4">
                     <h2 class="h6 mb-2">{{ alerta.mensaje }}</h2>
 
-                    <div class="text-nowrap">
-                        <button class="btn btn-compact" (click)="onDismiss()">
-                            <i class="fa-solid fa-xmark me-1"></i>Descartar
+                    <div class="text-nowrap d-flex flex-column align-items-end gap-2">
+                        <button *ngIf="alerta.estado === 'NUEVA'" class="btn btn-compact btn-outline-secondary"
+                            (click)="onMarkAsSeen()" aria-label="Marcar alerta como vista">
+                            <i class="fa-regular fa-eye me-1" aria-hidden="true"></i>
+                            Marcar como vista
+                        </button>
+
+                        <button *ngIf="alerta.estado !== 'DESCARTADA'" class="btn btn-compact" (click)="onDismiss()" aria-label="Descartar alerta">
+                            <i class="fa-solid fa-xmark me-1" aria-hidden="true"></i>
+                            Descartar
                         </button>
                     </div>
                 </div>
+
 
 
             </div>
