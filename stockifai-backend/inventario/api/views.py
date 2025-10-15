@@ -454,12 +454,11 @@ class AlertsListView(APIView):
     def get(self, request, taller_id: int):
         summary_mode = request.query_params.get("summary") == "1"
 
-        active_alerts_qs = Alerta.objects.filter(
-            repuesto_taller__taller_id=taller_id,
-            estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
-        )
-
         if summary_mode:
+            active_alerts_qs = Alerta.objects.filter(
+                repuesto_taller__taller_id=taller_id,
+                estado__in=[Alerta.EstadoAlerta.NUEVA]
+            ).order_by('-fecha_creacion')
             # CAMPANITA
             counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
             alert_counts = {
@@ -473,6 +472,10 @@ class AlertsListView(APIView):
             alert_counts["TOTAL_URGENTE"] = total_urgente
             return Response(alert_counts)
         else:
+            active_alerts_qs = Alerta.objects.filter(
+                repuesto_taller__taller_id=taller_id,
+                estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
+            ).order_by('-fecha_creacion')
             niveles_param = request.query_params.get('niveles')
             if niveles_param:
                 lista_de_niveles = [nivel.strip().upper() for nivel in niveles_param.split(',')]
@@ -543,3 +546,54 @@ class MarkAsSeenAlertView(APIView):
             {"status": "Alerta marcada como vista"},
             status=status.HTTP_200_OK
         )
+
+
+class MarkAllAsSeenView(APIView):
+    """
+    POST /talleres/alertas/<taller_id>/mark-all-as-seen/
+
+    Cambia el estado de TODAS las alertas 'NUEVA' de un taller a 'VISTA',
+    respetando los filtros de nivel aplicados en la URL (ej: ?niveles=CRITICO).
+    """
+
+    def post(self, request, taller_id: int):
+        alertas_a_marcar = Alerta.objects.filter(
+            repuesto_taller__taller_id=taller_id,
+            estado=Alerta.EstadoAlerta.NUEVA
+        )
+        niveles_raw = request.query_params.getlist('niveles')
+        if niveles_raw:
+            lista_de_niveles = [nivel.strip().upper() for nivel in niveles_raw]
+            alertas_a_marcar = alertas_a_marcar.filter(nivel__in=lista_de_niveles)
+
+        count = alertas_a_marcar.update(estado=Alerta.EstadoAlerta.VISTA)
+        return Response(
+            {"status": f"{count} alertas marcadas como vistas"},
+            status=status.HTTP_200_OK
+        )
+class AlertsForRepuestoView(APIView):
+    """
+    GET /talleres/<taller_id>/repuestos/<repuesto_taller_id>/alertas/
+
+    Devuelve el historial paginado de TODAS las alertas para un repuesto específico.
+    """
+    pagination_class = _StockPagination
+
+    def get(self, request, taller_id: int, repuesto_taller_id: int):
+        # Buscamos todas las alertas para ese repuesto, sin importar el estado
+        historial_alertas = Alerta.objects.filter(
+            repuesto_taller__taller_id=taller_id,
+            repuesto_taller_id=repuesto_taller_id
+        ).select_related(
+            'repuesto_taller__repuesto'
+        ).order_by('-fecha_creacion') # Más nuevas primero
+
+        # Aplicamos la paginación
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(historial_alertas, request, view=self)
+        if page is not None:
+            serializer = AlertaSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = AlertaSerializer(historial_alertas, many=True)
+        return Response(serializer.data)
