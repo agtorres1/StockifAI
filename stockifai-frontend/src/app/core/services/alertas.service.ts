@@ -47,6 +47,18 @@ export class AlertasService {
         return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/alertas/`, params);
     }
 
+    getAlertasPorRepuesto(
+        tallerId: number,
+        repuestoTallerId: number,
+        niveles: NivelAlerta[],
+        page: number = 1,
+        pageSize: number = 50
+    ): Observable<PagedResponse<Alerta>> {
+        const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
+
+        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`, params);
+    }
+
     dismissAlerta(alertaId: number) {
         return this.restService.post<void>(`alertas/${alertaId}/dismiss/`, {});
     }

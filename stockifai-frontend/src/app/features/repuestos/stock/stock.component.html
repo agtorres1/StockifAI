@@ -62,7 +62,7 @@
                             title="Indica cuántas semanas de demanda futura se pueden cubrir con el stock actual."></i>
                     </th>
                     <th class="text-end">Stock total</th>
-                    <th style="width:50px;"></th>
+                    <th style="width:100px;"></th>
                 </tr>
             </thead>
 
@@ -131,12 +131,22 @@
                                 title="{{'Demanda proyectada: ' + item.repuesto_taller.cantidad_minima}}"></i>
                         </td>
 
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
-                                data-bs-placement="bottom" title="Ver forecast"
-                                (click)="viewForecast(item.repuesto_taller)">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </button>
+                        <td>
+                            <div class="d-flex justify-content-around">
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver alertas" (mousedown)="$event.preventDefault()"
+                                    data-bs-trigger="hover" data-bs-container="body"
+                                    (click)="viewAlerts(item.repuesto_taller)">
+                                    <i class="fa-solid fa-bell"></i>
+                                </button>
+
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver forecast"
+                                    (mousedown)="$event.preventDefault()" data-bs-trigger="hover"
+                                    data-bs-container="body" (click)="viewForecast(item.repuesto_taller)">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
 

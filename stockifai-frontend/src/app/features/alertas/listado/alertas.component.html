@@ -1,3 +1,16 @@
+<div *ngIf="repuestoTallerId" class="card alerta-header mb-3 px-2 py-2">
+  <div>
+    <div class="text-uppercase text-muted fw-semibold small mb-1">Repuesto seleccionado</div>
+    <div class="fs-6 fw-semibold d-flex align-items-center flex-wrap gap-1">
+      <span class="text-dark">{{ repuestoNumero }}</span>
+      <span class="text-muted">—</span>
+      <span class="text-secondary">{{ repuestoDescripcion }}</span>
+    </div>
+  </div>
+</div>
+
+
+
 <div class="tags-filter mb-4">
     <button *ngFor="let n of niveles" type="button" class="tag-toggle"
         [ngClass]="[ 'tag-' + n.class, isActive(n.key) ? 'is-active' : 'is-inactive' ]" (click)="toggleNivel(n.key)"

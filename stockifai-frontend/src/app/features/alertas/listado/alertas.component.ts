@@ -4,6 +4,7 @@ import { firstValueFrom, of, Subject, Subscription } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 import { Alerta, NivelAlerta } from '../../../core/models/alerta';
 import { AlertasService } from '../../../core/services/alertas.service';
+import { TitleService } from '../../../core/services/title.service';
 
 @Component({
     selector: 'app-alertas',
@@ -29,6 +30,10 @@ export class AlertasComponent implements OnInit, OnDestroy {
 
     private cambiosFiltros$ = new Subject<Set<NivelAlerta>>();
 
+    repuestoTallerId: number | null = null;
+    repuestoNumero?: string | null;
+    repuestoDescripcion?: string | null;
+
     private NIVEL_VALUES: NivelAlerta[] = ['CRITICO', 'MEDIO', 'ADVERTENCIA', 'INFORMATIVO'];
 
     niveles: Array<{ key: NivelAlerta; label: string; class: string }> = [
@@ -38,12 +43,21 @@ export class AlertasComponent implements OnInit, OnDestroy {
         { key: 'INFORMATIVO', label: 'Informativo', class: 'informativo' },
     ];
 
-    constructor(private alertasService: AlertasService, private route: ActivatedRoute, private router: Router) {}
+    constructor(private alertasService: AlertasService, private route: ActivatedRoute, private router: Router, private titleService: TitleService) {
+        this.titleService.setTitle('Alertas');
+    }
 
     ngOnInit(): void {
         this.loading = true;
 
         this.nivelesSeleccionados = this.readFromQuery(this.route.snapshot.queryParamMap);
+
+        const repuestoQueryParam = this.route.snapshot.queryParamMap.get('repuesto');
+        if (repuestoQueryParam) {
+            this.repuestoTallerId = Number(repuestoQueryParam);
+            this.repuestoNumero = this.route.snapshot.queryParamMap.get('repuesto_numero');
+            this.repuestoDescripcion = this.route.snapshot.queryParamMap.get('repuesto_desc');
+        }
 
         this.dataSub = this.cambiosFiltros$
             .pipe(
@@ -64,7 +78,18 @@ export class AlertasComponent implements OnInit, OnDestroy {
                 switchMap((set) => {
                     const niveles = Array.from(set);
                     const seq = ++this.reqSeq;
-                    return this.alertasService.getAlertas(this.tallerId, niveles, this.page, this.pageSize).pipe(
+
+                    const request$ = this.repuestoTallerId
+                        ? this.alertasService.getAlertasPorRepuesto(
+                              this.tallerId,
+                              this.repuestoTallerId,
+                              niveles,
+                              this.page,
+                              this.pageSize
+                          )
+                        : this.alertasService.getAlertas(this.tallerId, niveles, this.page, this.pageSize);
+
+                    return request$.pipe(
                         map((res) => ({ kind: 'ok' as const, res, seq })),
                         catchError((err) => of({ kind: 'err' as const, err, seq }))
                     );
@@ -112,8 +137,17 @@ export class AlertasComponent implements OnInit, OnDestroy {
         try {
             const niveles = Array.from(this.nivelesSeleccionados);
             const nextPage = this.page + 1;
+
             const res = await firstValueFrom(
-                this.alertasService.getAlertas(this.tallerId, niveles, nextPage, this.pageSize)
+                this.repuestoTallerId
+                    ? this.alertasService.getAlertasPorRepuesto(
+                          this.tallerId,
+                          this.repuestoTallerId,
+                          niveles,
+                          nextPage,
+                          this.pageSize
+                      )
+                    : this.alertasService.getAlertas(this.tallerId, niveles, nextPage, this.pageSize)
             );
 
             const nuevos = res.results.filter((a) => {
@@ -162,13 +196,23 @@ export class AlertasComponent implements OnInit, OnDestroy {
 
     private writeToUrlFrom(set: Set<NivelAlerta>) {
         const niveles = Array.from(set).sort();
-        const currentKey = this.setKey(this.readFromQuery(this.route.snapshot.queryParamMap));
+        const current = this.route.snapshot.queryParamMap;
+        const currentKey = this.setKey(this.readFromQuery(current));
         const nextKey = niveles.join(',');
-        if (currentKey === nextKey) return;
+
+        const curRep = current.get('repuesto');
+        const nextRep = this.repuestoTallerId != null ? String(this.repuestoTallerId) : null;
+
+        if (currentKey === nextKey && curRep === nextRep) return;
 
         this.router.navigate([], {
             relativeTo: this.route,
-            queryParams: { nivel: niveles.length ? niveles : null },
+            queryParams: {
+                nivel: niveles.length ? niveles : null,
+                repuesto: nextRep,
+                repuesto_numero: this.repuestoNumero ?? null,
+                repuesto_desc: this.repuestoDescripcion ?? null,
+            },
             queryParamsHandling: 'merge',
             replaceUrl: true,
         });
