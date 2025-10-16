@@ -34,7 +34,7 @@ def generar_alertas_inventario(
     # Se añade la condición de que no sea ya una alerta crítica para evitar duplicados.
     if mos_en_semanas is not None and Decimal('1') < mos_en_semanas <= Decimal('2.5') and not (stock_total < pred_1):
         alertas_activas.append({
-            "nivel": "MEDIO",
+            "nivel": "ADVERTENCIA",
             "codigo": "MOS_BAJO_REORDENAR",
             "mensaje": f"Bajo MOS. La cobertura es de {mos_en_semanas:.2f} semanas."
         })
