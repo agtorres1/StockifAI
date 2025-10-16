@@ -20,6 +20,10 @@ import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios
 import { LayoutComponent } from './layout/layout.component';
 import { SharedModule } from './shared/shared.module';
 import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
+import { RegisterComponent } from './session/register/register.component';
+import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { LoginComponent } from './session/login/login.component';
 
 @NgModule({
     declarations: [
@@ -36,6 +40,10 @@ import { LocalizadorComponent } from './features/repuestos/localizador/localizad
         MarcasComponent,
         CategoriasComponent,
         LocalizadorComponent,
+        AuthLayoutComponent,
+        RegisterComponent,
+        LoginComponent
+
     ],
     imports: [
         BrowserModule,
@@ -46,6 +54,9 @@ import { LocalizadorComponent } from './features/repuestos/localizador/localizad
         HttpClientModule,
         BaseChartDirective,
         SharedModule,
+        RouterModule,
+        ReactiveFormsModule
+
     ],
     providers: [provideCharts(withDefaultRegisterables())],
     bootstrap: [AppComponent],

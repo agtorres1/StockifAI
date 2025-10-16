@@ -11,26 +11,58 @@ import { CatalogoComponent } from './features/repuestos/catalogo/catalogo.compon
 import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
 import { CategoriasComponent } from './features/repuestos/categorias/categorias.component';
 import { LocalizadorComponent } from './features/repuestos/localizador/localizador.component';
+import { RegisterComponent } from './session/register/register.component';
+import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
+import { LayoutComponent } from './layout/layout.component';
+import { LoginComponent } from './session/login/login.component';
 
-const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'talleres', children: [
-    { path: 'listado', component: TalleresListadoComponent },
-    { path: 'grupos', component: TalleresGruposComponent },
-    { path: 'usuarios', component: TalleresUsuariosComponent },
-  ]},
-  { path: 'repuestos', children: [
-    { path: 'movimientos', component: MovimientosComponent },
-    { path: 'forecasting', component: ForecastingComponent },
-    { path: 'stock', component: StockComponent },
-    { path: 'catalogo', component: CatalogoComponent },
-    { path: 'marcas', component: MarcasComponent },
-    { path: 'categorias', component: CategoriasComponent },
-    { path: 'localizador', component: LocalizadorComponent },
+export const routes: Routes = [
+  // Rutas de autenticación (SIN sidebar)
+  {
+    path: 'auth',
+    component: AuthLayoutComponent,
+    children: [
+      { path: 'login', component: LoginComponent },
+      { path: 'register', component: RegisterComponent }
+    ]
+  },
 
-  ]},
-  { path: '**', redirectTo: 'dashboard' },
+  // Rutas principales (CON sidebar)
+  {
+    path: '',
+    component: LayoutComponent,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: DashboardComponent },
+
+      // Talleres
+      {
+        path: 'talleres',
+        children: [
+          { path: 'listado', component: TalleresListadoComponent },
+          { path: 'grupos', component: TalleresGruposComponent },
+          { path: 'usuarios', component: TalleresUsuariosComponent },
+        ]
+      },
+
+      // Repuestos
+      {
+        path: 'repuestos',
+        children: [
+          { path: 'movimientos', component: MovimientosComponent },
+          { path: 'forecasting', component: ForecastingComponent },
+          { path: 'stock', component: StockComponent },
+          { path: 'catalogo', component: CatalogoComponent },
+          { path: 'marcas', component: MarcasComponent },
+          { path: 'categorias', component: CategoriasComponent },
+          { path: 'localizador', component: LocalizadorComponent },
+        ]
+      },
+    ]
+  },
+
+  // Catch-all
+  { path: '**', redirectTo: 'dashboard' }
 ];
 
 @NgModule({
