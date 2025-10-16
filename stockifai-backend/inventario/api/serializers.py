@@ -3,7 +3,7 @@ from rest_framework import serializers
 from catalogo.models import Repuesto, Categoria, Marca
 from inventario.models import Deposito, Movimiento, Alerta
 from catalogo.models import RepuestoTaller
-from user.models import Taller
+from user.models import Grupo, Taller
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -110,6 +110,29 @@ class RepuestoStockSerializer(serializers.Serializer):
     repuesto_taller = RepuestoTallerSerializer()
     stock_total = serializers.IntegerField()
     depositos = StockDepositoDetalleSerializer(many=True)
+
+
+class GrupoResumenSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    descripcion = serializers.CharField(allow_blank=True)
+    grupo_padre_id = serializers.IntegerField(allow_null=True)
+    es_subgrupo = serializers.BooleanField()
+
+
+class TallerConStockSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    direccion = serializers.CharField(allow_blank=True)
+    direccion_normalizada = serializers.CharField(allow_blank=True, required=False)
+    telefono = serializers.CharField(allow_blank=True, required=False)
+    telefono_e164 = serializers.CharField(allow_blank=True, required=False)
+    email = serializers.CharField(allow_blank=True, required=False)
+    latitud = serializers.FloatField(allow_null=True)
+    longitud = serializers.FloatField(allow_null=True)
+    cantidad = serializers.IntegerField()
+    distancia_km = serializers.FloatField(allow_null=True, required=False)
+    grupos = GrupoResumenSerializer(many=True)
 
 class AlertaSerializer(serializers.ModelSerializer):
     """

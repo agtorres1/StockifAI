@@ -1,10 +1,23 @@
 from django.urls import path
 
 from .movimientos import MovimientosListView
-from .views import (ImportarMovimientosView, ImportarStockView, ImportarCatalogoView, DepositosPorTallerView,
-                    ConsultarStockView, EjecutarForecastPorTallerView, EjecutarForecastView, DetalleForecastingView,
-                    ConsultarForecastingListView, AlertsListView, DismissAlertView, MarkAsSeenAlertView,
-                    AlertsForRepuestoView, MarkAllAsSeenView)
+from .views import (
+    ImportarMovimientosView,
+    ImportarStockView,
+    ImportarCatalogoView,
+    DepositosPorTallerView,
+    ConsultarStockView,
+    LocalizarRepuestoView,
+    EjecutarForecastPorTallerView,
+    EjecutarForecastView,
+    DetalleForecastingView,
+    ConsultarForecastingListView,
+    AlertsListView,
+    DismissAlertView,
+    MarkAsSeenAlertView,
+    AlertsForRepuestoView,
+    MarkAllAsSeenView,
+)
 urlpatterns = [
     path('importaciones/movimientos', ImportarMovimientosView.as_view(), name='importar-movimientos'),
     path("importaciones/stock", ImportarStockView.as_view(), name="importar-stock"),
@@ -12,6 +25,7 @@ urlpatterns = [
     path("talleres/<int:taller_id>/depositos", DepositosPorTallerView.as_view(), name="depositos-por-taller"),
     path("talleres/<int:taller_id>/movimientos", MovimientosListView.as_view(), name="movimientos-list"),
     path("talleres/<int:taller_id>/stock", ConsultarStockView.as_view(), name="consultar-stock"),
+    path("talleres/<int:taller_id>/localizador", LocalizarRepuestoView.as_view(), name="localizar-repuesto"),
     path("talleres/<int:taller_id>/forecast/run", EjecutarForecastPorTallerView.as_view(), name="forecast-run-taller"),
     path("talleres/forecast/run", EjecutarForecastView.as_view(), name="forecast-run"),
     path("talleres/<int:taller_id>/forecasting", ConsultarForecastingListView.as_view(), name="forecasting-list"),
