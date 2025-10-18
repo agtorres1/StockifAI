@@ -3,7 +3,7 @@ import math
 from datetime import date, timedelta, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Set, Union
-
+from collections import defaultdict
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Prefetch, Q, Sum, Count
@@ -15,6 +15,13 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+import pandas as pd
+from django.http import HttpResponse
+from rest_framework.views import APIView
+from rest_framework import status
+from datetime import datetime
+from django.db.models import Sum, Q, F, DecimalField
 
 from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
 from catalogo.models import Repuesto, RepuestoTaller
@@ -29,7 +36,7 @@ from ..services._helpers import (
     get_historical_demand,
     get_month_ranges,
 )
-from ..services.actualizar_alertas import actualizar_alertas_para_repuestos
+from ..services.actualizar_alertas import actualizar_alertas_para_repuestos, generar_alertas_inventario
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
 from ..services.import_stock import importar_stock
@@ -822,3 +829,145 @@ class AlertsForRepuestoView(APIView):
 
         serializer = AlertaSerializer(ordered_alertas, many=True)
         return Response(serializer.data)
+
+class ExportarUrgentesView(APIView):
+    """
+    GET /talleres/<taller_id>/alertas/exportar-urgentes/
+
+    Genera un archivo Excel con los repuestos en estado CRÍTICO (quiebre inminente)
+    y la cantidad sugerida a comprar para cubrir la demanda de la próxima semana.
+    """
+    def get(self, request, taller_id: int):
+
+        # Alertas CRÍTICAS activas
+        alertas_criticas_qs = Alerta.objects.filter(
+            repuesto_taller__taller_id=taller_id,
+            nivel=Alerta.NivelAlerta.CRITICO,
+            estado__in=[Alerta.EstadoAlerta.NUEVA, Alerta.EstadoAlerta.VISTA]
+        ).select_related(
+            'repuesto_taller__repuesto'
+        ).annotate(
+            stock_actual=Sum("repuesto_taller__stocks__cantidad",
+                             filter=Q(repuesto_taller__stocks__deposito__taller_id=taller_id),
+                             output_field=DecimalField())
+        )
+        data_para_excel = []
+        for alerta in alertas_criticas_qs:
+            rt = alerta.repuesto_taller
+            repuesto = rt.repuesto
+            stock_total = Decimal(alerta.stock_actual or 0)
+            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
+
+            # --- Cálculo de la Cantidad a Comprar ---
+            cantidad_a_comprar = max(Decimal(0), pred_1 - stock_total)
+            if cantidad_a_comprar > 0:
+                cantidad_a_comprar = cantidad_a_comprar.to_integral_value(rounding='ROUND_CEILING')
+
+            if cantidad_a_comprar > 0:
+                data_para_excel.append({
+                    "Numero Pieza": repuesto.numero_pieza,
+                    "Descripcion": repuesto.descripcion,
+                    "Stock Actual": stock_total,
+                    "Demanda Prox. Semana": pred_1,
+                    "Cantidad a Comprar": cantidad_a_comprar,
+                })
+
+        if not data_para_excel:
+            return Response({"detail": "No hay repuestos con alerta crítica que requieran compra urgente."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        df = pd.DataFrame(data_para_excel)
+        fecha_actual = datetime.now().strftime("%Y%m%d_%H%M")
+        nombre_archivo = f"reporte_urge_comprar_{fecha_actual}.xlsx"
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+        df.to_excel(response, index=False)
+        return response
+
+
+class SaludInventarioPorCategoriaView(APIView):
+    """
+    GET /api/talleres/<taller_id>/salud-por-categoria/
+
+    Devuelve un resumen de la salud del inventario agrupado por categoría y
+    sub-agrupado por frecuencia de rotación (como string).
+    """
+    def get(self, request, taller_id: int):
+
+        rt_qs = RepuestoTaller.objects.filter(
+            taller_id=taller_id
+        ).annotate(
+            stock_total=Sum(
+                "stocks__cantidad",
+                filter=Q(stocks__deposito__taller_id=taller_id),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            )
+        ).select_related('repuesto__categoria')
+
+        health_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+
+        NIVEL_TO_SALUD = {
+            "CRÍTICO": "critico",
+            "ADVERTENCIA": "advertencia",
+            "INFORMATIVO": "sobrestock",
+        }
+        SALUD_KEYS = ["critico", "advertencia", "saludable", "sobrestock"]
+
+        for rt in rt_qs:
+            stock = Decimal(rt.stock_total or 0)
+            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
+            frecuencia_str = getattr(rt, 'frecuencia', None) or "DESCONOCIDA"
+
+            categoria_nombre = "Sin Categoría"
+            if rt.repuesto and rt.repuesto.categoria:
+                categoria_nombre = rt.repuesto.categoria.nombre
+
+            forecast_semanas = [
+                pred_1,
+                Decimal(getattr(rt, 'pred_2', 0) or 0),
+                Decimal(getattr(rt, 'pred_3', 0) or 0),
+                Decimal(getattr(rt, 'pred_4', 0) or 0),
+            ]
+            mos = calcular_mos(stock, forecast_semanas)
+
+            alertas_potenciales = generar_alertas_inventario(
+                stock_total=stock, pred_1=pred_1, mos_en_semanas=mos,
+                frecuencia_rotacion=frecuencia_str
+            )
+            if not alertas_potenciales:
+                status = "saludable"
+            else:
+                primer_nivel_alerta = alertas_potenciales[0]['nivel']
+                status = NIVEL_TO_SALUD.get(primer_nivel_alerta, "saludable")
+
+            health_counts[categoria_nombre][frecuencia_str][status] += 1
+
+        response_data = []
+        for categoria, frecuencias_data in health_counts.items():
+            categoria_obj = {"categoria": categoria, "frecuencias": {}, "total_items_categoria": 0}
+            total_items_categoria = 0
+
+            for freq_key, counts in frecuencias_data.items():
+                frecuencia_obj = {}
+                total_items_frecuencia = 0
+
+                for salud_key in SALUD_KEYS:
+                    count_value = counts.get(salud_key, 0)
+                    frecuencia_obj[salud_key] = count_value
+                    total_items_frecuencia += count_value
+
+                if total_items_frecuencia > 0:
+                     frecuencia_obj["total_items_frecuencia"] = total_items_frecuencia
+                     categoria_obj["frecuencias"][freq_key] = frecuencia_obj
+                     total_items_categoria += total_items_frecuencia
+
+            if total_items_categoria > 0:
+                categoria_obj["total_items_categoria"] = total_items_categoria
+                response_data.append(categoria_obj)
+
+        response_data.sort(key=lambda x: x['categoria'])
+
+        return Response(response_data)
