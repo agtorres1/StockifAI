@@ -13,6 +13,18 @@
         Encontrá rápidamente qué talleres tienen stock disponible del repuesto que necesitás.
     </p>
 
+    <div *ngIf="mensajeError && !cargando" class="alert alert-danger py-2">
+        {{ mensajeError }}
+    </div>
+
+    <div *ngIf="!mensajeError && repuesto && !cargando" class="alert alert-info py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <strong>{{ repuesto.numero_pieza }}</strong>
+            <span class="text-muted" *ngIf="repuesto.descripcion">— {{ repuesto.descripcion }}</span>
+        </div>
+        <div class="fw-semibold">Total localizado: {{ totalEncontrado }} unidades</div>
+    </div>
+
     <!-- GRID PRINCIPAL -->
     <div class="row g-3">
         <!-- LISTA IZQUIERDA -->
@@ -20,35 +32,38 @@
             <div class="card shadow-sm h-100">
                 <div class="card-header fw-semibold">
                     Talleres con stock
-                    <div class="small text-muted">Número de pieza: {{ query || '—' }}</div>
+                    <div class="small text-muted">
+                        Número de pieza: {{ repuesto?.numero_pieza || query || '—' }}
+                    </div>
                 </div>
 
                 <div class="list-group list-group-flush">
                     <div class="list-group-item d-flex align-items-start justify-content-between" *ngFor="let t of resultados">
-                        <div class="me-3">
+                        <div class="me-3 flex-grow-1">
                             <div class="fw-semibold nombre">{{ t.nombre }}</div>
                             <div class="text-muted small">{{ t.direccion }}</div>
-                            <div class="text-muted small mt-1">
+                            <div class="text-muted small mt-1 d-flex flex-wrap gap-2">
                                 <span *ngIf="t.telefono">Tel: {{ t.telefono }}</span>
-                                <span *ngIf="t.email"> &nbsp; Email: {{ t.email }}</span>
+                                <span *ngIf="t.email">Email: {{ t.email }}</span>
+                                <span class="badge bg-light text-muted" *ngIf="t.distanciaKm != null">{{ distanciaFormateada(t) }}</span>
                             </div>
 
-                            <div class="mt-2 d-flex gap-2">
-                                <!-- Botón WhatsApp -->
+                            <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge bg-info text-dark" *ngFor="let g of t.grupos">{{ g.nombre }}</span>
                                 <a *ngIf="t.telefonoE164" class="btn btn-success btn-sm" [href]="whatsappUrl(t)" target="_blank" rel="noopener">
                                     <i class="fab fa-whatsapp me-1"></i> WhatsApp
                                 </a>
                             </div>
                         </div>
 
-                        <div class="text-nowrap">
+                        <div class="text-end">
                             <span class="badge bg-primary rounded-pill px-3 py-2">
                   {{ t.cantidad }} en stock
                 </span>
                         </div>
                     </div>
 
-                    <div class="list-group-item text-muted" *ngIf="!cargando && !resultados.length">
+                    <div class="list-group-item text-muted" *ngIf="!cargando && !resultados.length && !mensajeError">
                         Sin resultados
                     </div>
                     <div class="list-group-item" *ngIf="cargando">

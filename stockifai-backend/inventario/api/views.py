@@ -1,35 +1,51 @@
-from django.db.models.expressions import When, Case, Value
-from django.db.models.fields import IntegerField
-from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.db import transaction
+import logging
+import math
 from datetime import date, timedelta, datetime, time
-from .serializers import MovimientosImportSerializer, StockImportSerializer, CatalogoImportSerializer, \
-    DepositoSerializer, AlertaSerializer
-from ..models import Deposito, Movimiento, Alerta
-from ..services._helpers import calcular_mos, compute_trend_line, get_month_ranges, batch_calculate_demand, MESES_ABREV, \
-    get_historical_demand
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Any, Dict, List, Optional, Set, Union
+
+from django.conf import settings
+from django.db import transaction
+from django.db.models import F, Prefetch, Q, Sum, Count
+from django.db.models.expressions import Case, Value, When
+from django.db.models.fields import IntegerField
+from django.db.models.functions import TruncWeek
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
+from catalogo.models import Repuesto, RepuestoTaller
+from inventario.models import Deposito, Movimiento, StockPorDeposito, Alerta
+from user.models import Grupo, GrupoTaller, Taller
+
+from ..services._helpers import (
+    MESES_ABREV,
+    batch_calculate_demand,
+    calcular_mos,
+    compute_trend_line,
+    get_historical_demand,
+    get_month_ranges,
+)
 from ..services.actualizar_alertas import actualizar_alertas_para_repuestos
 from ..services.import_catalogo import importar_catalogo
 from ..services.import_movimientos import importar_movimientos
-from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
-from django.conf import settings
-from decimal import Decimal, ROUND_HALF_UP
-from typing import List, Optional, Union, Dict, Any
 from ..services.import_stock import importar_stock
-from django.db.models import Sum, Q, Prefetch, Count
-from django.db.models.functions import TruncWeek
-from rest_framework.pagination import PageNumberPagination
-from catalogo.models import RepuestoTaller
-from inventario.models import StockPorDeposito, Deposito
 from .serializers import (
+    AlertaSerializer,
+    CatalogoImportSerializer,
+    DepositoSerializer,
+    MovimientosImportSerializer,
     RepuestoStockSerializer,
     RepuestoTallerSerializer,
     StockDepositoDetalleSerializer,
-    DepositoSerializer,
+    StockImportSerializer,
+    TallerConStockSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 class ImportarMovimientosView(APIView):
     def post(self, request):
@@ -200,6 +216,191 @@ class ConsultarStockView(APIView):
             payload.append(item)
 
         return paginator.get_paginated_response(payload)
+
+
+class LocalizarRepuestoView(APIView):
+    """Localiza talleres dentro del grupo del taller solicitante con stock disponible."""
+
+    def get(self, request, taller_id: int) -> Response:
+        numero_pieza = request.query_params.get("numero_pieza")
+        repuesto_id = request.query_params.get("repuesto_id")
+
+        if not numero_pieza and not repuesto_id:
+            return Response(
+                {"detail": "Debe indicar numero_pieza o repuesto_id como parámetro de búsqueda."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        taller_origen = get_object_or_404(Taller, pk=taller_id)
+
+        if repuesto_id:
+            repuesto = get_object_or_404(Repuesto, pk=repuesto_id)
+        else:
+            repuesto = (
+                Repuesto.objects.filter(numero_pieza__iexact=numero_pieza).first()
+            )
+            if not repuesto:
+                return Response(
+                    {"detail": "No se encontró un repuesto con ese número de pieza."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        grupos_permitidos = self._grupos_permitidos_para_taller(taller_origen)
+
+        rt_qs = (
+            RepuestoTaller.objects
+            .filter(repuesto=repuesto)
+            .select_related("taller")
+            .prefetch_related(
+                Prefetch(
+                    "taller__grupotaller_set",
+                    queryset=GrupoTaller.objects.select_related("id_grupo__grupo_padre"),
+                    to_attr="prefetched_grupos",
+                )
+            )
+            .annotate(
+                stock_total=Sum(
+                    "stocks__cantidad",
+                    filter=Q(stocks__deposito__taller_id=F("taller_id"))
+                )
+            )
+            .filter(stock_total__gt=0)
+        )
+
+        if grupos_permitidos:
+            talleres_permitidos = set(
+                GrupoTaller.objects.filter(id_grupo_id__in=grupos_permitidos)
+                .values_list("id_taller_id", flat=True)
+            )
+            if talleres_permitidos:
+                rt_qs = rt_qs.filter(taller_id__in=talleres_permitidos)
+            else:
+                rt_qs = rt_qs.none()
+
+        resultados: List[Dict[str, Any]] = []
+        total_cantidad = 0
+
+        for rt in rt_qs:
+            cantidad = int(rt.stock_total or 0)
+            total_cantidad += cantidad
+            taller = rt.taller
+
+            grupos = []
+            for gt in getattr(taller, "prefetched_grupos", []):
+                grupo = gt.id_grupo
+                grupos.append({
+                    "id": grupo.id_grupo,
+                    "nombre": grupo.nombre,
+                    "descripcion": grupo.descripcion,
+                    "grupo_padre_id": grupo.grupo_padre_id,
+                    "es_subgrupo": grupo.grupo_padre_id is not None,
+                })
+
+            distancia = self._calcular_distancia_km(taller_origen, taller)
+
+            resultados.append({
+                "id": taller.id,
+                "nombre": taller.nombre,
+                "direccion": taller.direccion,
+                "direccion_normalizada": taller.direccion_normalizada,
+                "telefono": taller.telefono,
+                "telefono_e164": taller.telefono_e164,
+                "email": taller.email,
+                "latitud": float(taller.latitud) if taller.latitud is not None else None,
+                "longitud": float(taller.longitud) if taller.longitud is not None else None,
+                "cantidad": cantidad,
+                "distancia_km": distancia,
+                "grupos": grupos,
+            })
+
+        resultados.sort(
+            key=lambda item: (
+                item["distancia_km"] is None,
+                item["distancia_km"] or 0.0,
+                -item["cantidad"],
+                item["nombre"],
+            )
+        )
+
+        payload = {
+            "repuesto": {
+                "id": repuesto.id,
+                "numero_pieza": repuesto.numero_pieza,
+                "descripcion": repuesto.descripcion,
+            },
+            "taller_origen": {
+                "id": taller_origen.id,
+                "nombre": taller_origen.nombre,
+                "latitud": float(taller_origen.latitud) if taller_origen.latitud is not None else None,
+                "longitud": float(taller_origen.longitud) if taller_origen.longitud is not None else None,
+            },
+            "total_cantidad": total_cantidad,
+            "talleres": TallerConStockSerializer(resultados, many=True).data,
+        }
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _calcular_distancia_km(origen: Taller, destino: Taller) -> Optional[float]:
+        if (
+            origen.latitud is None
+            or origen.longitud is None
+            or destino.latitud is None
+            or destino.longitud is None
+        ):
+            return None
+
+        lat1 = math.radians(float(origen.latitud))
+        lon1 = math.radians(float(origen.longitud))
+        lat2 = math.radians(float(destino.latitud))
+        lon2 = math.radians(float(destino.longitud))
+
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        radio_tierra_km = 6371.0
+        return round(radio_tierra_km * c, 2)
+
+    def _grupos_permitidos_para_taller(self, taller: Taller) -> Set[int]:
+        grupos_asignados = list(
+            GrupoTaller.objects.filter(id_taller=taller).values_list("id_grupo_id", flat=True)
+        )
+        if not grupos_asignados:
+            return set()
+
+        grupos = list(
+            Grupo.objects.all().values("id_grupo", "grupo_padre_id")
+        )
+
+        parent_map = {g["id_grupo"]: g["grupo_padre_id"] for g in grupos}
+        children_map: Dict[Optional[int], List[int]] = {}
+        for g in grupos:
+            parent = g["grupo_padre_id"]
+            children_map.setdefault(parent, []).append(g["id_grupo"])
+
+        roots: Set[int] = set()
+        for gid in grupos_asignados:
+            current = gid
+            while current is not None:
+                parent = parent_map.get(current)
+                if parent is None:
+                    roots.add(current)
+                    break
+                current = parent
+
+        permitidos: Set[int] = set()
+        stack = list(roots)
+        while stack:
+            gid = stack.pop()
+            if gid in permitidos:
+                continue
+            permitidos.add(gid)
+            stack.extend(children_map.get(gid, []))
+
+        return permitidos
 
 class EjecutarForecastPorTallerView(APIView):
     def post(self, request, taller_id: int):
