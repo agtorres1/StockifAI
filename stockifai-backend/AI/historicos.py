@@ -184,7 +184,7 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
         return "ERROR_CLASIFICACION"
 
     volumen_historico["frecuencia_rotacion"] = volumen_historico.apply(
-        lambda row: frecuencia_rotacion(row, fecha_final), axis=1
+        lambda row: frecuencia_rotacion_ajustada(row, fecha_final), axis=1
     )
 
     df_full = df_full.merge(
