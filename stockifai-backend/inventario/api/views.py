@@ -462,13 +462,13 @@ class AlertsListView(APIView):
             # CAMPANITA
             counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
             alert_counts = {
-                Alerta.NivelAlerta.CRITICO: 0, Alerta.NivelAlerta.MEDIO: 0,
+                Alerta.NivelAlerta.CRITICO: 0,
                 Alerta.NivelAlerta.ADVERTENCIA: 0, Alerta.NivelAlerta.INFORMATIVO: 0
             }
             for item in counts:
                 if item['nivel'] in alert_counts:
                     alert_counts[item['nivel']] = item['total']
-            total_urgente = alert_counts[Alerta.NivelAlerta.CRITICO] + alert_counts[Alerta.NivelAlerta.MEDIO]
+            total_urgente = alert_counts[Alerta.NivelAlerta.CRITICO]
             alert_counts["TOTAL_URGENTE"] = total_urgente
             return Response(alert_counts)
         else:
