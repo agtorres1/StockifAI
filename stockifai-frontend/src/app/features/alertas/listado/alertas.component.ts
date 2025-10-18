@@ -34,11 +34,10 @@ export class AlertasComponent implements OnInit, OnDestroy {
     repuestoNumero?: string | null;
     repuestoDescripcion?: string | null;
 
-    private NIVEL_VALUES: NivelAlerta[] = ['CRITICO', 'MEDIO', 'ADVERTENCIA', 'INFORMATIVO'];
+    private NIVEL_VALUES: NivelAlerta[] = ['CRITICO', 'ADVERTENCIA', 'INFORMATIVO'];
 
     niveles: Array<{ key: NivelAlerta; label: string; class: string }> = [
         { key: 'CRITICO', label: 'Crítico', class: 'critico' },
-        { key: 'MEDIO', label: 'Medio', class: 'medio' },
         { key: 'ADVERTENCIA', label: 'Advertencia', class: 'advertencia' },
         { key: 'INFORMATIVO', label: 'Informativo', class: 'informativo' },
     ];

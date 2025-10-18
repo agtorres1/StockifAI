@@ -113,7 +113,17 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
             queryParams: {
                 search: repuestoStock.repuesto.numero_pieza,
                 categoria: this.filtro.idCategoria || null,
-                viewDetails: true
+                viewDetails: true,
+            },
+        });
+    }
+
+    viewAlerts(repuestoStock: RepuestoTaller) {
+        this.router.navigate(['/alertas'], {
+            queryParams: {
+                repuesto: repuestoStock.id_repuesto_taller,
+                repuesto_numero: repuestoStock.repuesto.numero_pieza,
+                repuesto_desc: repuestoStock.repuesto.descripcion,
             },
         });
     }

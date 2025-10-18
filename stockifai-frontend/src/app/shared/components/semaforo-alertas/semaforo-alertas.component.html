@@ -1,6 +1,6 @@
 <div class="sem-container" aria-live="polite">
     <button type="button" class="btn btn-link p-0 position-relative header-icon-btn"
-        [class.muted]="alertas.totalUrgente === 0" (click)="viewAlerts(['CRITICO', 'MEDIO'])"
+        [class.muted]="alertas.totalUrgente === 0" (click)="viewAlerts(['CRITICO'])"
         [attr.aria-label]="'Ver alertas urgentes: ' + alertas.totalUrgente" data-bs-toggle="tooltip"
         data-bs-placement="bottom" title="Ver alertas urgentes" (mousedown)="$event.preventDefault()"
         data-bs-trigger="hover" data-bs-container="body">

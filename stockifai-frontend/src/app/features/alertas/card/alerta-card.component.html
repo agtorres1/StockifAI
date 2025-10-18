@@ -1,6 +1,5 @@
 <div class="alert-card" [ngClass]="{
     'alert-card--critico': alerta.nivel === 'CRITICO',
-    'alert-card--medio': alerta.nivel === 'MEDIO',
     'alert-card--warning': alerta.nivel === 'ADVERTENCIA',
     'alert-card--info': alerta.nivel === 'INFORMATIVO',
     'alert-card--seen': alerta.estado !== 'NUEVA'}">
@@ -10,7 +9,6 @@
 
             <div class="flex-shrink-0 fs-3" aria-hidden="true">
                 <i *ngIf="alerta.nivel === 'CRITICO'" class="fa-solid fa-circle-exclamation text-danger"></i>
-                <i *ngIf="alerta.nivel === 'MEDIO'" class="fa-solid fa-circle-exclamation text-medio"></i>
                 <i *ngIf="alerta.nivel === 'ADVERTENCIA'" class="fa-solid fa-triangle-exclamation text-warning"></i>
                 <i *ngIf="alerta.nivel === 'INFORMATIVO'" class="fa-solid fa-circle-info text-info"></i>
             </div>
@@ -20,7 +18,6 @@
                     <span class="badge chip-nivel border" [attr.data-nivel]="alerta.nivel">
                         <i class="me-1 fa-solid" [ngClass]="{
                'fa-fire': alerta.nivel === 'CRITICO',
-               'fa-gauge': alerta.nivel === 'MEDIO',
                'fa-bell': alerta.nivel === 'ADVERTENCIA',
                'fa-circle-info': alerta.nivel === 'INFORMATIVO'
              }"></i>

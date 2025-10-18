@@ -17,8 +17,7 @@
         role="switch" [attr.aria-checked]="isActive(n.key)">
         <i class="fa-solid" [ngClass]="{
          'fa-circle-exclamation': n.key === 'CRITICO',
-         'fa-triangle-exclamation': n.key === 'MEDIO',
-         'fa-bell': n.key === 'ADVERTENCIA',
+         'fa-exclamation-triangle': n.key === 'ADVERTENCIA',
          'fa-circle-info': n.key === 'INFORMATIVO'
        }"></i>
         <span>{{ n.label }}</span>
