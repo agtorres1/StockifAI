@@ -128,6 +128,14 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     }
 
+    goToLocalizador(repuestoStock: RepuestoTaller) {
+        this.router.navigate(['/repuestos/localizador'], {
+            queryParams: {
+                search: repuestoStock.repuesto.numero_pieza
+            },
+        });
+    }
+
     toggle(event: MouseEvent, id: number) {
         event.stopPropagation();
         this.isOpen(id) ? this.open.delete(id) : this.open.add(id);
