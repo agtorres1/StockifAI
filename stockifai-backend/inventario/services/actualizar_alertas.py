@@ -25,7 +25,7 @@ def generar_alertas_inventario(
     # 1. ALERTA CRÍTICA: Quiebre de Stock Inmediato
     if stock_total < pred_1:
         alertas_activas.append({
-            "nivel": "CRÍTICO",
+            "nivel": "CRITICO",
             "codigo": "ACCION_INMEDIATA",
             "mensaje": f"Quiebre Inminente. Stock ({stock_total}) no cubre la demanda de la próxima semana ({pred_1})."
         })

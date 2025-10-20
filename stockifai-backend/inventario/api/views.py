@@ -910,7 +910,7 @@ class SaludInventarioPorCategoriaView(APIView):
         health_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
 
         NIVEL_TO_SALUD = {
-            "CRÍTICO": "critico",
+            "CRITICO": "critico",
             "ADVERTENCIA": "advertencia",
             "INFORMATIVO": "sobrestock",
         }
