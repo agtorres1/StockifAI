@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
 
@@ -46,6 +46,16 @@ export class RestService {
         return this.http
             .post<T>(`${this.baseUrl}${endpoint}`, formData, {
                 headers: new HttpHeaders(headers || {}),
+            })
+            .pipe(catchError((err) => throwError(() => err)));
+    }
+
+    getBlobResponse(endpoint: string, params?: any): Observable<HttpResponse<Blob>> {
+        return this.http
+            .get(`${this.baseUrl}${endpoint}`, {
+                params,
+                responseType: 'blob',
+                observe: 'response',
             })
             .pipe(catchError((err) => throwError(() => err)));
     }

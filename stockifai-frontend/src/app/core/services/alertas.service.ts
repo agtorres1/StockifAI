@@ -1,4 +1,4 @@
-import { HttpParams } from '@angular/common/http';
+import { HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
     catchError,
@@ -56,7 +56,10 @@ export class AlertasService {
     ): Observable<PagedResponse<Alerta>> {
         const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
 
-        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`, params);
+        return this.restService.get<PagedResponse<Alerta>>(
+            `talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`,
+            params
+        );
     }
 
     dismissAlerta(alertaId: number) {
@@ -69,6 +72,10 @@ export class AlertasService {
 
     triggerResumenRefresh(tallerId: number) {
         this.resumenRefresh$.next(tallerId);
+    }
+
+    exportarListadoComprarUrgentes(tallerId: number): Observable<HttpResponse<Blob>> {
+        return this.restService.getBlobResponse(`talleres/${tallerId}/exportar-urgentes/`);
     }
 
     private getResumenAlertas(tallerId: number): Observable<AlertasResumen> {

@@ -1,1 +1,126 @@
-<p>dashboard works!</p>
+<div class="card shadow-sm mb-3">
+    <div class="card-body pt-4 pb-4 ps-3 pe-3">
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0 fw-bold text-danger">
+                <i class="fa-solid fa-circle-exclamation text-danger me-2"></i>
+                URGE COMPRAR
+            </h5>
+
+            <button class="btn btn-sm btn-outline-success" [disabled]="exportando"
+                (click)="exportarListadoUrgeComprar()">
+                <span *ngIf="!exportando">
+                    <i class="fa-solid fa-file-excel me-1"></i> Exportar
+                </span>
+                <span *ngIf="exportando">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Generando…
+                </span>
+            </button>
+        </div>
+
+        <div *ngIf="loadingUrgentes" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <span>Cargando…</span>
+        </div>
+
+        <div *ngIf="errorUrgentes" class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            <span class="text-sm">{{ errorUrgentes }}</span>
+        </div>
+
+        <div *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) === 0"
+            class="alert alert-warning fade show mt-4 mb-4" role="alert">
+            <span class="text-center text-muted py-3">No hay urgencias de compra por el momento.</span>
+        </div>
+
+        <table class="table table-sm table-hover align-middle sfa-table"
+            *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) > 0">
+            <thead class="table-light">
+                <tr>
+                    <th>Repuesto</th>
+                    <th class="text-center">Stock Actual</th>
+                    <th class="text-center">Demanda Prox. Semana</th>
+                    <th class="text-center">Cant. a Comprar</th>
+                    <th class="text-center">Fecha</th>
+                    <th style="width:50px;"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <ng-container *ngFor="let alerta of listaUrgeComprar">
+                    <tr class="sfa-row table-danger">
+                        <td>
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold">{{ alerta.repuesto_taller.repuesto.numero_pieza }}</span>
+                                    <span class="text-muted">{{ alerta.repuesto_taller.repuesto.descripcion }}</span>
+                                    <span class="badge rounded-pill"
+                                        [ngClass]="(alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.css">
+                                        {{ (alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.label ||
+                                        alerta.repuesto_taller.frecuencia }}
+                                    </span>
+                                </div>
+
+                            </div>
+                        </td>
+
+                        <td class="text-center fw-semibold">{{alerta.datos_snapshot ?
+                            alerta.datos_snapshot['stock_total'] : ''}}</td>
+
+                        <td class="text-center fw-semibold">
+                            {{ alerta.repuesto_taller.pred_1 }}
+                        </td>
+
+                        <td class="text-center">{{ alerta.datos_snapshot && alerta.repuesto_taller.pred_1 ?
+                            alerta.repuesto_taller.pred_1 - alerta.datos_snapshot['stock_total'] : ''}}</td>
+
+                        <td class="text-center">
+                            {{ alerta.fecha_creacion | date:'dd/MM HH:mm' }}
+                        </td>
+
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver forecast"
+                                    (mousedown)="$event.preventDefault()" data-bs-trigger="hover"
+                                    data-bs-container="body" (click)="viewForecast(alerta.repuesto_taller)">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+
+        <div class="d-flex align-items-center justify-content-end py-2 mt-2"
+            *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) > 0">
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" style="width:auto" [ngModel]="pageSize"
+                    (ngModelChange)="onPageSizeChange($event)">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="20">20</option>
+                    <option [ngValue]="50">50</option>
+                </select>
+
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" [class.disabled]="page===1">
+                        <button class="page-link" (click)="goPreviousPage()" [disabled]="page===1">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let p of paginationItems" [class.active]="p===page"
+                        [class.disabled]="p==='…'">
+                        <span class="page-link" *ngIf="p==='…'">&hellip;</span>
+                        <button class="page-link" *ngIf="p!=='…'" (click)="goToPage(+p)">{{ p }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="page===totalPages">
+                        <button class="page-link" (click)="goNextPage()" [disabled]="page===totalPages">
+                            Siguiente
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
