@@ -1,7 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ChartData, ChartOptions, TooltipItem } from 'chart.js';
+import { firstValueFrom } from 'rxjs';
 import { Alerta } from '../../core/models/alerta';
 import { RepuestoTaller } from '../../core/models/repuesto-taller';
+import { SaludInventarioChartData, TotalesPorCategoria } from '../../core/models/salud-inventario';
 import { AlertasService } from '../../core/services/alertas.service';
 
 @Component({
@@ -22,10 +25,23 @@ export class DashboardComponent implements OnInit {
     listaUrgeComprar: Alerta[] = [];
     exportando: boolean = false;
 
+    // KPIS
+    kpiRotacion = 6.4;
+    objRotacion = 8;
+    kpiDiasEnMano = 43;
+    objDiasEnMano = 35;
+    kpiDeadStock = 0.12;
+    objDeadStock = 0.05;
+
+    // Chart
+    chartData?: SaludInventarioChartData[];
+    pieData: ChartData<'pie'> = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
+
     constructor(private alertasService: AlertasService, private router: Router) {}
 
     ngOnInit(): void {
         this.cargarPagina(this.page);
+        this.cargarSaludInventario();
     }
 
     viewForecast(repuestoStock: RepuestoTaller) {
@@ -55,6 +71,16 @@ export class DashboardComponent implements OnInit {
                 this.loadingUrgentes = false;
             },
         });
+    }
+
+    async cargarSaludInventario() {
+        try {
+            const res = await firstValueFrom(this.alertasService.getSaludInventario(this.tallerId));
+            console.log('salud inventario', res);
+            this.chartData = this.convertirSaludInventarioPorFrecuencia(res);
+            console.log('chart data', this.chartData);
+            this.setChart(this.chartData);
+        } catch (error) {}
     }
 
     exportarListadoUrgeComprar() {
@@ -107,6 +133,24 @@ export class DashboardComponent implements OnInit {
         )}${pad(d.getMinutes())}.xlsx`;
     }
 
+    convertirSaludInventarioPorFrecuencia(data: TotalesPorCategoria[]): SaludInventarioChartData[] {
+        const acc: Record<string, number> = {};
+        for (const cat of data || []) {
+            for (const [freq, det] of Object.entries(cat.frecuencias || {})) {
+                acc[freq] = (acc[freq] || 0) + (det?.total_items_frecuencia ?? 0);
+            }
+        }
+        const totalGlobal = Object.values(acc).reduce((a, b) => a + b, 0);
+        const res = Object.entries(acc).map(([frecuencia, total]) => ({
+            frecuencia,
+            total,
+            porcentaje: totalGlobal ? +((total * 100) / totalGlobal).toFixed(2) : 0,
+        }));
+        // Orden: mayor → menor (queda más legible)
+        res.sort((a, b) => b.total - a.total);
+        return res;
+    }
+
     goPreviousPage() {
         this.cargarPagina(this.page - 1);
     }
@@ -144,4 +188,82 @@ export class DashboardComponent implements OnInit {
 
         return items;
     }
+
+    private setChart(src: SaludInventarioChartData[]): void {
+    if (!src?.length) {
+      this.pieData = { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] };
+      return;
+    }
+
+    const labels = src.map(s => this.prettyLabel(s.frecuencia));
+    const values = src.map(s => s.total);
+    const colors = src.map(s => this.colorFor(s.frecuencia));
+
+    this.pieData = {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: colors,
+          borderWidth: 0
+        }
+      ]
+    };
+  }
+
+    // Etiquetas prolijas
+    private prettyLabel(f: string): string {
+    const map: Record<string, string> = {
+      ALTA_ROTACION: 'Alta rotación',
+      INTERMEDIO: 'Intermedio',
+      LENTO: 'Lento',
+      MUERTO: 'Muerto',
+      OBSOLETO: 'Obsoleto',
+      DESCONOCIDA: 'Desconocida'
+    };
+    return map[f] ?? f;
+  }
+
+    // Paleta consistente por frecuencia (colores sobrios/legibles)
+    private colorFor(f: string): string {
+    switch (f) {
+      case 'MUERTO':        return 'rgba(156,163,175,0.85)'; // gris
+      case 'LENTO':         return 'rgba(245,158,11,0.65)';  // ámbar
+      case 'INTERMEDIO':    return 'rgba(16,185,129,0.65)';  // verde
+      case 'ALTA_ROTACION': return 'rgba(59,130,246,0.65)';  // azul
+      case 'OBSOLETO':      return 'rgba(239,68,68,0.70)';   // rojo
+      case 'DESCONOCIDA':   return 'rgba(139,92,246,0.65)';  // violeta
+      default:              return 'rgba(148,163,184,0.6)';
+    }
+  }
+
+    pieOptions: ChartOptions<'pie'> = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 16,
+                    font: { size: 12 },
+                },
+            },
+            tooltip: {
+                backgroundColor: 'rgba(17,24,39,0.9)',
+                padding: 10,
+                callbacks: {
+                    label: (ctx: TooltipItem<'pie'>) => {
+                        const label = (ctx.label ?? '').toString();
+                        const value = Number(ctx.raw ?? 0);
+                        const dataset = ctx.dataset.data as number[];
+                        const total = dataset.reduce((a, b) => a + (Number(b) || 0), 0) || 1;
+                        const pct = (value * 100) / total;
+                        return `${label}: ${value} (${pct.toFixed(2)}%)`;
+                    },
+                },
+            },
+        },
+    };
 }

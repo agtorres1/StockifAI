@@ -17,6 +17,7 @@ import { Alerta, NivelAlerta } from '../models/alerta';
 import { AlertasResumen } from '../models/alertas-resumen';
 import { PagedResponse } from '../models/paged-response';
 import { RestService } from './rest.service';
+import { TotalesPorCategoria } from '../models/salud-inventario';
 
 @Injectable({ providedIn: 'root' })
 export class AlertasService {
@@ -76,6 +77,10 @@ export class AlertasService {
 
     exportarListadoComprarUrgentes(tallerId: number): Observable<HttpResponse<Blob>> {
         return this.restService.getBlobResponse(`talleres/${tallerId}/exportar-urgentes/`);
+    }
+
+    getSaludInventario(tallerId: number): Observable<TotalesPorCategoria[]> {
+        return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`);
     }
 
     private getResumenAlertas(tallerId: number): Observable<AlertasResumen> {
