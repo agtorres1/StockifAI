@@ -76,11 +76,11 @@ export class DashboardComponent implements OnInit {
     async cargarSaludInventario() {
         try {
             const res = await firstValueFrom(this.alertasService.getSaludInventario(this.tallerId));
-            console.log('salud inventario', res);
             this.chartData = this.convertirSaludInventarioPorFrecuencia(res);
-            console.log('chart data', this.chartData);
             this.setChart(this.chartData);
-        } catch (error) {}
+        } catch (error) {
+            
+        }
     }
 
     exportarListadoUrgeComprar() {
@@ -146,7 +146,7 @@ export class DashboardComponent implements OnInit {
             total,
             porcentaje: totalGlobal ? +((total * 100) / totalGlobal).toFixed(2) : 0,
         }));
-        // Orden: mayor → menor (queda más legible)
+
         res.sort((a, b) => b.total - a.total);
         return res;
     }
@@ -190,52 +190,55 @@ export class DashboardComponent implements OnInit {
     }
 
     private setChart(src: SaludInventarioChartData[]): void {
-    if (!src?.length) {
-      this.pieData = { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] };
-      return;
-    }
-
-    const labels = src.map(s => this.prettyLabel(s.frecuencia));
-    const values = src.map(s => s.total);
-    const colors = src.map(s => this.colorFor(s.frecuencia));
-
-    this.pieData = {
-      labels,
-      datasets: [
-        {
-          data: values,
-          backgroundColor: colors,
-          borderWidth: 0
+        if (!src?.length) {
+            this.pieData = { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] };
+            return;
         }
-      ]
-    };
-  }
 
-    // Etiquetas prolijas
-    private prettyLabel(f: string): string {
-    const map: Record<string, string> = {
-      ALTA_ROTACION: 'Alta rotación',
-      INTERMEDIO: 'Intermedio',
-      LENTO: 'Lento',
-      MUERTO: 'Muerto',
-      OBSOLETO: 'Obsoleto',
-      DESCONOCIDA: 'Desconocida'
-    };
-    return map[f] ?? f;
-  }
+        const labels = src.map((s) => this.prettyLabel(s.frecuencia));
+        const values = src.map((s) => s.total);
+        const colors = src.map((s) => this.colorFor(s.frecuencia));
 
-    // Paleta consistente por frecuencia (colores sobrios/legibles)
-    private colorFor(f: string): string {
-    switch (f) {
-      case 'MUERTO':        return 'rgba(156,163,175,0.85)'; // gris
-      case 'LENTO':         return 'rgba(245,158,11,0.65)';  // ámbar
-      case 'INTERMEDIO':    return 'rgba(16,185,129,0.65)';  // verde
-      case 'ALTA_ROTACION': return 'rgba(59,130,246,0.65)';  // azul
-      case 'OBSOLETO':      return 'rgba(239,68,68,0.70)';   // rojo
-      case 'DESCONOCIDA':   return 'rgba(139,92,246,0.65)';  // violeta
-      default:              return 'rgba(148,163,184,0.6)';
+        this.pieData = {
+            labels,
+            datasets: [
+                {
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                },
+            ],
+        };
     }
-  }
+
+    private prettyLabel(f: string): string {
+        const map: Record<string, string> = {
+            ALTA_ROTACION: 'Rotación Alta',
+            INTERMEDIO: 'Rotación Intermedia',
+            LENTO: 'Rotación Lenta',
+            MUERTO: 'Muerto',
+            OBSOLETO: 'Obsoleto',
+            DESCONOCIDA: 'Desconocida',
+        };
+        return map[f] ?? f;
+    }
+
+    private colorFor(freq: string): string {
+        switch (freq) {
+            case 'MUERTO':
+                return 'rgba(220, 53, 69, 0.65)';
+            case 'OBSOLETO':
+                return 'rgba(33, 37, 41, 0.65)';
+            case 'LENTO':
+                return 'rgba(255, 193, 7, 0.65)';
+            case 'INTERMEDIO':
+                return 'rgba(13, 110, 253, 0.65)';
+            case 'ALTA_ROTACION':
+                return 'rgba(25, 135, 84, 0.65)';
+            default:
+                return 'rgba(148, 163, 184, 0.48)';
+        }
+    }
 
     pieOptions: ChartOptions<'pie'> = {
         responsive: true,
