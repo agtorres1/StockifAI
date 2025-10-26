@@ -1,74 +1,111 @@
 <div class="row g-3 sfa-kpi-row mb-3">
-    <div class="col-12 col-md-4">
-        <div class="sfa-kpi sfa-kpi--green">
-            <div class="sfa-kpi__label d-flex align-items-center gap-2">
-                <i class="fa-solid fa-rotate-right"></i>
-                Tasa de rotación
-            </div>
 
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="sfa-kpi__value">
-                    {{ kpiRotacion | number:'1.1-1' }}<span class="sfa-kpi__unit">x</span>
+    <ng-container *ngIf="loadingKpis; else kpisLoaded">
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--green">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
                 </div>
-
-                <div class="d-flex align-items-center gap-2 sfa-kpi__goal-wrap">
-                    <span class="sfa-kpi__sep" aria-hidden="true"></span>
-                    <span class="sfa-kpi__goal-pill">
-                        <i class="fa-solid fa-bullseye me-1"></i>
-                        {{ objRotacion | number:'1.1-1' }}x
-                    </span>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-12 col-md-4">
-        <div class="sfa-kpi sfa-kpi--blue">
-            <div class="sfa-kpi__label d-flex align-items-center gap-2">
-                <i class="fa-regular fa-hourglass-half"></i>
-                Días en mano
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="sfa-kpi__value">
-                    {{ kpiDiasEnMano | number:'1.0-0' }}<span class="sfa-kpi__unit">d</span>
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--blue">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
                 </div>
-
-                <div class="d-flex align-items-center gap-2 sfa-kpi__goal-wrap">
-                    <span class="sfa-kpi__sep" aria-hidden="true"></span>
-                    <span class="sfa-kpi__goal-pill">
-                        <i class="fa-solid fa-bullseye me-1"></i>
-                        {{ objDiasEnMano | number:'1.0-0' }}d
-                    </span>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-12 col-md-4">
-        <div class="sfa-kpi sfa-kpi--gray">
-            <div class="sfa-kpi__label d-flex align-items-center gap-2">
-                <i class="fa-solid fa-skull-crossbones"></i>
-                Dead stock
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div class="sfa-kpi__value">
-                    {{ kpiDeadStock | percent:'1.0-1' }}
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--gray">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
                 </div>
-
-                <div class="d-flex align-items-center gap-2 sfa-kpi__goal-wrap">
-                    <span class="sfa-kpi__sep" aria-hidden="true"></span>
-                    <span class="sfa-kpi__goal-pill">
-                        <i class="fa-solid fa-bullseye me-1"></i>
-                        {{ objDeadStock | percent:'1.0-1' }}
-                    </span>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </ng-container>
+
+    <ng-template #kpisLoaded>
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--green">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    Tasa de rotación
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiRotacion | number:'1.1-1' }}<span class="sfa-kpi__unit">x</span>
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objRotacion | number:'1.1-1' }} x
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--blue">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-regular fa-hourglass-half"></i>
+                    Días en mano
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiDiasEnMano | number:'1.0-0' }}<span class="sfa-kpi__unit">d</span>
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objDiasEnMano | number:'1.0-0' }} d
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--gray">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-skull-crossbones"></i>
+                    Dead stock
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiDeadStock | percent:'1.0-1' }}
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objDeadStock | percent:'1.0-1' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ng-template>
 </div>
-
 
 
 <div class="card shadow-sm mb-3">
@@ -198,13 +235,32 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 sfa-card w-50">
-    <div class="card-body">
-        <h6 class="sfa-card-title mb-3">Salud de inventario (por frecuencia)</h6>
 
-        <div class="sfa-chart-container">
-            <canvas baseChart [type]="'pie'" [data]="pieData" [options]="pieOptions">
-            </canvas>
+
+<div class="card p-3 h-100 text-center">
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart [label]="'Stock muerto'" [porcentaje]="deadStockPercentage" [total]="deadStockTotal"
+                [loading]="loadingSaludInventario" [color]="deadStockColor" [iconClass]="deadStockIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart [label]="'Alta Rotación'" [porcentaje]="altaRotacionPercentage" [total]="altaRotacionTotal"
+                [loading]="loadingSaludInventario" [color]="altaRotacionColor" [iconClass]="altaRotacionIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart label="Stock Lento" [porcentaje]="lentaRotacionPercentage" [total]="lentaRotacionTotal"
+                [loading]="loadingSaludInventario" [color]="lentaRotacionColor" [iconClass]="lentaRotacionIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart label="Obsoleto" [porcentaje]="obsoletoPercentage" [total]="obsoletoTotal"
+                [loading]="loadingSaludInventario" [color]="obsoletoColor" [iconClass]="obsoletoIcon">
+            </app-gauge-chart>
         </div>
     </div>
 </div>

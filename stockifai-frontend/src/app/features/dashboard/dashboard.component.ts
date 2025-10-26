@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ChartData, ChartOptions, TooltipItem } from 'chart.js';
 import { firstValueFrom } from 'rxjs';
 import { Alerta } from '../../core/models/alerta';
 import { RepuestoTaller } from '../../core/models/repuesto-taller';
@@ -32,10 +31,32 @@ export class DashboardComponent implements OnInit {
     objDiasEnMano = 35;
     kpiDeadStock = 0.12;
     objDeadStock = 0.05;
+    loadingKpis: boolean = false;
 
-    // Chart
+    // Salud de Inventario
     chartData?: SaludInventarioChartData[];
-    pieData: ChartData<'pie'> = { labels: [], datasets: [{ data: [], backgroundColor: [] }] };
+    saludInventarioError: boolean = false;
+    loadingSaludInventario: boolean = false;
+
+    deadStockPercentage: number = 0;
+    deadStockTotal: number = 0;
+    deadStockColor: string = '#dc3545';
+    deadStockIcon: string = 'fa-solid fa-skull-crossbones';
+
+    altaRotacionPercentage: number = 0;
+    altaRotacionTotal: number = 0;
+    altaRotacionColor: string = '#198754';
+    altaRotacionIcon: string = 'fa-solid fa-arrows-rotate';
+
+    lentaRotacionPercentage: number = 0;
+    lentaRotacionTotal: number = 0;
+    lentaRotacionColor: string = '#ffc107';
+    lentaRotacionIcon: string = 'fa-solid fa-hourglass-half';
+
+    obsoletoPercentage: number = 0;
+    obsoletoTotal: number = 0;
+    obsoletoColor: string = '#495057';
+    obsoletoIcon: string = 'fa-solid fa-gears';
 
     constructor(private alertasService: AlertasService, private router: Router) {}
 
@@ -75,11 +96,29 @@ export class DashboardComponent implements OnInit {
 
     async cargarSaludInventario() {
         try {
+            this.loadingSaludInventario = true;
             const res = await firstValueFrom(this.alertasService.getSaludInventario(this.tallerId));
             this.chartData = this.convertirSaludInventarioPorFrecuencia(res);
-            this.setChart(this.chartData);
+
+            const deadStock = this.chartData.find((c) => c.frecuencia === 'MUERTO');
+            this.deadStockTotal = deadStock?.total ?? 0;
+            this.deadStockPercentage = deadStock?.porcentaje ?? 0;
+
+            const altaRotacion = this.chartData.find((c) => c.frecuencia === 'ALTA_ROTACION');
+            this.altaRotacionTotal = altaRotacion?.total ?? 0;
+            this.altaRotacionPercentage = altaRotacion?.porcentaje ?? 0;
+
+            const lentaRotacion = this.chartData.find((c) => c.frecuencia === 'LENTO');
+            this.lentaRotacionTotal = lentaRotacion?.total ?? 0;
+            this.lentaRotacionPercentage = lentaRotacion?.porcentaje ?? 0;
+
+            const obsoleto = this.chartData.find((c) => c.frecuencia === 'OBSOLETO');
+            this.obsoletoTotal = obsoleto?.total ?? 0;
+            this.obsoletoPercentage = obsoleto?.porcentaje ?? 0;
+
+            this.loadingSaludInventario = false;
         } catch (error) {
-            
+            this.saludInventarioError = true;
         }
     }
 
@@ -189,84 +228,4 @@ export class DashboardComponent implements OnInit {
         return items;
     }
 
-    private setChart(src: SaludInventarioChartData[]): void {
-        if (!src?.length) {
-            this.pieData = { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0 }] };
-            return;
-        }
-
-        const labels = src.map((s) => this.prettyLabel(s.frecuencia));
-        const values = src.map((s) => s.total);
-        const colors = src.map((s) => this.colorFor(s.frecuencia));
-
-        this.pieData = {
-            labels,
-            datasets: [
-                {
-                    data: values,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                },
-            ],
-        };
-    }
-
-    private prettyLabel(f: string): string {
-        const map: Record<string, string> = {
-            ALTA_ROTACION: 'Rotación Alta',
-            INTERMEDIO: 'Rotación Intermedia',
-            LENTO: 'Rotación Lenta',
-            MUERTO: 'Muerto',
-            OBSOLETO: 'Obsoleto',
-            DESCONOCIDA: 'Desconocida',
-        };
-        return map[f] ?? f;
-    }
-
-    private colorFor(freq: string): string {
-        switch (freq) {
-            case 'MUERTO':
-                return 'rgba(220, 53, 69, 0.65)';
-            case 'OBSOLETO':
-                return 'rgba(33, 37, 41, 0.65)';
-            case 'LENTO':
-                return 'rgba(255, 193, 7, 0.65)';
-            case 'INTERMEDIO':
-                return 'rgba(13, 110, 253, 0.65)';
-            case 'ALTA_ROTACION':
-                return 'rgba(25, 135, 84, 0.65)';
-            default:
-                return 'rgba(148, 163, 184, 0.48)';
-        }
-    }
-
-    pieOptions: ChartOptions<'pie'> = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: {
-                    usePointStyle: true,
-                    pointStyle: 'circle',
-                    padding: 16,
-                    font: { size: 12 },
-                },
-            },
-            tooltip: {
-                backgroundColor: 'rgba(17,24,39,0.9)',
-                padding: 10,
-                callbacks: {
-                    label: (ctx: TooltipItem<'pie'>) => {
-                        const label = (ctx.label ?? '').toString();
-                        const value = Number(ctx.raw ?? 0);
-                        const dataset = ctx.dataset.data as number[];
-                        const total = dataset.reduce((a, b) => a + (Number(b) || 0), 0) || 1;
-                        const pct = (value * 100) / total;
-                        return `${label}: ${value} (${pct.toFixed(2)}%)`;
-                    },
-                },
-            },
-        },
-    };
 }

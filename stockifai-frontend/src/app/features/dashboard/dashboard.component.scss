@@ -32,9 +32,6 @@
     margin-left: 0.1rem;
 }
 
-.sfa-kpi__goal-wrap {
-    margin-left: auto;
-}
 .sfa-kpi__sep {
     width: 1px;
     height: 24px;
@@ -44,7 +41,7 @@
 .sfa-kpi__goal-pill {
     font-size: 0.85rem;
     font-weight: 700;
-    padding: 0.25rem 0.6rem;
+    padding: 0 0.6rem;
     color: #374151;
     white-space: nowrap;
 }
@@ -59,20 +56,20 @@
     --kpi-accent: #3b82f6;
 }
 
-
 .sfa-card {
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,.06);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .sfa-card-title {
-  font-weight: 700;
-  color: #374151;
+    font-weight: 700;
+    color: #374151;
 }
 
 .sfa-chart-container {
-  height: 300px;            /* ajustá 280–360 según espacio */
-  position: relative;
+    height: 300px;
+    position: relative;
 }
 
-/* Leyenda redondeada (ng2-charts usa la de Chart.js v4) */
-:host ::ng-deep .chartjs-render-monitor { border-radius: 8px; }
+:host ::ng-deep .chartjs-render-monitor {
+    border-radius: 8px;
+}
