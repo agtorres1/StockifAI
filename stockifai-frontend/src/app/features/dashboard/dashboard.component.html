@@ -237,8 +237,8 @@
 
 
 
-<div class="card p-3 h-100 text-center">
-    <div class="row g-3">
+<div class="card p-3">
+    <div class="row g-3 text-center">
         <div class="col-12 col-md-6 col-lg-3">
             <app-gauge-chart [label]="'Stock muerto'" [porcentaje]="deadStockPercentage" [total]="deadStockTotal"
                 [loading]="loadingSaludInventario" [color]="deadStockColor" [iconClass]="deadStockIcon">
@@ -261,6 +261,38 @@
             <app-gauge-chart label="Obsoleto" [porcentaje]="obsoletoPercentage" [total]="obsoletoTotal"
                 [loading]="loadingSaludInventario" [color]="obsoletoColor" [iconClass]="obsoletoIcon">
             </app-gauge-chart>
+        </div>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="sfa-health p-3">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg sfa-health__metercol">
+                <div class="fw-semibold mb-2">SALUD GENERAL DEL STOCK</div>
+
+                <ng-container *ngIf="loadingSaludInventario; else healthBar">
+                    <div class="skeleton w-100 sfa-health-meter"></div>
+                </ng-container>
+
+                <ng-template #healthBar>
+                    <div class="sfa-health-meter">
+                        <canvas baseChart [type]="'bar'" [data]="healthBarData" [options]="healthBarOpts">
+                        </canvas>
+                    </div>
+                </ng-template>
+            </div>
+
+            <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end me-4" *ngIf="!loadingSaludInventario">
+                <div
+                    class="sfa-health__score d-flex align-items-center gap-4 w-100 justify-content-between justify-content-lg-end">
+                    <div class="text-end me-2">
+                        <div class="sfa-health__pct fw-bold mb-0">{{ saludGeneral | number:'1.0-0' }}%</div>
+                        <div class="fw-semibold sfa-health__label" [style.color]="saludColorText">{{ saludLabel }}</div>
+                    </div>
+                    <i [class]="saludIcon" [style.color]="saludColor" class="sfa-health__icon"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>

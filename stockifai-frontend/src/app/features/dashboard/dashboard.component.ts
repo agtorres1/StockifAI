@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ChartOptions } from 'chart.js';
 import { firstValueFrom } from 'rxjs';
 import { Alerta } from '../../core/models/alerta';
 import { RepuestoTaller } from '../../core/models/repuesto-taller';
@@ -58,6 +59,9 @@ export class DashboardComponent implements OnInit {
     obsoletoColor: string = '#495057';
     obsoletoIcon: string = 'fa-solid fa-gears';
 
+    intermediaRotacionPercentage: number = 0;
+
+
     constructor(private alertasService: AlertasService, private router: Router) {}
 
     ngOnInit(): void {
@@ -100,6 +104,8 @@ export class DashboardComponent implements OnInit {
             const res = await firstValueFrom(this.alertasService.getSaludInventario(this.tallerId));
             this.chartData = this.convertirSaludInventarioPorFrecuencia(res);
 
+            console.log('Salud inventario chart data:', this.chartData);
+
             const deadStock = this.chartData.find((c) => c.frecuencia === 'MUERTO');
             this.deadStockTotal = deadStock?.total ?? 0;
             this.deadStockPercentage = deadStock?.porcentaje ?? 0;
@@ -115,6 +121,11 @@ export class DashboardComponent implements OnInit {
             const obsoleto = this.chartData.find((c) => c.frecuencia === 'OBSOLETO');
             this.obsoletoTotal = obsoleto?.total ?? 0;
             this.obsoletoPercentage = obsoleto?.porcentaje ?? 0;
+
+            const intermedia = this.chartData.find((c) => c.frecuencia === 'INTERMEDIO');
+            this.intermediaRotacionPercentage = intermedia?.porcentaje ?? 0;
+
+            this.actualizarSaludInventarioResumen();
 
             this.loadingSaludInventario = false;
         } catch (error) {
@@ -228,4 +239,76 @@ export class DashboardComponent implements OnInit {
         return items;
     }
 
+    // Resumen de Salud de inventario
+    saludGeneral = 0;
+    saludColor = '#28a745';
+    saludColorText = '#212529';
+    saludLabel = 'SALUDABLE';
+    saludIcon = 'fa-solid fa-circle-check';
+
+    healthBarData = {
+        labels: [''],
+        datasets: [
+            {
+                data: [this.saludGeneral],
+                backgroundColor: this.saludColor,
+                borderSkipped: false,
+                barThickness: 28,
+                borderRadius: { topLeft: 14, bottomLeft: 14, topRight: 0, bottomRight: 0 },
+            },
+            {
+                data: [100 - this.saludGeneral],
+                backgroundColor: '#e9ecef',
+                borderSkipped: false,
+                barThickness: 28,
+                borderRadius: { topLeft: 0, bottomLeft: 0, topRight: 14, bottomRight: 14 },
+            },
+        ],
+    };
+
+    healthBarOpts: ChartOptions<'bar'> = {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y' as const,
+        animation: { duration: 600, easing: 'easeOutQuart' },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+            x: { display: false, stacked: true, max: 100 },
+            y: { display: false, stacked: true },
+        },
+    };
+
+    actualizarSaludInventarioResumen() {
+        // Saludable: Alta Rotación + Intermedio
+        const alta = this.altaRotacionPercentage ?? 0;
+        const intermedio = this.intermediaRotacionPercentage ?? 0;
+        this.saludGeneral = Math.max(0, Math.min(100, alta + intermedio));
+
+        // Umbrales de color/label
+        if (this.saludGeneral >= 70) {
+            this.saludColor = '#28a745';
+            this.saludLabel = 'SALUDABLE';
+            this.saludIcon = 'fa-solid fa-circle-check';
+        } else if (this.saludGeneral >= 40) {
+            this.saludColor = '#ffc107';
+            this.saludLabel = 'EN RIESGO';
+            this.saludIcon = 'fa-solid fa-triangle-exclamation';
+        } else {
+            this.saludColor = '#dc3545';
+            this.saludLabel = 'CRÍTICO';
+            this.saludIcon = 'fa-solid fa-circle-xmark';
+        }
+
+        this.healthBarData = {
+            ...this.healthBarData,
+            datasets: [
+                {
+                    ...(this.healthBarData.datasets[0] as any),
+                    data: [this.saludGeneral],
+                    backgroundColor: this.saludColor,
+                },
+                { ...(this.healthBarData.datasets[1] as any), data: [100 - this.saludGeneral] },
+            ],
+        };
+    }
 }

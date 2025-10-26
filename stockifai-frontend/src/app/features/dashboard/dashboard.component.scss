@@ -73,3 +73,30 @@
 :host ::ng-deep .chartjs-render-monitor {
     border-radius: 8px;
 }
+
+.sfa-health__metercol {
+    padding-right: 0.5rem;
+}
+
+.sfa-health-meter {
+    height: 36px; /* antes 24px */
+    min-width: 320px;
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+}
+
+.sfa-health__pct {
+    font-size: clamp(1.75rem, 2.2vw + 0.5rem, 3rem); /* ~28px a 48px */
+    line-height: 1;
+}
+
+.sfa-health__icon {
+    font-size: clamp(2rem, 2.2vw + 0.5rem, 3.25rem); /* ~32px a 52px */
+}
+
+.sfa-health__label {
+    font-size: clamp(0.9rem, 0.6vw + 0.4rem, 1.1rem);
+}
