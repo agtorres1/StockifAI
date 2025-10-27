@@ -11,7 +11,7 @@ from django.db import transaction  # Import transaction
 from d_externo.models import RegistroEntrenamiento_Frecuencia_Alta, RegistroEntrenamiento_intermitente
 from d_externo.repositories.dataexterna import borrar_registroentrenamiento_frecuencia_alta, \
     borrar_registroentrenamiento_intermitente
-from user.models import Taller
+from user.api.models.models import Taller
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

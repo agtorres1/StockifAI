@@ -27,9 +27,9 @@ export class RegisterComponent {
         this.passwordValidator
       ]],
       telefono: [''],
-      calle: ['', [Validators.required]],
-      numero: ['', [Validators.required]],
-      localidad: ['', [Validators.required]]
+      direccion: ['', [Validators.required]],
+      codigoPostal: ['', [Validators.required]],
+      ciudad: ['', [Validators.required]]
     });
 
     this.registroForm.statusChanges.subscribe(status => {

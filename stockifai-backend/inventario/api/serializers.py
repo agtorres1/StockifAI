@@ -4,6 +4,8 @@ from catalogo.models import Repuesto, Categoria, Marca
 from inventario.models import Deposito, Movimiento
 from catalogo.models import RepuestoTaller
 from user.api.models.models import Taller
+from inventario.models import ObjetivoKPI
+
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -110,3 +112,19 @@ class RepuestoStockSerializer(serializers.Serializer):
     repuesto_taller = RepuestoTallerSerializer()
     stock_total = serializers.IntegerField()
     depositos = StockDepositoDetalleSerializer(many=True)
+
+
+class ObjetivoKPISerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ObjetivoKPI
+        fields = [
+            'id',
+            'taller',
+            'grupo',
+            'tasa_rotacion_objetivo',
+            'dias_en_mano_objetivo',
+            'dead_stock_objetivo',  # ← NUEVO
+            'dias_dead_stock',
+            'fecha_actualizacion'
+        ]
+        read_only_fields = ['id', 'fecha_actualizacion']

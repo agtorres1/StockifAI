@@ -89,27 +89,27 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-                        <label for="calle">Calle <span class="required">*</span></label>
-                        <input type="text" id="calle" formControlName="calle" placeholder="Av. Corrientes">
-                        <div class="error-message" *ngIf="isFieldInvalid('calle')">
-                            <small *ngIf="hasError('calle', 'required')">La calle es obligatoria</small>
+                        <label for="direccion">Dirección <span class="required">*</span></label>
+                        <input type="text" id="direccion" formControlName="direccion" placeholder="Av. Corrientes 1234">
+                        <div class="error-message" *ngIf="isFieldInvalid('direccion')">
+                            <small *ngIf="hasError('direccion', 'required')">La dirección es obligatoria</small>
                         </div>
                     </div>
 
                     <div class="form-group" style="flex: 1;">
-                        <label for="numero">Número <span class="required">*</span></label>
-                        <input type="text" id="numero" formControlName="numero" placeholder="1234">
-                        <div class="error-message" *ngIf="isFieldInvalid('numero')">
-                            <small *ngIf="hasError('numero', 'required')">El número es obligatorio</small>
+                        <label for="codigoPostal">Código Postal <span class="required">*</span></label>
+                        <input type="text" id="codigoPostal" formControlName="codigoPostal" placeholder="1043">
+                        <div class="error-message" *ngIf="isFieldInvalid('codigoPostal')">
+                            <small *ngIf="hasError('codigoPostal', 'required')">El código postal es obligatorio</small>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="localidad">Localidad <span class="required">*</span></label>
-                    <input type="text" id="localidad" formControlName="localidad" placeholder="Buenos Aires">
-                    <div class="error-message" *ngIf="isFieldInvalid('localidad')">
-                        <small *ngIf="hasError('localidad', 'required')">La localidad es obligatoria</small>
+                    <label for="ciudad">Ciudad <span class="required">*</span></label>
+                    <input type="text" id="ciudad" formControlName="ciudad" placeholder="Buenos Aires">
+                    <div class="error-message" *ngIf="isFieldInvalid('ciudad')">
+                        <small *ngIf="hasError('ciudad', 'required')">La ciudad es obligatoria</small>
                     </div>
                 </div>
 

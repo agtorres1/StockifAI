@@ -7,23 +7,23 @@ from user.api.views.talleres import TallerViewSet
 from user.api.views.grupo_view import GrupoViewSet
 from user.api.views.grupo_view import GrupoTallerViewSet
 from user.api.views.talleres import TallerView
-from user.api.views.views_user import login_view, logout, callback, register_api
+from user.api.views.views_user import login_view, logout_view, callback, register_api,check_session, force_login
 
 
 router = DefaultRouter()
 router.register(r"talleres", TallerViewSet, basename="taller")
-router.register(r"usuarios", UserViewSet, basename="usuario")  # 👈 acá agregás usuarios
+router.register(r"usuarios", UserViewSet, basename="usuario")
 router.register(r"grupos", GrupoViewSet, basename="grupo")
 router.register(r"grupo-taller", GrupoTallerViewSet, basename="grupo-taller")
 
 urlpatterns = [
-    path("login/", login_view, name="login"),
-    path('logout/', logout, name='logout'),
-    path("callback/", callback, name="callback"),
+    # Rutas de autenticación (públicas)
     path("register/", register_api, name="register"),
-
-#path("talleres/<int:taller_id>", TallerView.as_view(), name="taller-info")
-
-
+    path("login/", login_view, name="login"),
+    path("callback/", callback, name="callback"),
+    path("logout/", logout_view, name="logout"),  # ← Cambié 'logout' por 'logout_view'
+    path("check-session/", check_session, name="check_session"),  # ← AGREGAR ESTA
+    path('force-login/', force_login, name='force-login'),
+    # Rutas del router (protegidas automáticamente por el middleware)
     path("", include(router.urls)),
 ]

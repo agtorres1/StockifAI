@@ -7,7 +7,9 @@ import environ
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
+#DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
+DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
+
 ALLOWED_HOSTS = ["*"] if DEBUG else os.getenv("DJANGO_ALLOWED_HOSTS","").split(",")
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -32,6 +34,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware","django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'user.middleware.Auth0Middleware',
     #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
@@ -105,16 +108,16 @@ DATABASES = {
 }
 """
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.mysql',
-#        'NAME': 'stockifia_local',   # tu base creada
-#        'USER': 'root',              # usuario root
-#        'PASSWORD': 'pepegrillo1',
-#        'HOST': '127.0.0.1',
-#        'PORT': '3306',
-#    }
-#}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'stockifia_local',   # tu base creada
+        'USER': 'root',              # usuario root
+        'PASSWORD': 'pepegrillo1',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+    }
+}
 
 
 LANGUAGE_CODE="es-ar"; TIME_ZONE="America/Argentina/Buenos_Aires"; USE_I18N=True; USE_TZ=True
@@ -128,6 +131,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
+
+
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -137,11 +142,19 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [],  # desactiva auth temporalmente
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'user.authentication.SessionAuthentication',  # ← AGREGAR ESTO
+    ],
+
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
 }
+
+
+
 
 
 #REST_FRAMEWORK = {
@@ -168,11 +181,20 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': 'import_debug.log',
         },
+        'console': {  # ← AGREGAR ESTO
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
+        },
     },
     'loggers': {
         'django.db.backends': {
             'handlers': ['file'],
             'level': 'DEBUG',
+        },
+        'django.request': {  # ← AGREGAR ESTO
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
         },
     }
 }

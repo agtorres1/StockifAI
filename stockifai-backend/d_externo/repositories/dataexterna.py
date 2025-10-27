@@ -1,5 +1,5 @@
 from d_externo.models import Inflacion, Patentamiento, IPSA, Prenda, TasaInteresPrestamo, TipoCambio,  RegistroEntrenamiento_intermitente, RegistroEntrenamiento_Frecuencia_Alta
-from user.models import Taller
+from user.api.models.models import Taller
 
 def obtener_todas_las_inflaciones():
     """

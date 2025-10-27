@@ -21,7 +21,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 from inventario.repositories.movimiento_repo import MovimientoRepo
 from catalogo.models import Repuesto
 from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
-from user.models import Taller
+from user.api.models.models import Taller
 from catalogo.models import RepuestoTaller
 
 CHUNK_SIZE = 1000
