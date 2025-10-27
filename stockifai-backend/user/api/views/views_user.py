@@ -1,33 +1,24 @@
-<<<<<<< HEAD
-
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.http import JsonResponse
 from django.conf import settings
-from auth0_backend.jwt_utils import decode_jwt
-from user.api.models.models import User, Direccion, Grupo
-from django.contrib.auth import login
-=======
-from user.models import User, Direccion
->>>>>>> origin/main
-import jwt
-from rest_framework.decorators import action
-# user/views.py
-
-<<<<<<< HEAD
-from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
-
 from django.db.models import Q
-=======
-
->>>>>>> origin/main
-# user/views.py
-from django.shortcuts import redirect
-
-from ...forms import RegisterForm
-
 from django.contrib.auth import authenticate, login
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
+import json
+import traceback
+import requests
+import jwt
+
+from auth0_backend.jwt_utils import decode_jwt
+from user.api.models.models import User, Direccion, Grupo, Taller
+from user.api.serializers.user_serializer import UserSerializer
+from ...forms import RegisterForm
+from ...auth0_utils import get_mgmt_token
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 

@@ -3,17 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from inventario.models import Movimiento
 from user.api.serializers.taller_serializer import TallerSerializer
-<<<<<<< HEAD
-from user.api.models.models import Taller
-from rest_framework.decorators import action
-from user.api.models.models import User
-=======
-from user.models import Taller
-
->>>>>>> origin/main
+from user.api.models.models import Taller, User, GrupoTaller
+from user.permissions import PermissionChecker
 
 class TallerViewSet(viewsets.ModelViewSet):
     queryset = Taller.objects.all()  # ← AGREGAR ESTO

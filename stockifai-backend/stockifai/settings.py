@@ -71,6 +71,7 @@ def _remove_none(data: dict) -> dict:
 
 
 db_target = (os.getenv("DB_TARGET", "aws") or "aws").strip().lower()
+#db_target = "local"
 if db_target not in {"aws", "local"}:
     db_target = "aws"
 
@@ -253,6 +254,5 @@ CRONJOBS = [
 ]
 
 CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'
-
 
 
