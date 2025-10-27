@@ -17,4 +17,8 @@ export interface RepuestoTaller {
     pred_4?: number;
 
     cantidad_minima?: number; // Prediccion_1 por defecto
+
+    pred_mensual?: number;
+    promedio_pred_mensual?: number;
+    tendencia?: 'ALTA' | 'BAJA' | 'ESTABLE';
 }

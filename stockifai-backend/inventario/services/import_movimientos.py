@@ -29,6 +29,7 @@ def importar_movimientos(*, file, taller_id: int, fields_map: dict | None = None
                          permitir_stock_negativo: bool = True):
     """
     Versión optimizada del import de movimientos - asume repuestos y depósitos ya existen.
+    MODIFICADO: Ahora devuelve los IDs de los repuestos afectados por la importación.
     """
     # 1) Leer y normalizar archivo
     df = read_df(file)
@@ -61,6 +62,11 @@ def importar_movimientos(*, file, taller_id: int, fields_map: dict | None = None
         result = _process_bulk_movimientos(
             processed_data, entities, permitir_stock_negativo
         )
+
+        # Extraemos los IDs de los RepuestoTaller que se procesaron
+        # para saber a cuáles debemos recalcularles las alertas.
+        repuestos_afectados_ids = [rt.pk for rt in entities["repuesto_taller"].values()]
+        result["repuestos_afectados_ids"] = repuestos_afectados_ids
 
         return result
 

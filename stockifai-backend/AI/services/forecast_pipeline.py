@@ -34,7 +34,7 @@ def ejecutar_forecast_talleres(fecha_lunes: datetime) -> Dict[str, Any]:
 
     for taller_id in ids:
         try:
-            #out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
+            out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
             outputs.append({"taller_id": taller_id})
         except Exception as e:
             # no frenamos toda la corrida por un taller

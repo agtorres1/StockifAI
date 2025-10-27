@@ -44,11 +44,11 @@
             <div class="header-title">
                 {{ titleService.title() }}
             </div>
-            <div class="header-icons d-flex align-items-center gap-3">
-                <button class="btn btn-link position-relative p-0" aria-label="Notificaciones">
-                    <i class="fas fa-bell fa-lg"></i>
-                    <span class="notification-badge"></span>
-                </button>
+
+            <div class="header-icons d-flex align-items-center gap-4">
+                <app-semaforo-alertas class="me-1"></app-semaforo-alertas>
+
+                <div class="vr divider"></div>
 
                 <div class="dropdown">
                     <button class="btn btn-link p-0 dropdown-toggle" type="button" id="userDropdown"

@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from catalogo.models import Repuesto, Categoria, Marca
-from inventario.models import Deposito, Movimiento
+from inventario.models import Deposito, Movimiento, Alerta, ObjetivoKPI
 from catalogo.models import RepuestoTaller
 from user.api.models.models import Taller
-from inventario.models import ObjetivoKPI
+from user.models import Grupo
 
 
 class MovimientosImportSerializer(serializers.Serializer):
@@ -123,8 +123,50 @@ class ObjetivoKPISerializer(serializers.ModelSerializer):
             'grupo',
             'tasa_rotacion_objetivo',
             'dias_en_mano_objetivo',
-            'dead_stock_objetivo',  # ← NUEVO
+            'dead_stock_objetivo',
             'dias_dead_stock',
             'fecha_actualizacion'
         ]
         read_only_fields = ['id', 'fecha_actualizacion']
+
+
+class GrupoResumenSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    descripcion = serializers.CharField(allow_blank=True)
+    grupo_padre_id = serializers.IntegerField(allow_null=True)
+    es_subgrupo = serializers.BooleanField()
+
+
+class TallerConStockSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    direccion = serializers.CharField(allow_blank=True)
+    direccion_normalizada = serializers.CharField(allow_blank=True, required=False)
+    telefono = serializers.CharField(allow_blank=True, required=False)
+    telefono_e164 = serializers.CharField(allow_blank=True, required=False)
+    email = serializers.CharField(allow_blank=True, required=False)
+    latitud = serializers.FloatField(allow_null=True)
+    longitud = serializers.FloatField(allow_null=True)
+    cantidad = serializers.IntegerField()
+    distancia_km = serializers.FloatField(allow_null=True, required=False)
+    grupos = GrupoResumenSerializer(many=True)
+
+class AlertaSerializer(serializers.ModelSerializer):
+    """
+    Serializador principal para el modelo Alerta.
+    """
+    repuesto_taller = RepuestoTallerSerializer(read_only=True)
+
+    class Meta:
+        model = Alerta
+        fields = [
+            'id',
+            'repuesto_taller',
+            'nivel',
+            'codigo',
+            'mensaje',
+            'estado',
+            'fecha_creacion',
+            'datos_snapshot'
+        ]

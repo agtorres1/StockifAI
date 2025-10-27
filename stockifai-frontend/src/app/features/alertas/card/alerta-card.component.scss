@@ -1,0 +1,145 @@
+:host {
+    display: block;
+
+    --critico: #dc3545;
+    --medio: #fd7e14;
+    --warning: #ffc107;
+    --info: #0dcaf0;
+    --card-radius: 1rem;
+}
+
+.alert-card {
+    border: 1px solid #e6ebf2;
+    border-left-width: 16px;
+    border-radius: var(--card-radius);
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgba(20, 34, 66, 0.06);
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        opacity 0.50s ease;
+    overflow: hidden;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(20, 34, 66, 0.1);
+    }
+
+    &--critico {
+        border-left-color: var(--critico);
+    }
+
+    &--medio {
+        border-left-color: var(--medio);
+    }
+
+    &--warning {
+        border-left-color: var(--warning);
+    }
+
+    &--info {
+        border-left-color: var(--info);
+    }
+
+    &--seen {
+        opacity: 0.5;
+    }
+}
+
+.badge-soft {
+    background: #f1f4f9;
+    border: 1px solid #e6ebf2;
+    color: #2b3245;
+}
+
+.chip-nivel {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+
+    &[data-nivel="CRITICO"] {
+        background: #fde7ea;
+        border-color: #f3b5be;
+        color: #9f1d2a;
+    }
+    &[data-nivel="MEDIO"] {
+        background: #ffe7d3;
+        border-color: #ffc49b;
+        color: #8a3b05;
+    }
+    &[data-nivel="ADVERTENCIA"] {
+        background: #fff3cd;
+        border-color: #ffe08a;
+        color: #7a5a00;
+    }
+    &[data-nivel="INFORMATIVO"] {
+        background: #e6f7fc;
+        border-color: #b6ecfa;
+        color: #0b6477;
+    }
+}
+
+.meta {
+    small {
+        color: #7f8aa3;
+    }
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 0.5rem;
+        background: rgba(43, 50, 69, 0.25);
+    }
+}
+
+.action-btn {
+    border: 1px solid #e6ebf2;
+    background: #ffffff;
+    color: #2b3245;
+
+    &:hover {
+        background: #f7faff;
+        border-color: #d5e3ff;
+    }
+}
+
+.repuesto-line {
+    font-size: 1rem;
+    color: #3a4154;
+
+    .part-number {
+        font-weight: 700;
+        color: #2b3245;
+        letter-spacing: 0.2px;
+    }
+
+    .sep {
+        display: inline-block;
+        margin: 0 0.4rem;
+        color: #a4afc6;
+        font-weight: 600;
+    }
+
+    .desc {
+        color: #5e687f;
+        font-weight: 600;
+    }
+}
+
+.btn-compact {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border: 1px solid #e6ebf2;
+    background: #ffffff;
+    color: #2b3245;
+    border-radius: 0.5rem;
+
+    &:hover {
+        background: #f7faff;
+        border-color: #d5e3ff;
+    }
+}
+
+.text-medio {
+    color: var(--medio);
+}

@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
 AUTH_USER_MODEL = 'user.User'  # 'user' es el nombre de tu app
 import environ
@@ -49,74 +51,95 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "stockifai.wsgi.application"
 
+def _env_bool(value: Optional[str], default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "y", "on"}
 
 
-# DATABASES = {"default":{
-#  "ENGINE":"django.db.backends.mysql","NAME":os.getenv("DB_NAME","stockifai"),
-#   "USER":os.getenv("DB_USER","root"),"PASSWORD":os.getenv("DB_PASSWORD",""),
-#   "HOST":os.getenv("DB_HOST","127.0.0.1"),"PORT":os.getenv("DB_PORT","3306"),
-#   "OPTIONS":{"charset":"utf8mb4"}
-#}}
-"""
-# }}
+def _optional_int(value: Optional[str]):
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
-DATABASES = {
-     'default': {
-        'ENGINE': 'dj_db_conn_pool.backends.mysql',
-        'NAME': os.getenv('DB_NAMEAWS'),
-        'USER': os.getenv('DB_USERAWS'),
-        'PASSWORD': os.getenv('DB_PASSWORDAWS'),
-        'HOST': os.getenv('DB_HOSTAWS'),
-        'PORT': os.getenv('DB_PORTAWS'),
-        'CONN_MAX_AGE': 1800,
-        'CONN_HEALTH_CHECKS': True,
-         'OPTIONS': {
-             'connect_timeout': 10,
-             'read_timeout': 600,
-             'write_timeout': 600,
-             'init_command': "SET SESSION sql_mode='TRADITIONAL', autocommit=1, net_write_timeout=60, net_read_timeout=60",
-             'charset': 'utf8mb4',
-             'sql_mode': 'TRADITIONAL',
-             'isolation_level': 'READ COMMITTED',
-         },
-        'POOL_OPTIONS': {
-            'POOL_SIZE': 3,
-            'MAX_OVERFLOW': 2,
-            'RECYCLE': 1800,
-            'PRE_PING': True,
-            'POOL_TIMEOUT': 60,
-            'POOL_RECYCLE': 1800,
-        }
-     }
+
+def _remove_none(data: dict) -> dict:
+    return {key: value for key, value in data.items() if value is not None}
+
+
+db_target = (os.getenv("DB_TARGET", "aws") or "aws").strip().lower()
+if db_target not in {"aws", "local"}:
+    db_target = "aws"
+
+aws_database_config = {
+    'ENGINE': os.getenv('DB_ENGINE_AWS', 'dj_db_conn_pool.backends.mysql'),
+    'NAME': os.getenv('DB_NAME_AWS', os.getenv('DB_NAMEAWS')),
+    'USER': os.getenv('DB_USER_AWS', os.getenv('DB_USERAWS')),
+    'PASSWORD': os.getenv('DB_PASSWORD_AWS', os.getenv('DB_PASSWORDAWS')),
+    'HOST': os.getenv('DB_HOST_AWS', os.getenv('DB_HOSTAWS')),
+    'PORT': os.getenv('DB_PORT_AWS', os.getenv('DB_PORTAWS')),
+    'CONN_MAX_AGE': _optional_int(os.getenv('DB_CONN_MAX_AGE_AWS')) or 1800,
+    'CONN_HEALTH_CHECKS': _env_bool(os.getenv('DB_CONN_HEALTH_CHECKS_AWS'), True),
+    'OPTIONS': {
+        'connect_timeout': _optional_int(os.getenv('DB_CONNECT_TIMEOUT_AWS')) or 10,
+        'read_timeout': _optional_int(os.getenv('DB_READ_TIMEOUT_AWS')) or 600,
+        'write_timeout': _optional_int(os.getenv('DB_WRITE_TIMEOUT_AWS')) or 600,
+        'init_command': os.getenv('DB_INIT_COMMAND_AWS', "SET SESSION sql_mode='TRADITIONAL', autocommit=1, net_write_timeout=60, net_read_timeout=60"),
+        'charset': os.getenv('DB_CHARSET_AWS', 'utf8mb4'),
+        'sql_mode': os.getenv('DB_SQL_MODE_AWS', 'TRADITIONAL'),
+        'isolation_level': os.getenv('DB_ISOLATION_LEVEL_AWS', 'READ COMMITTED'),
+    },
+    'POOL_OPTIONS': {
+        'POOL_SIZE': _optional_int(os.getenv('DB_POOL_SIZE_AWS')) or 10,
+        'MAX_OVERFLOW': _optional_int(os.getenv('DB_POOL_MAX_OVERFLOW_AWS')) or 20,
+        'PRE_PING': _env_bool(os.getenv('DB_POOL_PRE_PING_AWS'), True),
+        'POOL_TIMEOUT': _optional_int(os.getenv('DB_POOL_TIMEOUT_AWS')) or 30,
+        'POOL_RECYCLE': _optional_int(os.getenv('DB_POOL_RECYCLE_AWS')) or 1800,
+    },
 }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAMEAWS'),
-        'USER': os.getenv('DB_USERAWS'),
-        'PASSWORD': os.getenv('DB_PASSWORDAWS'),
-        'HOST': os.getenv('DB_HOSTAWS'),
-        'PORT': os.getenv('DB_PORTAWS'),
-        'OPTIONS': {
-            'connect_timeout': 30,
-            'read_timeout': 300,
-            'write_timeout': 300,
-            'charset': 'utf8mb4',
-        }
-    }
+local_database_config = {
+    'ENGINE': os.getenv('DB_ENGINE_LOCAL', 'django.db.backends.mysql'),
+    'NAME': os.getenv('DB_NAME_LOCAL', os.getenv('DB_NAME')),
+    'USER': os.getenv('DB_USER_LOCAL', os.getenv('DB_USER')),
+    'PASSWORD': os.getenv('DB_PASSWORD_LOCAL', os.getenv('DB_PASSWORD')),
+    'HOST': os.getenv('DB_HOST_LOCAL', os.getenv('DB_HOST', '127.0.0.1')),
+    'PORT': os.getenv('DB_PORT_LOCAL', os.getenv('DB_PORT', '3306')),
+    'CONN_MAX_AGE': _optional_int(os.getenv('DB_CONN_MAX_AGE_LOCAL')),
+    'CONN_HEALTH_CHECKS': _env_bool(os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL')) if os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL') is not None else None,
 }
-"""
+
+
+local_options = {
+    'connect_timeout': _optional_int(os.getenv('DB_CONNECT_TIMEOUT_LOCAL')),
+    'read_timeout': _optional_int(os.getenv('DB_READ_TIMEOUT_LOCAL')),
+    'write_timeout': _optional_int(os.getenv('DB_WRITE_TIMEOUT_LOCAL')),
+    'init_command': os.getenv('DB_INIT_COMMAND_LOCAL'),
+    'charset': os.getenv('DB_CHARSET_LOCAL'),
+    'sql_mode': os.getenv('DB_SQL_MODE_LOCAL'),
+    'isolation_level': os.getenv('DB_ISOLATION_LEVEL_LOCAL'),
+}
+
+local_pool_options = {
+    'POOL_SIZE': _optional_int(os.getenv('DB_POOL_SIZE_LOCAL')),
+    'MAX_OVERFLOW': _optional_int(os.getenv('DB_POOL_MAX_OVERFLOW_LOCAL')),
+    'PRE_PING': _env_bool(os.getenv('DB_POOL_PRE_PING_LOCAL')) if os.getenv('DB_POOL_PRE_PING_LOCAL') is not None else None,
+    'POOL_TIMEOUT': _optional_int(os.getenv('DB_POOL_TIMEOUT_LOCAL')),
+    'POOL_RECYCLE': _optional_int(os.getenv('DB_POOL_RECYCLE_LOCAL')),
+}
+
+if any(value is not None for value in local_options.values()):
+    local_database_config['OPTIONS'] = _remove_none(local_options)
+
+if any(value is not None for value in local_pool_options.values()):
+    local_database_config['POOL_OPTIONS'] = _remove_none(local_pool_options)
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'stockifia_local',   # tu base creada
-        'USER': 'root',              # usuario root
-        'PASSWORD': 'pepegrillo1',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-    }
+    'default': _remove_none(aws_database_config if db_target == 'aws' else local_database_config),
+
 }
 
 
@@ -226,7 +249,7 @@ CRONJOBS = [
     ('0 23 * * 0', 'django.core.management.call_command', ['forecast_all']),
 
     # TEST CADA 5 MIN PARA PROBAR
-    ('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
+    #('*/5 * * * *', 'django.core.management.call_command', ['forecast_all']),
 ]
 
 CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'

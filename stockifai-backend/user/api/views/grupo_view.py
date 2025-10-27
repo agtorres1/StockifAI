@@ -1,5 +1,9 @@
 from rest_framework import viewsets
+<<<<<<< HEAD
 from user.api.models.models import Grupo, GrupoTaller, User
+=======
+from user.models import Grupo, GrupoTaller
+>>>>>>> origin/main
 from user.api.serializers.grupo_serializer import GrupoSerializer, GrupoTallerSerializer
 from rest_framework.decorators import action
 

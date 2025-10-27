@@ -1,0 +1,102 @@
+.sfa-kpi {
+    --kpi-accent: #22c55e;
+    background: #f9fafb;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    border-left: 8px solid var(--kpi-accent);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem 1rem 1.25rem;
+    box-shadow: 0 2px 10px rgba(16, 24, 40, 0.06);
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease;
+    min-height: 110px;
+}
+.sfa-kpi:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.1);
+}
+
+.sfa-kpi__label {
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+.sfa-kpi__value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #1f2937;
+}
+.sfa-kpi__unit {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-left: 0.1rem;
+}
+
+.sfa-kpi__sep {
+    width: 1px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+.sfa-kpi__goal-pill {
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0 0.6rem;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.sfa-kpi--green {
+    --kpi-accent: #22c55e;
+}
+.sfa-kpi--blue {
+    --kpi-accent: #f59e0b;
+}
+.sfa-kpi--gray {
+    --kpi-accent: #3b82f6;
+}
+
+.sfa-card {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.sfa-card-title {
+    font-weight: 700;
+    color: #374151;
+}
+
+.sfa-chart-container {
+    height: 300px;
+    position: relative;
+}
+
+:host ::ng-deep .chartjs-render-monitor {
+    border-radius: 8px;
+}
+
+.sfa-health__metercol {
+    padding-right: 0.5rem;
+}
+
+.sfa-health-meter {
+    height: 36px; /* antes 24px */
+    min-width: 320px;
+    canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+    }
+}
+
+.sfa-health__pct {
+    font-size: clamp(1.75rem, 2.2vw + 0.5rem, 3rem); /* ~28px a 48px */
+    line-height: 1;
+}
+
+.sfa-health__icon {
+    font-size: clamp(2rem, 2.2vw + 0.5rem, 3.25rem); /* ~32px a 52px */
+}
+
+.sfa-health__label {
+    font-size: clamp(0.9rem, 0.6vw + 0.4rem, 1.1rem);
+}

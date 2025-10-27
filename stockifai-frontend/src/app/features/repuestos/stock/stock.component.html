@@ -62,7 +62,7 @@
                             title="Indica cuántas semanas de demanda futura se pueden cubrir con el stock actual."></i>
                     </th>
                     <th class="text-end">Stock total</th>
-                    <th style="width:50px;"></th>
+                    <th style="width:150px;"></th>
                 </tr>
             </thead>
 
@@ -91,7 +91,7 @@
                                             {{ (freq | frecuenciaRotacion).label }}
                                         </span>
                                     </span>
-                                    
+
                                 </div>
                                 <span class="text-muted">{{ item.repuesto_taller.repuesto.descripcion }}</span>
                             </div>
@@ -126,21 +126,40 @@
                                 data-bs-placement="bottom"
                                 title="{{'Demanda proyectada: ' + item.repuesto_taller.cantidad_minima}}"></i>
                             <i *ngIf="item.estaBajoMinimo === false"
-                                class="fa-solid fa-square-check text-success ms-1 fs-5"></i>
+                                class="fa-solid fa-square-check text-success ms-1 fs-5" data-bs-toggle="tooltip"
+                                data-bs-placement="bottom"
+                                title="{{'Demanda proyectada: ' + item.repuesto_taller.cantidad_minima}}"></i>
                         </td>
 
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
-                                data-bs-placement="bottom" title="Ver forecast"
-                                (click)="viewForecast(item.repuesto_taller)">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </button>
+                        <td>
+                            <div class="d-flex justify-content-center gap-3">
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver alertas" (mousedown)="$event.preventDefault()"
+                                    data-bs-trigger="hover" data-bs-container="body"
+                                    (click)="viewAlerts(item.repuesto_taller)" style="width: 30px;">
+                                    <i class="fa-solid fa-bell"></i>
+                                </button>
+
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver forecast"
+                                    (mousedown)="$event.preventDefault()" data-bs-trigger="hover"
+                                    data-bs-container="body" (click)="viewForecast(item.repuesto_taller)" style="width: 30px;">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+
+                                <button *ngIf="item.stock_total === 0" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ir al Localizador"
+                                    (mousedown)="$event.preventDefault()" data-bs-trigger="hover"
+                                    data-bs-container="body" (click)="goToLocalizador(item.repuesto_taller)" style="width: 30px;">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
 
                     <!-- Fila detalle -->
                     <tr *ngIf="isOpen(item.repuesto_taller.id_repuesto_taller)" class="sfa-detail-row">
-                        <td [attr.colspan]="7" class="p-0">
+                        <td [attr.colspan]="8" class="p-0">
                             <div class="sfa-detail bg-body-tertiary border-top"
                                 [id]="'row-'+item.repuesto_taller.id_repuesto_taller">
 

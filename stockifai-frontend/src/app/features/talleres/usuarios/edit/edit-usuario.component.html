@@ -1,0 +1,171 @@
+<div class="modal-dialog modal-lg">
+    <form #userForm="ngForm" (ngSubmit)="submitUsuarioForm(userForm)" novalidate>
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ isEdit ? 'Editar usuario' : 'Crear nuevo usuario' }}
+                </h5>
+                <button type="button" class="btn-close" [attr.data-bs-dismiss]="loading ? null : 'modal'"
+                    aria-label="Cerrar" (click)="close(false)"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body" *ngIf="usuario">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre<span class="text-danger">*</span></label>
+                        <input #firstName="ngModel" class="form-control" name="firstName"
+                            [(ngModel)]="usuario.first_name" required maxlength="150"
+                            [ngClass]="{'is-invalid': userForm.submitted && firstName.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && firstName.invalid">
+                            El nombre es requerido.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Apellido <span class="text-danger">*</span></label>
+                        <input #lastName="ngModel" class="form-control" name="lastName" [(ngModel)]="usuario.last_name"
+                            required maxlength="150"
+                            [ngClass]="{'is-invalid': userForm.submitted && lastName.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && lastName.invalid">
+                            El apellido es requerido.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input #username="ngModel" class="form-control" name="username" [(ngModel)]="usuario.username"
+                            required maxlength="150"
+                            [ngClass]="{'is-invalid': userForm.submitted && username.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && username.invalid">
+                            El usuario es requerido.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email <span class="text-danger">*</span></label>
+                        <input #email="ngModel" class="form-control" name="email" [(ngModel)]="usuario.email" required
+                            maxlength="254" pattern="^[^@\s]+@[^@\s]+\.[^@\s]{2,}$"
+                            [ngClass]="{'is-invalid': userForm.submitted && email.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && email.invalid">
+                            <ng-container *ngIf="email.errors?.['required']">
+                                El email es requerido.
+                            </ng-container>
+                            <ng-container *ngIf="email.errors?.['email'] || email.errors?.['pattern']">
+                                Ingresá un email válido.
+                            </ng-container>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Calle</label>
+                        <input #direccion="ngModel" class="form-control" name="direccion_calle"
+                            [(ngModel)]="usuario.direccion!.calle" maxlength="255" required
+                            [ngClass]="{'is-invalid': userForm.submitted && direccion.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && direccion.invalid">
+                            La dirección es requerida.
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Ciudad</label>
+                        <input #ciudad="ngModel" class="form-control" name="direccion_ciudad"
+                            [(ngModel)]="usuario.direccion!.ciudad" maxlength="100" required
+                            [ngClass]="{'is-invalid': userForm.submitted && ciudad.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && ciudad.invalid">
+                            La ciudad es requerida.
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Código Postal</label>
+                        <input #codigoPostal="ngModel" class="form-control" name="direccion_codigo_postal"
+                            [(ngModel)]="usuario.direccion!.codigo_postal" maxlength="20" required
+                            [ngClass]="{'is-invalid': userForm.submitted && codigoPostal.invalid}" />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && codigoPostal.invalid">
+                            El código postal es requerido.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
+                        <input class="form-control" name="telefono" [(ngModel)]="usuario.telefono" maxlength="150" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">País</label>
+                        <select class="form-select" name="direccion_pais" [(ngModel)]="usuario.direccion!.pais"
+                            disabled>
+                            <option [ngValue]="'Argentina'">Argentina</option>
+                        </select>
+                    </div>
+
+                    <hr>
+
+                    <div class="col-12 mt-0">
+                        <label class="form-label d-block">Pertenece a <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="optTaller" name="scope"
+                                    [value]="'taller'" [(ngModel)]="scopeType" (change)="onScopeChange('taller')">
+                                <label class="form-check-label" for="optTaller">Taller</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="optGrupo" name="scope"
+                                    [value]="'grupo'" [(ngModel)]="scopeType" (change)="onScopeChange('grupo')">
+                                <label class="form-check-label" for="optGrupo">Grupo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6" *ngIf="!loadingTalleres">
+                        <label class="form-label">Taller</label>
+                        <select class="form-select" name="taller" [(ngModel)]="usuario.id_taller"
+                            [disabled]="scopeType !== 'taller'" (ngModelChange)="usuario.grupo = undefined"
+                            [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.id_taller}">
+                            <option [ngValue]="null" disabled></option>
+                            <option *ngFor="let t of talleres" [ngValue]="t.id">{{ t.nombre }}</option>
+                        </select>
+                        <div class="invalid-feedback d-block"
+                            *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.id_taller">
+                            Seleccioná un taller.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6" *ngIf="!loadingTalleres">
+                        <label class="form-label">Grupo</label>
+                        <select class="form-select" name="grupo" [(ngModel)]="usuario.id_grupo"
+                            [disabled]="scopeType !== 'grupo'" (ngModelChange)="usuario.taller = undefined"
+                            [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo}">
+                            <option [ngValue]="null" disabled></option>
+                            <option *ngFor="let g of grupos" [ngValue]="g.id_grupo">{{ g.nombre }}</option>
+                        </select>
+                        <div class="invalid-feedback d-block"
+                            *ngIf="userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo">
+                            Seleccioná un grupo.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div *ngIf="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
+                <div *ngIf="successMessage" class="alert alert-success mt-3">{{ successMessage }}</div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                    [attr.data-bs-dismiss]="loading ? null : 'modal'" (click)="close(true)">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" [disabled]="loading">
+                    <div *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true">
+                    </div>
+                    {{ loading ? (isEdit ? 'Guardando...' : 'Creando...') :
+                    (isEdit ? 'Guardar cambios' : 'Crear usuario') }}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

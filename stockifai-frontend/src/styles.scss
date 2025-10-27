@@ -103,6 +103,7 @@ tbody tr:hover {
     padding-left: 4rem !important;
 }
 
+
 /* ===== ESTILOS PARA AUTH LAYOUT - REGISTRO/LOGIN ===== */
 app-auth-layout {
     position: fixed !important;
@@ -128,4 +129,57 @@ app-login {
     display: block !important;
 }
 /* ===== FIN ESTILOS AUTH ===== */
+
+
+.icon-success {
+    color: var(--bs-green);
+}
+
+.icon-danger {
+    color: var(--bs-red);
+}
+
+.trend-icon {
+    font-size: 28px;
+
+    &__success {
+        color: var(--bs-green);
+    }
+
+    &__danger {
+        color: var(--bs-red);
+    }
+}
+
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: #e9ecef;
+}
+.skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.skeleton-text {
+    height: 1.25rem;
+}
+.skeleton-chart {
+    height: 350px;
+    border-radius: 0.5rem;
+}
+
+.uppercase {
+    text-transform: uppercase;
+}
 

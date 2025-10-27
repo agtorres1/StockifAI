@@ -32,4 +32,16 @@
     .badge {
         font-weight: 600;
     }
+    .alert-info {
+        background-color: #e8f7f8;
+        border-color: #bfe7ea;
+        color: #0f6d70;
+    }
+    .badge.bg-info {
+        background-color: #bee9f4 !important;
+        color: #045463 !important;
+    }
+    .badge.bg-light {
+        border: 1px solid #d9dde0;
+    }
 }

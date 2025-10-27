@@ -6,9 +6,14 @@ from rest_framework.permissions import AllowAny
 
 from inventario.models import Movimiento
 from user.api.serializers.taller_serializer import TallerSerializer
+<<<<<<< HEAD
 from user.api.models.models import Taller
 from rest_framework.decorators import action
 from user.api.models.models import User
+=======
+from user.models import Taller
+
+>>>>>>> origin/main
 
 class TallerViewSet(viewsets.ModelViewSet):
     queryset = Taller.objects.all()  # ← AGREGAR ESTO

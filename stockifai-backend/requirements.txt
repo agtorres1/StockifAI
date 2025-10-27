@@ -26,6 +26,8 @@ holidays==0.57
 lightgbm==4.3
 scikit-learn==1.5.2
 django-crontab==0.7.1
+django-extensions==4.1
+geopy==2.4.1
 
 python-jose[cryptography]
 requests

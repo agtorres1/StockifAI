@@ -5,7 +5,7 @@ export class FrecuenciaRotacionPipe implements PipeTransform {
     transform(value: string): { label: string; css: string } {
         switch (value) {
             case 'MUERTO':
-                return { label: 'Muerto', css: 'bg-secondary' };
+                return { label: 'Muerto', css: 'bg-danger' };
             case 'OBSOLETO':
                 return { label: 'Obsoleto', css: 'bg-dark' };
             case 'LENTO':
@@ -13,7 +13,7 @@ export class FrecuenciaRotacionPipe implements PipeTransform {
             case 'INTERMEDIO':
                 return { label: 'Rotación intermedia', css: 'bg-primary' };
             case 'ALTA_ROTACION':
-                return { label: 'Rotación alta', css: 'bg-danger' };
+                return { label: 'Rotación alta', css: 'bg-success' };
             default:
                 return { label: value ?? 'N/A', css: 'bg-light text-dark' };
         }

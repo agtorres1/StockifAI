@@ -1,0 +1,67 @@
+<div *ngIf="repuestoTallerId" class="card alerta-header mb-3 px-2 py-2">
+  <div>
+    <div class="text-uppercase text-muted fw-semibold small mb-1">Repuesto seleccionado</div>
+    <div class="fs-6 fw-semibold d-flex align-items-center flex-wrap gap-1">
+      <span class="text-dark">{{ repuestoNumero }}</span>
+      <span class="text-muted">—</span>
+      <span class="text-secondary">{{ repuestoDescripcion }}</span>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="tags-filter mb-4">
+    <button *ngFor="let n of niveles" type="button" class="tag-toggle"
+        [ngClass]="[ 'tag-' + n.class, isActive(n.key) ? 'is-active' : 'is-inactive' ]" (click)="toggleNivel(n.key)"
+        role="switch" [attr.aria-checked]="isActive(n.key)">
+        <i class="fa-solid" [ngClass]="{
+         'fa-circle-exclamation': n.key === 'CRITICO',
+         'fa-exclamation-triangle': n.key === 'ADVERTENCIA',
+         'fa-circle-info': n.key === 'INFORMATIVO'
+       }"></i>
+        <span>{{ n.label }}</span>
+    </button>
+</div>
+
+<div class="row g-3" *ngIf="loading">
+    <div class="col-12" *ngFor="let _ of [1, 2, 3, 4, 5]">
+        <div class="card shadow-sm alerta-skel">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="skeleton sk-line w-50"></div>
+                    <div class="skeleton sk-pill"></div>
+                </div>
+                <div class="skeleton sk-line w-100 mb-1"></div>
+                <div class="skeleton sk-line w-75 mb-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="!loading && alertas.length === 0" class="card shadow-sm text-center py-5">
+    <div class="card-body">
+        <i class="fa-regular fa-bell-slash fa-2xl text-muted mb-4 d-block"></i>
+        <h6 class="fw-semibold text-secondary mb-2">No se encontraron alertas</h6>
+        <p class="text-muted small mb-0">
+            No hay alertas activas para los filtros seleccionados.
+        </p>
+    </div>
+</div>
+
+
+<section class="cards-grid" *ngIf="alertas?.length">
+    <app-alerta-card class="masonry-item" *ngFor="let alerta of alertas;" [alerta]="alerta"
+        (dismiss)="onDismiss($event)" (markAsSeen)="onMarkAsSeen($event)"></app-alerta-card>
+
+    <div class="d-flex justify-content-center my-3" *ngIf="!loading">
+        <button class="btn btn-outline-primary" (click)="loadMore()" [disabled]="loadingMore || !hasMore">
+            <ng-container *ngIf="hasMore && !loadingMore">Cargar más</ng-container>
+            <ng-container *ngIf="loadingMore">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Cargando…
+            </ng-container>
+            <ng-container *ngIf="!hasMore">No hay más alertas</ng-container>
+        </button>
+    </div>
+</section>

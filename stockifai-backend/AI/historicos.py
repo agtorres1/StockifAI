@@ -134,17 +134,21 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
 
     volumen_historico["segmento_demanda"] = volumen_historico.apply(segmento_demanda, axis=1)
 
-    def frecuencia_rotacion(row, fecha_final):
+    def frecuencia_rotacion_ajustada(row, fecha_final):
+        """
+        Clasifica la rotación de gestión (obsolescencia), ajustando la categoría
+        en base al patrón de intermitencia para evitar sobre-clasificar.
+        """
         # Determinar la fecha de referencia para el cálculo de obsolescencia
-        # Si vendió, es la última venta. Si nunca vendió, es el inicio de registro.
         if pd.isna(row["fecha_ultima_venta"]):
             fecha_referencia = row["fecha_inicio_registro"]
         else:
             fecha_referencia = row["fecha_ultima_venta"]
 
         dias_sin_movimiento = (fecha_final - fecha_referencia).days
+        segmento = row["segmento_demanda"]  # Segmento para refinar la clasificación
 
-        # 2. Casos de Obsolescencia y Rotación (Se aplica si registro >= 6 meses)
+        # 1. Casos de Obsolescencia (Prioridad Alta - MUERTO/OBSOLETO)
 
         # MUERTO (> 2 años sin movimiento)
         if dias_sin_movimiento > 730:
@@ -158,18 +162,29 @@ def clasificar_demanda(demanda_semanal: pd.DataFrame) -> pd.DataFrame:
         if dias_sin_movimiento > 180:
             return "LENTO"
 
+        # 2. Casos de Rotación Activa (Ajuste por Patrón de Venta)
+
         # INTERMEDIO (> 2 meses y <= 6 meses)
         if dias_sin_movimiento > 60:
+            # Si el patrón de demanda es intermitente, lo degradamos a LENTO,
+            # incluso si ha vendido recientemente (pero no en los últimos 2 meses).
+            if segmento == "intermitente":
+                return "LENTO"
             return "INTERMEDIO"
 
         # ALTA ROTACION (<= 2 meses)
         if dias_sin_movimiento <= 60:
-            return "ALTA_ROTACION"
+            # FILTRO CLAVE: Si la última venta fue muy reciente (ALTA_ROTACION)
+            # pero el patrón histórico es ERRÁTICO, lo bajamos a INTERMEDIO
+            # para no asignar una estrategia de compra demasiado agresiva.
+            if segmento == "intermitente":
+                return "INTERMEDIO"  # No es una ALTA ROTACION estable, es intermitente reciente
 
-        return "ERROR_CLASIFICACION"  # Fallback, no debería ocurrir  # Si cae fuera de las categorías explícitas
+            return "ALTA_ROTACION"
+        return "ERROR_CLASIFICACION"
 
     volumen_historico["frecuencia_rotacion"] = volumen_historico.apply(
-        lambda row: frecuencia_rotacion(row, fecha_final), axis=1
+        lambda row: frecuencia_rotacion_ajustada(row, fecha_final), axis=1
     )
 
     df_full = df_full.merge(

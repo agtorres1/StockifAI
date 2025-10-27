@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from user.api.models.models import Grupo, GrupoTaller
+from user.models import Grupo, GrupoTaller
 
 
 class GrupoSerializer(serializers.ModelSerializer):

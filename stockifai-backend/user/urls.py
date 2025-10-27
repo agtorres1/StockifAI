@@ -19,11 +19,15 @@ router.register(r"grupo-taller", GrupoTallerViewSet, basename="grupo-taller")
 urlpatterns = [
     # Rutas de autenticación (públicas)
     path("register/", register_api, name="register"),
+<<<<<<< HEAD
     path("login/", login_view, name="login"),
     path("callback/", callback, name="callback"),
     path("logout/", logout_view, name="logout"),  # ← Cambié 'logout' por 'logout_view'
     path("check-session/", check_session, name="check_session"),  # ← AGREGAR ESTA
     path('force-login/', force_login, name='force-login'),
     # Rutas del router (protegidas automáticamente por el middleware)
+=======
+    path("taller-data/<int:taller_id>", TallerView.as_view(), name="taller-info"),
+>>>>>>> origin/main
     path("", include(router.urls)),
 ]

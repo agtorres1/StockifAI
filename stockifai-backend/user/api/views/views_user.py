@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 from django.shortcuts import redirect
 from django.http import JsonResponse
@@ -5,18 +6,23 @@ from django.conf import settings
 from auth0_backend.jwt_utils import decode_jwt
 from user.api.models.models import User, Direccion, Grupo
 from django.contrib.auth import login
+=======
+from user.models import User, Direccion
+>>>>>>> origin/main
 import jwt
 from rest_framework.decorators import action
 # user/views.py
 
+<<<<<<< HEAD
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
 from django.db.models import Q
-# user/views.py
-from django.shortcuts import render, redirect
-from django.conf import settings
+=======
 
+>>>>>>> origin/main
+# user/views.py
+from django.shortcuts import redirect
 
 from ...forms import RegisterForm
 
@@ -241,7 +247,11 @@ def get_mgmt_token():
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = (
+        User.objects
+            .select_related('direccion', 'taller', 'grupo')
+            .all()
+    )
     serializer_class = UserSerializer
 
     def get_queryset(self):

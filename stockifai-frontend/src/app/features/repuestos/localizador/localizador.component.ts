@@ -1,146 +1,172 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import * as L from 'leaflet';
+import { Subscription } from 'rxjs';
+import { LocalizadorRespuesta, LocalizadorTaller } from '../../../core/models/localizador';
+import { LocalizadorService } from '../../../core/services/localizador.service';
 
-type TallerConStock = {
-  id: number;
-  nombre: string;
-  direccion: string;
-  lat: number;
-  lng: number;
-  cantidad: number;
-  telefono?: string;     // formato local para mostrar
-  telefonoE164?: string; // para WhatsApp (ej: 5491160012345)
-  email?: string;
-};
+// Fix para que salgan los iconos en el mapa
+const defaultIcon = L.icon({
+  iconUrl:       '/assets/leaflet/images/marker-icon.png',
+  iconRetinaUrl: '/assets/leaflet/images/marker-icon-2x.png',
+  shadowUrl:     '/assets/leaflet/images/marker-shadow.png',
+  iconSize:      [25, 41],
+  iconAnchor:    [12, 41],
+  popupAnchor:   [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize:    [41, 41],
+});
+(L.Marker.prototype as any).options.icon = defaultIcon;
 
 @Component({
-  selector: 'app-localizador',
-  templateUrl: './localizador.component.html',
-  styleUrls: ['./localizador.component.scss'],
+    selector: 'app-localizador',
+    templateUrl: './localizador.component.html',
+    styleUrls: ['./localizador.component.scss'],
 })
 export class LocalizadorComponent implements OnInit, OnDestroy {
-  query = '';
-  cargando = false;
-  resultados: TallerConStock[] = [];
+    query = '';
+    cargando = false;
+    resultados: LocalizadorTaller[] = [];
+    totalEncontrado = 0;
+    mensajeError = '';
+    tallerId = 1; // TODO: tomar del usuario autenticado
+    repuesto?: LocalizadorRespuesta['repuesto'];
+    tallerOrigen?: LocalizadorRespuesta['tallerOrigen'];
 
-  private map?: L.Map;
-  private markers: L.Marker[] = [];
+    private map?: L.Map;
+    private markers: L.Marker[] = [];
+    private origenMarker?: L.Marker;
+    private busquedaSub?: Subscription;
 
-  ngOnInit(): void {
-    setTimeout(() => this.initMap(), 0);
-  }
+    constructor(private localizadorService: LocalizadorService, private route: ActivatedRoute) {}
 
-  buscar(): void {
-    if (!this.query.trim()) return;
-    this.cargando = true;
+    ngOnInit(): void {
+        setTimeout(() => this.initMap(), 0);
 
-    // ⚠️ MOCK para probar UI (API comentada)
-    setTimeout(() => {
-      this.resultados = [
-        {
-          id: 1,
-          nombre: 'Taller Central',
-          direccion: 'Av. Rivadavia 1234, CABA',
-          lat: -34.6083,
-          lng: -58.4097,
-          cantidad: 4,
-          telefono: '11-5555-1234',
-          telefonoE164: '5491155551234',
-          email: 'central@talleres.com',
-        },
-        {
-          id: 2,
-          nombre: 'Mecánica del Sur',
-          direccion: 'Calle 50 742, La Plata',
-          lat: -34.9215,
-          lng: -57.9545,
-          cantidad: 2,
-          telefono: '221-444-7788',
-          telefonoE164: '542214447788',
-          email: 'contacto@mecanicadelsur.com',
-        },
-        {
-          id: 3,
-          nombre: 'Taller Norte',
-          direccion: 'Av. Sarmiento 3500, Rosario',
-          lat: -32.9575,
-          lng: -60.6394,
-          cantidad: 5,
-          telefono: '341-555-6677',
-          telefonoE164: '543415556677',
-          email: 'ventas@tallernorte.com',
-        },
-        {
-          id: 4,
-          nombre: 'Garage Oeste',
-          direccion: 'Av. San Martín 255, Morón',
-          lat: -34.6532,
-          lng: -58.6218,
-          cantidad: 1,
-          telefono: '11-4667-8899',
-          telefonoE164: '5491146678899',
-          email: 'hola@garageoeste.com',
-        },
-      ];
-      this.cargando = false;
-      this.renderMarkers();
-    }, 500);
+        const queryParam = this.route.snapshot.queryParamMap;
+        this.query = queryParam.get('search') ?? '';
 
-    /*
-    // 🔜 Cuando conectes la API real, descomentá y ajustá:
-    this.cargando = true;
-    this.miServicio.buscarTalleresPorNumeroParte(this.query.trim()).subscribe({
-      next: data => { this.resultados = data ?? []; this.cargando = false; this.renderMarkers(); },
-      error: err => { this.resultados = []; this.cargando = false; console.error(err); }
-    });
-    */
-  }
+        if (this.query && this.query != '') {
+            this.buscar();
+        }
+    }
 
-  limpiar(): void {
-    this.query = '';
-    this.resultados = [];
-    this.markers.forEach(m => m.remove());
-    this.markers = [];
-    this.map?.setView([-34.6037, -58.3816], 12);
-  }
+    buscar(): void {
+        const normalizada = this.normalizarQuery(this.query);
+        if (!normalizada) {
+            this.mensajeError = 'Ingresá un número de pieza válido.';
+            return;
+        }
 
-  whatsappUrl(t: TallerConStock): string {
-    const numero = t.telefonoE164 ?? '';
-    const texto = `Hola, consulto por disponibilidad del repuesto ${this.query.trim()}`;
-    return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
-  }
+        this.cargando = true;
+        this.mensajeError = '';
+        this.busquedaSub?.unsubscribe();
 
-  private initMap(): void {
-    this.map = L.map('mapa', {
-      center: [-34.6037, -58.3816],
-      zoom: 12,
-    });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap',
-    }).addTo(this.map);
-  }
+        this.busquedaSub = this.localizadorService.buscarPorNumeroParte(this.tallerId, normalizada).subscribe({
+            next: (respuesta) => {
+                this.repuesto = respuesta.repuesto;
+                this.tallerOrigen = respuesta.tallerOrigen;
+                this.totalEncontrado = respuesta.totalCantidad ?? 0;
+                this.resultados = respuesta.talleres ?? [];
+                this.cargando = false;
+                this.renderMarkers();
+            },
+            error: (err) => {
+                console.error('Error buscando repuesto:', err);
+                this.resultados = [];
+                this.totalEncontrado = 0;
+                this.cargando = false;
+                this.mensajeError = err?.error?.detail || 'No fue posible localizar el repuesto.';
+                this.renderMarkers();
+            },
+        });
+    }
 
-  private renderMarkers(): void {
-    if (!this.map) return;
+    limpiar(): void {
+        this.query = '';
+        this.repuesto = undefined;
+        this.tallerOrigen = undefined;
+        this.totalEncontrado = 0;
+        this.mensajeError = '';
+        this.resultados = [];
+        this.markers.forEach((m) => m.remove());
+        this.markers = [];
+        this.origenMarker?.remove();
+        this.origenMarker = undefined;
+        this.map?.setView([-34.6037, -58.3816], 12);
+    }
 
-    this.markers.forEach(m => m.remove());
-    this.markers = [];
+    whatsappUrl(t: LocalizadorTaller): string {
+        const numero = t.telefonoE164 ?? '';
+        const texto = `Hola, consulto por disponibilidad del repuesto ${this.query.trim()}`;
+        return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+    }
 
-    if (!this.resultados.length) return;
+    distanciaFormateada(t: LocalizadorTaller): string {
+        if (t.distanciaKm == null) return '—';
+        return `${t.distanciaKm.toFixed(1)} km`;
+    }
 
-    const bounds = L.latLngBounds([]);
-    this.resultados.forEach(t => {
-      const marker = L.marker([t.lat, t.lng]).bindPopup(
-        `<b>${t.nombre}</b><br/>${t.direccion}<br/>Unidades: ${t.cantidad}`
-      );
-      marker.addTo(this.map!);
-      this.markers.push(marker);
-      bounds.extend([t.lat, t.lng]);
-    });
-    this.map.fitBounds(bounds.pad(0.2));
-  }
+    private initMap(): void {
+        this.map = L.map('mapa', {
+            center: [-34.6037, -58.3816],
+            zoom: 12,
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+        }).addTo(this.map);
+    }
 
-  ngOnDestroy(): void {
-    this.map?.remove();
-  }
+    private renderMarkers(): void {
+        if (!this.map) return;
+
+        this.markers.forEach((m) => m.remove());
+        this.markers = [];
+        this.origenMarker?.remove();
+        this.origenMarker = undefined;
+
+        if (!this.resultados.length && !this.tallerOrigen) {
+            return;
+        }
+
+        const bounds = L.latLngBounds([]);
+
+        if (this.tallerOrigen?.latitud != null && this.tallerOrigen?.longitud != null) {
+            const origenLatLng = L.latLng(this.tallerOrigen.latitud, this.tallerOrigen.longitud);
+            this.origenMarker = L.marker(origenLatLng, {
+                title: this.tallerOrigen.nombre,
+            }).bindPopup(`<b>${this.tallerOrigen.nombre}</b><br/>Taller origen`);
+            this.origenMarker.addTo(this.map!);
+            bounds.extend(origenLatLng);
+        }
+
+        this.resultados.forEach((t) => {
+            if (t.lat == null || t.lng == null) {
+                return;
+            }
+            const detalleGrupos = t.grupos?.length
+                ? `<br/><span class="badge bg-info text-dark">${t.grupos.map((g) => g.nombre).join(', ')}</span>`
+                : '';
+            const distancia = t.distanciaKm != null ? `<br/>Distancia: ${t.distanciaKm.toFixed(1)} km` : '';
+            const marker = L.marker([t.lat, t.lng]).bindPopup(
+                `<b>${t.nombre}</b><br/>${t.direccion}<br/>Unidades: ${t.cantidad}${distancia}${detalleGrupos}`
+            );
+            marker.addTo(this.map!);
+            this.markers.push(marker);
+            bounds.extend([t.lat, t.lng]);
+        });
+
+        if (bounds.isValid()) {
+            this.map.fitBounds(bounds.pad(0.2));
+        }
+    }
+
+    ngOnDestroy(): void {
+        this.busquedaSub?.unsubscribe();
+        this.map?.remove();
+    }
+
+    private normalizarQuery(valor: string): string {
+        return valor.replace(/\s+/g, '').toUpperCase();
+    }
 }
