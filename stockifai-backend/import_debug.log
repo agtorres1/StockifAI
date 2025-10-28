@@ -249,3 +249,904 @@ ALTER TABLE `user_grupo` ADD COLUMN `grupo_padre_id` integer NULL , ADD CONSTRAI
 (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'd_externo'; args=('d_externo',); alias=default
 (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
 (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.015) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'admin'; args=('admin',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'admin' AND `django_content_type`.`model` = 'logentry') LIMIT 21; args=('admin', 'logentry'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (1) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(1,); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'admin'; args=('admin',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'auth'; args=('auth',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'auth' AND `django_content_type`.`model` = 'permission') LIMIT 21; args=('auth', 'permission'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'auth' AND `django_content_type`.`model` = 'group') LIMIT 21; args=('auth', 'group'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (2, 3) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(2, 3); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'auth'; args=('auth',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'contenttypes' AND `django_content_type`.`model` = 'contenttype') LIMIT 21; args=('contenttypes', 'contenttype'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (4) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(4,); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'sessions' AND `django_content_type`.`model` = 'session') LIMIT 21; args=('sessions', 'session'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (5) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(5,); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_crontab'; args=('django_crontab',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_crontab'; args=('django_crontab',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'catalogo'; args=('catalogo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'categoria') LIMIT 21; args=('catalogo', 'categoria'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'marca') LIMIT 21; args=('catalogo', 'marca'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'modelo') LIMIT 21; args=('catalogo', 'modelo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'repuesto') LIMIT 21; args=('catalogo', 'repuesto'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'modelorepuesto') LIMIT 21; args=('catalogo', 'modelorepuesto'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'repuestotaller') LIMIT 21; args=('catalogo', 'repuestotaller'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (6, 7, 8, 9, 10, 11) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(6, 7, 8, 9, 10, 11); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'catalogo'; args=('catalogo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'inventario'; args=('inventario',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'deposito') LIMIT 21; args=('inventario', 'deposito'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'ingreso') LIMIT 21; args=('inventario', 'ingreso'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'movimiento') LIMIT 21; args=('inventario', 'movimiento'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'stockpordeposito') LIMIT 21; args=('inventario', 'stockpordeposito'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'objetivokpi') LIMIT 21; args=('inventario', 'objetivokpi'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (12, 13, 14, 15, 29) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(12, 13, 14, 15, 29); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'inventario'; args=('inventario',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'user'; args=('user',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'direccion') LIMIT 21; args=('user', 'direccion'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'grupo') LIMIT 21; args=('user', 'grupo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'taller') LIMIT 21; args=('user', 'taller'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'grupotaller') LIMIT 21; args=('user', 'grupotaller'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'user') LIMIT 21; args=('user', 'user'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (16, 17, 18, 19, 20) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(16, 17, 18, 19, 20); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'user'; args=('user',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'd_externo'; args=('d_externo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'inflacion') LIMIT 21; args=('d_externo', 'inflacion'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'ipsa') LIMIT 21; args=('d_externo', 'ipsa'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'patentamiento') LIMIT 21; args=('d_externo', 'patentamiento'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'prenda') LIMIT 21; args=('d_externo', 'prenda'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'tasainteresprestamo') LIMIT 21; args=('d_externo', 'tasainteresprestamo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'tipocambio') LIMIT 21; args=('d_externo', 'tipocambio'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'registroentrenamiento_frecuencia_alta') LIMIT 21; args=('d_externo', 'registroentrenamiento_frecuencia_alta'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'registroentrenamiento_intermitente') LIMIT 21; args=('d_externo', 'registroentrenamiento_intermitente'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (21, 22, 23, 24, 25, 26, 27, 28) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(21, 22, 23, 24, 25, 26, 27, 28); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'd_externo'; args=('d_externo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
+(0.171) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.157) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.172) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.156) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.172) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.172) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.172) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.172) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.171) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.172) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.172) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.172) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.171) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+ALTER TABLE `user_direccion` RENAME COLUMN `localidad` TO `ciudad`; (params ())
+(0.172) None; args=(); alias=default
+(0.156) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.172) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.157) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.156) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.157) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.157) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.172) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.156) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.172) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+ALTER TABLE `user_direccion` RENAME COLUMN `localidad` TO `ciudad`; (params ())
+(0.156) None; args=(); alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.015) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.016) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.015) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.015) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+CREATE TABLE `django_migrations` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); (params None)
+(0.063) CREATE TABLE `django_migrations` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); args=None; alias=default
+CREATE TABLE `django_content_type` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(100) NOT NULL, `app_label` varchar(100) NOT NULL, `model` varchar(100) NOT NULL); (params None)
+(0.015) CREATE TABLE `django_content_type` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(100) NOT NULL, `app_label` varchar(100) NOT NULL, `model` varchar(100) NOT NULL); args=None; alias=default
+ALTER TABLE `django_content_type` ADD CONSTRAINT `django_content_type_app_label_model_76bd3d3b_uniq` UNIQUE (`app_label`, `model`); (params ())
+(0.047) ALTER TABLE `django_content_type` ADD CONSTRAINT `django_content_type_app_label_model_76bd3d3b_uniq` UNIQUE (`app_label`, `model`); args=(); alias=default
+(0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('contenttypes', '0001_initial', '2025-10-28 00:10:29.786538'); args=['contenttypes', '0001_initial', '2025-10-28 00:10:29.786538']; alias=default
+ALTER TABLE `django_content_type` MODIFY `name` varchar(100) NULL; (params [])
+(0.047) ALTER TABLE `django_content_type` MODIFY `name` varchar(100) NULL; args=[]; alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) COMMIT; args=None; alias=default
+ALTER TABLE `django_content_type` DROP COLUMN `name`; (params ())
+(0.031) ALTER TABLE `django_content_type` DROP COLUMN `name`; args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('contenttypes', '0002_remove_content_type_name', '2025-10-28 00:10:29.882427'); args=['contenttypes', '0002_remove_content_type_name', '2025-10-28 00:10:29.882427']; alias=default
+CREATE TABLE `auth_permission` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(50) NOT NULL, `content_type_id` integer NOT NULL, `codename` varchar(100) NOT NULL); (params None)
+(0.016) CREATE TABLE `auth_permission` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(50) NOT NULL, `content_type_id` integer NOT NULL, `codename` varchar(100) NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'auth_permission' AND
+                table_schema = DATABASE()
+            ; args=['auth_permission']; alias=default
+CREATE TABLE `auth_group` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(80) NOT NULL UNIQUE); (params None)
+(0.031) CREATE TABLE `auth_group` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(80) NOT NULL UNIQUE); args=None; alias=default
+CREATE TABLE `auth_group_permissions` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `group_id` integer NOT NULL, `permission_id` integer NOT NULL); (params None)
+(0.016) CREATE TABLE `auth_group_permissions` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `group_id` integer NOT NULL, `permission_id` integer NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'auth_group_permissions' AND
+                table_schema = DATABASE()
+            ; args=['auth_group_permissions']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'auth_group_permissions' AND
+                table_schema = DATABASE()
+            ; args=['auth_group_permissions']; alias=default
+ALTER TABLE `auth_permission` ADD CONSTRAINT `auth_permission_content_type_id_codename_01ab375a_uniq` UNIQUE (`content_type_id`, `codename`); (params ())
+(0.016) ALTER TABLE `auth_permission` ADD CONSTRAINT `auth_permission_content_type_id_codename_01ab375a_uniq` UNIQUE (`content_type_id`, `codename`); args=(); alias=default
+ALTER TABLE `auth_permission` ADD CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`); (params ())
+(0.062) ALTER TABLE `auth_permission` ADD CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`); args=(); alias=default
+ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissions_group_id_permission_id_0cd325b0_uniq` UNIQUE (`group_id`, `permission_id`); (params ())
+(0.016) ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissions_group_id_permission_id_0cd325b0_uniq` UNIQUE (`group_id`, `permission_id`); args=(); alias=default
+ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`); (params ())
+(0.047) ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`); args=(); alias=default
+ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`); (params ())
+(0.062) ALTER TABLE `auth_group_permissions` ADD CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0001_initial', '2025-10-28 00:10:30.160365'); args=['auth', '0001_initial', '2025-10-28 00:10:30.160365']; alias=default
+ALTER TABLE `auth_permission` MODIFY `name` varchar(255) NOT NULL; (params [])
+(0.063) ALTER TABLE `auth_permission` MODIFY `name` varchar(255) NOT NULL; args=[]; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0002_alter_permission_name_max_length', '2025-10-28 00:10:30.229404'); args=['auth', '0002_alter_permission_name_max_length', '2025-10-28 00:10:30.229404']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0003_alter_user_email_max_length', '2025-10-28 00:10:30.234579'); args=['auth', '0003_alter_user_email_max_length', '2025-10-28 00:10:30.234579']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0004_alter_user_username_opts', '2025-10-28 00:10:30.242087'); args=['auth', '0004_alter_user_username_opts', '2025-10-28 00:10:30.242087']; alias=default
+(0.016) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0005_alter_user_last_login_null', '2025-10-28 00:10:30.247086'); args=['auth', '0005_alter_user_last_login_null', '2025-10-28 00:10:30.247086']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0006_require_contenttypes_0002', '2025-10-28 00:10:30.250591'); args=['auth', '0006_require_contenttypes_0002', '2025-10-28 00:10:30.250591']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0007_alter_validators_add_error_messages', '2025-10-28 00:10:30.255674'); args=['auth', '0007_alter_validators_add_error_messages', '2025-10-28 00:10:30.255674']; alias=default
+(0.015) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0008_alter_user_username_max_length', '2025-10-28 00:10:30.261174'); args=['auth', '0008_alter_user_username_max_length', '2025-10-28 00:10:30.261174']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0009_alter_user_last_name_max_length', '2025-10-28 00:10:30.267176'); args=['auth', '0009_alter_user_last_name_max_length', '2025-10-28 00:10:30.267176']; alias=default
+ALTER TABLE `auth_group` MODIFY `name` varchar(150) NOT NULL; (params [])
+(0.016) ALTER TABLE `auth_group` MODIFY `name` varchar(150) NOT NULL; args=[]; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0010_alter_group_name_max_length', '2025-10-28 00:10:30.281435'); args=['auth', '0010_alter_group_name_max_length', '2025-10-28 00:10:30.281435']; alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0011_update_proxy_permissions', '2025-10-28 00:10:30.289437'); args=['auth', '0011_update_proxy_permissions', '2025-10-28 00:10:30.289437']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('auth', '0012_alter_user_first_name_max_length', '2025-10-28 00:10:30.294459'); args=['auth', '0012_alter_user_first_name_max_length', '2025-10-28 00:10:30.294459']; alias=default
+CREATE TABLE `user_direccion` (`id_direccion` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `calle` varchar(255) NOT NULL, `ciudad` varchar(100) NOT NULL, `codigo_postal` varchar(20) NOT NULL, `pais` varchar(100) NOT NULL); (params None)
+(0.015) CREATE TABLE `user_direccion` (`id_direccion` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `calle` varchar(255) NOT NULL, `ciudad` varchar(100) NOT NULL, `codigo_postal` varchar(20) NOT NULL, `pais` varchar(100) NOT NULL); args=None; alias=default
+CREATE TABLE `user_taller` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL, `direccion` varchar(255) NOT NULL, `direccion_normalizada` varchar(255) NOT NULL, `direccion_validada` bool NOT NULL, `telefono` varchar(50) NOT NULL, `telefono_e164` varchar(20) NOT NULL, `email` varchar(254) NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `latitud` numeric(9, 6) NULL, `longitud` numeric(9, 6) NULL); (params None)
+(0.032) CREATE TABLE `user_taller` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL, `direccion` varchar(255) NOT NULL, `direccion_normalizada` varchar(255) NOT NULL, `direccion_validada` bool NOT NULL, `telefono` varchar(50) NOT NULL, `telefono_e164` varchar(20) NOT NULL, `email` varchar(254) NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `latitud` numeric(9, 6) NULL, `longitud` numeric(9, 6) NULL); args=None; alias=default
+CREATE TABLE `user_grupo` (`id_grupo` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(100) NOT NULL, `descripcion` longtext NOT NULL, `grupo_padre_id` integer NULL); (params None)
+(0.015) CREATE TABLE `user_grupo` (`id_grupo` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(100) NOT NULL, `descripcion` longtext NOT NULL, `grupo_padre_id` integer NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'user_grupo' AND
+                table_schema = DATABASE()
+            ; args=['user_grupo']; alias=default
+CREATE TABLE `user_grupotaller` (`id_grupo_taller` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `id_grupo_id` integer NOT NULL, `id_taller_id` bigint NOT NULL); (params None)
+(0.031) CREATE TABLE `user_grupotaller` (`id_grupo_taller` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `id_grupo_id` integer NOT NULL, `id_taller_id` bigint NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'user_grupotaller' AND
+                table_schema = DATABASE()
+            ; args=['user_grupotaller']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'user_grupotaller' AND
+                table_schema = DATABASE()
+            ; args=['user_grupotaller']; alias=default
+CREATE TABLE `custom_user` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `password` varchar(128) NOT NULL, `last_login` datetime(6) NULL, `is_superuser` bool NOT NULL, `username` varchar(150) NOT NULL UNIQUE, `first_name` varchar(150) NOT NULL, `last_name` varchar(150) NOT NULL, `email` varchar(254) NOT NULL, `is_staff` bool NOT NULL, `is_active` bool NOT NULL, `date_joined` datetime(6) NOT NULL, `telefono` varchar(20) NOT NULL, `rol_en_grupo` varchar(20) NULL, `direccion_id` integer NULL UNIQUE, `grupo_id` integer NULL, `taller_id` bigint NULL); (params None)
+(0.032) CREATE TABLE `custom_user` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `password` varchar(128) NOT NULL, `last_login` datetime(6) NULL, `is_superuser` bool NOT NULL, `username` varchar(150) NOT NULL UNIQUE, `first_name` varchar(150) NOT NULL, `last_name` varchar(150) NOT NULL, `email` varchar(254) NOT NULL, `is_staff` bool NOT NULL, `is_active` bool NOT NULL, `date_joined` datetime(6) NOT NULL, `telefono` varchar(20) NOT NULL, `rol_en_grupo` varchar(20) NULL, `direccion_id` integer NULL UNIQUE, `grupo_id` integer NULL, `taller_id` bigint NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user' AND
+                table_schema = DATABASE()
+            ; args=['custom_user']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user' AND
+                table_schema = DATABASE()
+            ; args=['custom_user']; alias=default
+CREATE TABLE `custom_user_groups` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `user_id` bigint NOT NULL, `group_id` integer NOT NULL); (params None)
+(0.031) CREATE TABLE `custom_user_groups` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `user_id` bigint NOT NULL, `group_id` integer NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user_groups' AND
+                table_schema = DATABASE()
+            ; args=['custom_user_groups']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user_groups' AND
+                table_schema = DATABASE()
+            ; args=['custom_user_groups']; alias=default
+CREATE TABLE `custom_user_user_permissions` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `user_id` bigint NOT NULL, `permission_id` integer NOT NULL); (params None)
+(0.031) CREATE TABLE `custom_user_user_permissions` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `user_id` bigint NOT NULL, `permission_id` integer NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user_user_permissions' AND
+                table_schema = DATABASE()
+            ; args=['custom_user_user_permissions']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'custom_user_user_permissions' AND
+                table_schema = DATABASE()
+            ; args=['custom_user_user_permissions']; alias=default
+ALTER TABLE `user_grupo` ADD CONSTRAINT `user_grupo_grupo_padre_id_ff6f46dc_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_padre_id`) REFERENCES `user_grupo` (`id_grupo`); (params ())
+(0.047) ALTER TABLE `user_grupo` ADD CONSTRAINT `user_grupo_grupo_padre_id_ff6f46dc_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_padre_id`) REFERENCES `user_grupo` (`id_grupo`); args=(); alias=default
+ALTER TABLE `user_grupotaller` ADD CONSTRAINT `user_grupotaller_id_grupo_id_befbb804_fk_user_grupo_id_grupo` FOREIGN KEY (`id_grupo_id`) REFERENCES `user_grupo` (`id_grupo`); (params ())
+(0.047) ALTER TABLE `user_grupotaller` ADD CONSTRAINT `user_grupotaller_id_grupo_id_befbb804_fk_user_grupo_id_grupo` FOREIGN KEY (`id_grupo_id`) REFERENCES `user_grupo` (`id_grupo`); args=(); alias=default
+ALTER TABLE `user_grupotaller` ADD CONSTRAINT `user_grupotaller_id_taller_id_3e2c0e88_fk_user_taller_id` FOREIGN KEY (`id_taller_id`) REFERENCES `user_taller` (`id`); (params ())
+(0.062) ALTER TABLE `user_grupotaller` ADD CONSTRAINT `user_grupotaller_id_taller_id_3e2c0e88_fk_user_taller_id` FOREIGN KEY (`id_taller_id`) REFERENCES `user_taller` (`id`); args=(); alias=default
+ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_direccion_id_f029764a_fk_user_direccion_id_direccion` FOREIGN KEY (`direccion_id`) REFERENCES `user_direccion` (`id_direccion`); (params ())
+(0.047) ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_direccion_id_f029764a_fk_user_direccion_id_direccion` FOREIGN KEY (`direccion_id`) REFERENCES `user_direccion` (`id_direccion`); args=(); alias=default
+ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_grupo_id_3d61c188_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_id`) REFERENCES `user_grupo` (`id_grupo`); (params ())
+(0.078) ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_grupo_id_3d61c188_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_id`) REFERENCES `user_grupo` (`id_grupo`); args=(); alias=default
+ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_taller_id_d08476b5_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller` (`id`); (params ())
+(0.079) ALTER TABLE `custom_user` ADD CONSTRAINT `custom_user_taller_id_d08476b5_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller` (`id`); args=(); alias=default
+ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_user_id_group_id_747bb497_uniq` UNIQUE (`user_id`, `group_id`); (params ())
+(0.015) ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_user_id_group_id_747bb497_uniq` UNIQUE (`user_id`, `group_id`); args=(); alias=default
+ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_user_id_fc78735a_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); (params ())
+(0.047) ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_user_id_fc78735a_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); args=(); alias=default
+ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_group_id_02874f21_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`); (params ())
+(0.063) ALTER TABLE `custom_user_groups` ADD CONSTRAINT `custom_user_groups_group_id_02874f21_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`); args=(); alias=default
+ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_permissions_user_id_permission_id_31f85e8f_uniq` UNIQUE (`user_id`, `permission_id`); (params ())
+(0.000) ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_permissions_user_id_permission_id_31f85e8f_uniq` UNIQUE (`user_id`, `permission_id`); args=(); alias=default
+ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_permissions_user_id_0634b1dc_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); (params ())
+(0.047) ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_permissions_user_id_0634b1dc_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); args=(); alias=default
+ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_per_permission_id_f82b5e3f_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`); (params ())
+(0.047) ALTER TABLE `custom_user_user_permissions` ADD CONSTRAINT `custom_user_user_per_permission_id_f82b5e3f_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('user', '0001_initial', '2025-10-28 00:10:31.086350'); args=['user', '0001_initial', '2025-10-28 00:10:31.086350']; alias=default
+CREATE TABLE `django_admin_log` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `action_time` datetime(6) NOT NULL, `object_id` longtext NULL, `object_repr` varchar(200) NOT NULL, `action_flag` smallint UNSIGNED NOT NULL CHECK (`action_flag` >= 0), `change_message` longtext NOT NULL, `content_type_id` integer NULL, `user_id` bigint NOT NULL); (params None)
+(0.015) CREATE TABLE `django_admin_log` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `action_time` datetime(6) NOT NULL, `object_id` longtext NULL, `object_repr` varchar(200) NOT NULL, `action_flag` smallint UNSIGNED NOT NULL CHECK (`action_flag` >= 0), `change_message` longtext NOT NULL, `content_type_id` integer NULL, `user_id` bigint NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'django_admin_log' AND
+                table_schema = DATABASE()
+            ; args=['django_admin_log']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'django_admin_log' AND
+                table_schema = DATABASE()
+            ; args=['django_admin_log']; alias=default
+ALTER TABLE `django_admin_log` ADD CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`); (params ())
+(0.047) ALTER TABLE `django_admin_log` ADD CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`); args=(); alias=default
+ALTER TABLE `django_admin_log` ADD CONSTRAINT `django_admin_log_user_id_c564eba6_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); (params ())
+(0.062) ALTER TABLE `django_admin_log` ADD CONSTRAINT `django_admin_log_user_id_c564eba6_fk_custom_user_id` FOREIGN KEY (`user_id`) REFERENCES `custom_user` (`id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('admin', '0001_initial', '2025-10-28 00:10:31.239285'); args=['admin', '0001_initial', '2025-10-28 00:10:31.239285']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('admin', '0002_logentry_remove_auto_add', '2025-10-28 00:10:31.247793'); args=['admin', '0002_logentry_remove_auto_add', '2025-10-28 00:10:31.247793']; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('admin', '0003_logentry_add_action_flag_choices', '2025-10-28 00:10:31.255898'); args=['admin', '0003_logentry_add_action_flag_choices', '2025-10-28 00:10:31.255898']; alias=default
+CREATE TABLE `catalogo_categoria` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL UNIQUE, `descripcion` longtext NOT NULL); (params None)
+(0.031) CREATE TABLE `catalogo_categoria` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL UNIQUE, `descripcion` longtext NOT NULL); args=None; alias=default
+CREATE TABLE `catalogo_marca` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL UNIQUE); (params None)
+(0.031) CREATE TABLE `catalogo_marca` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL UNIQUE); args=None; alias=default
+CREATE TABLE `catalogo_modelo` (`id_modelo` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(100) NOT NULL, `fecha_creacion` date NOT NULL, `id_marca_id` bigint NOT NULL); (params None)
+(0.016) CREATE TABLE `catalogo_modelo` (`id_modelo` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(100) NOT NULL, `fecha_creacion` date NOT NULL, `id_marca_id` bigint NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_modelo' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_modelo']; alias=default
+CREATE TABLE `catalogo_repuesto` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(120) NOT NULL UNIQUE, `descripcion` varchar(255) NOT NULL, `estado` varchar(50) NOT NULL, `categoria_id` bigint NULL, `marca_id` bigint NULL); (params None)
+(0.031) CREATE TABLE `catalogo_repuesto` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(120) NOT NULL UNIQUE, `descripcion` varchar(255) NOT NULL, `estado` varchar(50) NOT NULL, `categoria_id` bigint NULL, `marca_id` bigint NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_repuesto' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_repuesto']; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_repuesto' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_repuesto']; alias=default
+CREATE TABLE `catalogo_modelorepuesto` (`id_modelo_repuesto` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `id_modelo_id` integer NOT NULL, `id_repuesto_id` bigint NOT NULL); (params None)
+(0.016) CREATE TABLE `catalogo_modelorepuesto` (`id_modelo_repuesto` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `id_modelo_id` integer NOT NULL, `id_repuesto_id` bigint NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_modelorepuesto' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_modelorepuesto']; alias=default
+(0.015) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_modelorepuesto' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_modelorepuesto']; alias=default
+CREATE TABLE `catalogo_repuestotaller` (`id_repuesto_taller` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `frecuencia` varchar(100) NULL, `precio` numeric(12, 2) NULL, `costo` numeric(12, 2) NULL, `original` bool NOT NULL, `pred_1` integer NULL, `pred_2` integer NULL, `pred_3` integer NULL, `pred_4` integer NULL, `repuesto_id` bigint NOT NULL); (params None)
+(0.016) CREATE TABLE `catalogo_repuestotaller` (`id_repuesto_taller` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `frecuencia` varchar(100) NULL, `precio` numeric(12, 2) NULL, `costo` numeric(12, 2) NULL, `original` bool NOT NULL, `pred_1` integer NULL, `pred_2` integer NULL, `pred_3` integer NULL, `pred_4` integer NULL, `repuesto_id` bigint NOT NULL); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_repuestotaller' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_repuestotaller']; alias=default
+ALTER TABLE `catalogo_modelo` ADD CONSTRAINT `catalogo_modelo_id_marca_id_2d365b77_fk_catalogo_marca_id` FOREIGN KEY (`id_marca_id`) REFERENCES `catalogo_marca` (`id`); (params ())
+(0.047) ALTER TABLE `catalogo_modelo` ADD CONSTRAINT `catalogo_modelo_id_marca_id_2d365b77_fk_catalogo_marca_id` FOREIGN KEY (`id_marca_id`) REFERENCES `catalogo_marca` (`id`); args=(); alias=default
+ALTER TABLE `catalogo_repuesto` ADD CONSTRAINT `catalogo_repuesto_categoria_id_52fa985c_fk_catalogo_categoria_id` FOREIGN KEY (`categoria_id`) REFERENCES `catalogo_categoria` (`id`); (params ())
+(0.062) ALTER TABLE `catalogo_repuesto` ADD CONSTRAINT `catalogo_repuesto_categoria_id_52fa985c_fk_catalogo_categoria_id` FOREIGN KEY (`categoria_id`) REFERENCES `catalogo_categoria` (`id`); args=(); alias=default
+ALTER TABLE `catalogo_repuesto` ADD CONSTRAINT `catalogo_repuesto_marca_id_714743c0_fk_catalogo_marca_id` FOREIGN KEY (`marca_id`) REFERENCES `catalogo_marca` (`id`); (params ())
+(0.063) ALTER TABLE `catalogo_repuesto` ADD CONSTRAINT `catalogo_repuesto_marca_id_714743c0_fk_catalogo_marca_id` FOREIGN KEY (`marca_id`) REFERENCES `catalogo_marca` (`id`); args=(); alias=default
+ALTER TABLE `catalogo_modelorepuesto` ADD CONSTRAINT `catalogo_modelorepue_id_modelo_id_4b3b74e6_fk_catalogo_` FOREIGN KEY (`id_modelo_id`) REFERENCES `catalogo_modelo` (`id_modelo`); (params ())
+(0.047) ALTER TABLE `catalogo_modelorepuesto` ADD CONSTRAINT `catalogo_modelorepue_id_modelo_id_4b3b74e6_fk_catalogo_` FOREIGN KEY (`id_modelo_id`) REFERENCES `catalogo_modelo` (`id_modelo`); args=(); alias=default
+ALTER TABLE `catalogo_modelorepuesto` ADD CONSTRAINT `catalogo_modelorepue_id_repuesto_id_a9f16a82_fk_catalogo_` FOREIGN KEY (`id_repuesto_id`) REFERENCES `catalogo_repuesto` (`id`); (params ())
+(0.047) ALTER TABLE `catalogo_modelorepuesto` ADD CONSTRAINT `catalogo_modelorepue_id_repuesto_id_a9f16a82_fk_catalogo_` FOREIGN KEY (`id_repuesto_id`) REFERENCES `catalogo_repuesto` (`id`); args=(); alias=default
+ALTER TABLE `catalogo_repuestotaller` ADD CONSTRAINT `catalogo_repuestotal_repuesto_id_dbc08325_fk_catalogo_` FOREIGN KEY (`repuesto_id`) REFERENCES `catalogo_repuesto` (`id`); (params ())
+(0.078) ALTER TABLE `catalogo_repuestotaller` ADD CONSTRAINT `catalogo_repuestotal_repuesto_id_dbc08325_fk_catalogo_` FOREIGN KEY (`repuesto_id`) REFERENCES `catalogo_repuesto` (`id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('catalogo', '0001_initial', '2025-10-28 00:10:31.749200'); args=['catalogo', '0001_initial', '2025-10-28 00:10:31.749200']; alias=default
+ALTER TABLE `catalogo_repuestotaller` ADD COLUMN `taller_id` bigint NOT NULL , ADD CONSTRAINT `catalogo_repuestotaller_taller_id_a7c36fe3_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); (params None)
+(0.062) ALTER TABLE `catalogo_repuestotaller` ADD COLUMN `taller_id` bigint NOT NULL , ADD CONSTRAINT `catalogo_repuestotaller_taller_id_a7c36fe3_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'catalogo_repuestotaller' AND
+                table_schema = DATABASE()
+            ; args=['catalogo_repuestotaller']; alias=default
+ALTER TABLE `catalogo_repuestotaller` ADD CONSTRAINT `catalogo_repuestotaller_repuesto_id_taller_id_65840d5f_uniq` UNIQUE (`repuesto_id`, `taller_id`); (params ())
+(0.016) ALTER TABLE `catalogo_repuestotaller` ADD CONSTRAINT `catalogo_repuestotaller_repuesto_id_taller_id_65840d5f_uniq` UNIQUE (`repuesto_id`, `taller_id`); args=(); alias=default
+(0.016) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('catalogo', '0002_initial', '2025-10-28 00:10:31.840936'); args=['catalogo', '0002_initial', '2025-10-28 00:10:31.840936']; alias=default
+CREATE TABLE `d_externo_inflacion` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `ipc` numeric(9, 4) NOT NULL); (params None)
+(0.015) CREATE TABLE `d_externo_inflacion` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `ipc` numeric(9, 4) NOT NULL); args=None; alias=default
+CREATE TABLE `d_externo_ipsa` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `ipsa` numeric(10, 6) NOT NULL); (params None)
+(0.016) CREATE TABLE `d_externo_ipsa` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `ipsa` numeric(10, 6) NOT NULL); args=None; alias=default
+CREATE TABLE `d_externo_patentamiento` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `cantidad` double precision NOT NULL); (params None)
+(0.016) CREATE TABLE `d_externo_patentamiento` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `cantidad` double precision NOT NULL); args=None; alias=default
+CREATE TABLE `d_externo_prenda` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `prenda` integer NOT NULL); (params None)
+(0.016) CREATE TABLE `d_externo_prenda` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `prenda` integer NOT NULL); args=None; alias=default
+CREATE TABLE `d_externo_registroentrenamiento_frecuencia_alta` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(255) NOT NULL, `fecha` date NOT NULL, `cantidad` double precision NULL, `segmento_demanda` varchar(50) NOT NULL, `inflacion_lag_1` double precision NULL, `inflacion_lag_2` double precision NULL, `inflacion_lag_3` double precision NULL, `inflacion_lag_6` double precision NULL, `inflacion_ema_3` double precision NULL, `inflacion_ema_6` double precision NULL, `inflacion_ema_12` double precision NULL, `inflacion_delta` double precision NULL, `ipsa_lag_1` double precision NULL, `ipsa_lag_2` double precision NULL, `ipsa_lag_3` double precision NULL, `ipsa_lag_6` double precision NULL, `ipsa_ema_3` double precision NULL, `ipsa_ema_6` double precision NULL, `ipsa_ema_12` double precision NULL, `ipsa_delta` double precision NULL, `patentamientos_lag_12` double precision NULL, `patentamientos_lag_24` double precision NULL, `patentamientos_lag_36` double precision NULL, `patentamientos_ema_12` double precision NULL, `patentamientos_ema_24` double precision NULL, `patentamientos_delta` double precision NULL, `prenda_lag_1` double precision NULL, `prenda_lag_2` double precision NULL, `prenda_lag_3` double precision NULL, `prenda_lag_6` double precision NULL, `prenda_ema_3` double precision NULL, `prenda_ema_6` double precision NULL, `prenda_ema_12` double precision NULL, `prenda_delta` double precision NULL, `tasa_de_interes_lag_1` double precision NULL, `tasa_de_interes_lag_2` double precision NULL, `tasa_de_interes_lag_3` double precision NULL, `tasa_de_interes_lag_6` double precision NULL, `tasa_de_interes_ema_3` double precision NULL, `tasa_de_interes_ema_6` double precision NULL, `tasa_de_interes_ema_12` double precision NULL, `tasa_de_interes_delta` double precision NULL, `tipo_de_cambio_lag_1` double precision NULL, `tipo_de_cambio_lag_2` double precision NULL, `tipo_de_cambio_lag_3` double precision NULL, `tipo_de_cambio_lag_6` double precision NULL, `tipo_de_cambio_ema_3` double precision NULL, `tipo_de_cambio_ema_6` double precision NULL, `tipo_de_cambio_ema_12` double precision NULL, `tipo_de_cambio_delta` double precision NULL, `mes_1` double precision NULL, `mes_2` double precision NULL, `mes_3` double precision NULL, `mes_4` double precision NULL, `mes_5` double precision NULL, `mes_6` double precision NULL, `mes_7` double precision NULL, `mes_8` double precision NULL, `mes_9` double precision NULL, `mes_10` double precision NULL, `mes_11` double precision NULL, `mes_12` double precision NULL, `semana_1` double precision NULL, `semana_2` double precision NULL, `semana_3` double precision NULL, `semana_4` double precision NULL, `semana_5` double precision NULL, `semana_6` double precision NULL, `semana_7` double precision NULL, `semana_8` double precision NULL, `semana_9` double precision NULL, `semana_10` double precision NULL, `semana_11` double precision NULL, `semana_12` double precision NULL, `semana_13` double precision NULL, `semana_14` double precision NULL, `semana_15` double precision NULL, `semana_16` double precision NULL, `semana_17` double precision NULL, `semana_18` double precision NULL, `semana_19` double precision NULL, `semana_20` double precision NULL, `semana_21` double precision NULL, `semana_22` double precision NULL, `semana_23` double precision NULL, `semana_24` double precision NULL, `semana_25` double precision NULL, `semana_26` double precision NULL, `semana_27` double precision NULL, `semana_28` double precision NULL, `semana_29` double precision NULL, `semana_30` double precision NULL, `semana_31` double precision NULL, `semana_32` double precision NULL, `semana_33` double precision NULL, `semana_34` double precision NULL, `semana_35` double precision NULL, `semana_36` double precision NULL, `semana_37` double precision NULL, `semana_38` double precision NULL, `semana_39` double precision NULL, `semana_40` double precision NULL, `semana_41` double precision NULL, `semana_42` double precision NULL, `semana_43` double precision NULL, `semana_44` double precision NULL, `semana_45` double precision NULL, `semana_46` double precision NULL, `semana_47` double precision NULL, `semana_48` double precision NULL, `semana_49` double precision NULL, `semana_50` double precision NULL, `semana_51` double precision NULL, `semana_52` double precision NULL, `trimestre_1` double precision NULL, `trimestre_2` double precision NULL, `trimestre_3` double precision NULL, `trimestre_4` double precision NULL, `es_semana_feriado` bool NULL, `hubo_venta` bool NULL, `dias_hasta_feriado` integer NULL, `ventas_t_1` double precision NULL, `ventas_t_2` double precision NULL, `ventas_t_3` double precision NULL, `ventas_t_4` double precision NULL, `ventas_t_5` double precision NULL, `ventas_t_6` double precision NULL, `ventas_t_7` double precision NULL, `ventas_t_8` double precision NULL, `ventas_t_9` double precision NULL, `ventas_t_10` double precision NULL, `ventas_t_11` double precision NULL, `ventas_t_12` double precision NULL, `ventas_t_13` double precision NULL, `ventas_t_14` double precision NULL, `ventas_t_15` double precision NULL, `ventas_t_16` double precision NULL, `ventas_t_17` double precision NULL, `ventas_t_18` double precision NULL, `ventas_t_19` double precision NULL, `ventas_t_20` double precision NULL, `ventas_t_21` double precision NULL, `ventas_t_22` double precision NULL, `ventas_t_23` double precision NULL, `ventas_t_24` double precision NULL, `ventas_t_25` double precision NULL, `ventas_t_26` double precision NULL, `ventas_t_27` double precision NULL, `ventas_t_28` double precision NULL, `ventas_t_29` double precision NULL, `ventas_t_30` double precision NULL, `ventas_t_31` double precision NULL, `ventas_t_32` double precision NULL, `ventas_t_33` double precision NULL, `ventas_t_34` double precision NULL, `ventas_t_35` double precision NULL, `ventas_t_36` double precision NULL, `ventas_t_37` double precision NULL, `ventas_t_38` double precision NULL, `ventas_t_39` double precision NULL, `ventas_t_40` double precision NULL, `ventas_t_41` double precision NULL, `ventas_t_42` double precision NULL, `ventas_t_43` double precision NULL, `ventas_t_44` double precision NULL, `ventas_t_45` double precision NULL, `ventas_t_46` double precision NULL, `ventas_t_47` double precision NULL, `ventas_t_48` double precision NULL, `ventas_t_49` double precision NULL, `ventas_t_50` double precision NULL, `ventas_t_51` double precision NULL, `ventas_t_52` double precision NULL, `media_ultimas_4` double precision NULL, `std_pasada_4_semanas` double precision NULL, `coef_var_4` double precision NULL, `media_ultimas_8` double precision NULL, `std_pasada_8_semanas` double precision NULL, `coef_var_8` double precision NULL, `media_ultimas_12` double precision NULL, `std_pasada_12_semanas` double precision NULL, `coef_var_12` double precision NULL, `media_ultimas_26` double precision NULL, `std_pasada_26_semanas` double precision NULL, `coef_var_26` double precision NULL, `media_ultimas_52` double precision NULL, `std_pasada_52_semanas` double precision NULL, `coef_var_52` double precision NULL); (params None)
+(0.047) CREATE TABLE `d_externo_registroentrenamiento_frecuencia_alta` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(255) NOT NULL, `fecha` date NOT NULL, `cantidad` double precision NULL, `segmento_demanda` varchar(50) NOT NULL, `inflacion_lag_1` double precision NULL, `inflacion_lag_2` double precision NULL, `inflacion_lag_3` double precision NULL, `inflacion_lag_6` double precision NULL, `inflacion_ema_3` double precision NULL, `inflacion_ema_6` double precision NULL, `inflacion_ema_12` double precision NULL, `inflacion_delta` double precision NULL, `ipsa_lag_1` double precision NULL, `ipsa_lag_2` double precision NULL, `ipsa_lag_3` double precision NULL, `ipsa_lag_6` double precision NULL, `ipsa_ema_3` double precision NULL, `ipsa_ema_6` double precision NULL, `ipsa_ema_12` double precision NULL, `ipsa_delta` double precision NULL, `patentamientos_lag_12` double precision NULL, `patentamientos_lag_24` double precision NULL, `patentamientos_lag_36` double precision NULL, `patentamientos_ema_12` double precision NULL, `patentamientos_ema_24` double precision NULL, `patentamientos_delta` double precision NULL, `prenda_lag_1` double precision NULL, `prenda_lag_2` double precision NULL, `prenda_lag_3` double precision NULL, `prenda_lag_6` double precision NULL, `prenda_ema_3` double precision NULL, `prenda_ema_6` double precision NULL, `prenda_ema_12` double precision NULL, `prenda_delta` double precision NULL, `tasa_de_interes_lag_1` double precision NULL, `tasa_de_interes_lag_2` double precision NULL, `tasa_de_interes_lag_3` double precision NULL, `tasa_de_interes_lag_6` double precision NULL, `tasa_de_interes_ema_3` double precision NULL, `tasa_de_interes_ema_6` double precision NULL, `tasa_de_interes_ema_12` double precision NULL, `tasa_de_interes_delta` double precision NULL, `tipo_de_cambio_lag_1` double precision NULL, `tipo_de_cambio_lag_2` double precision NULL, `tipo_de_cambio_lag_3` double precision NULL, `tipo_de_cambio_lag_6` double precision NULL, `tipo_de_cambio_ema_3` double precision NULL, `tipo_de_cambio_ema_6` double precision NULL, `tipo_de_cambio_ema_12` double precision NULL, `tipo_de_cambio_delta` double precision NULL, `mes_1` double precision NULL, `mes_2` double precision NULL, `mes_3` double precision NULL, `mes_4` double precision NULL, `mes_5` double precision NULL, `mes_6` double precision NULL, `mes_7` double precision NULL, `mes_8` double precision NULL, `mes_9` double precision NULL, `mes_10` double precision NULL, `mes_11` double precision NULL, `mes_12` double precision NULL, `semana_1` double precision NULL, `semana_2` double precision NULL, `semana_3` double precision NULL, `semana_4` double precision NULL, `semana_5` double precision NULL, `semana_6` double precision NULL, `semana_7` double precision NULL, `semana_8` double precision NULL, `semana_9` double precision NULL, `semana_10` double precision NULL, `semana_11` double precision NULL, `semana_12` double precision NULL, `semana_13` double precision NULL, `semana_14` double precision NULL, `semana_15` double precision NULL, `semana_16` double precision NULL, `semana_17` double precision NULL, `semana_18` double precision NULL, `semana_19` double precision NULL, `semana_20` double precision NULL, `semana_21` double precision NULL, `semana_22` double precision NULL, `semana_23` double precision NULL, `semana_24` double precision NULL, `semana_25` double precision NULL, `semana_26` double precision NULL, `semana_27` double precision NULL, `semana_28` double precision NULL, `semana_29` double precision NULL, `semana_30` double precision NULL, `semana_31` double precision NULL, `semana_32` double precision NULL, `semana_33` double precision NULL, `semana_34` double precision NULL, `semana_35` double precision NULL, `semana_36` double precision NULL, `semana_37` double precision NULL, `semana_38` double precision NULL, `semana_39` double precision NULL, `semana_40` double precision NULL, `semana_41` double precision NULL, `semana_42` double precision NULL, `semana_43` double precision NULL, `semana_44` double precision NULL, `semana_45` double precision NULL, `semana_46` double precision NULL, `semana_47` double precision NULL, `semana_48` double precision NULL, `semana_49` double precision NULL, `semana_50` double precision NULL, `semana_51` double precision NULL, `semana_52` double precision NULL, `trimestre_1` double precision NULL, `trimestre_2` double precision NULL, `trimestre_3` double precision NULL, `trimestre_4` double precision NULL, `es_semana_feriado` bool NULL, `hubo_venta` bool NULL, `dias_hasta_feriado` integer NULL, `ventas_t_1` double precision NULL, `ventas_t_2` double precision NULL, `ventas_t_3` double precision NULL, `ventas_t_4` double precision NULL, `ventas_t_5` double precision NULL, `ventas_t_6` double precision NULL, `ventas_t_7` double precision NULL, `ventas_t_8` double precision NULL, `ventas_t_9` double precision NULL, `ventas_t_10` double precision NULL, `ventas_t_11` double precision NULL, `ventas_t_12` double precision NULL, `ventas_t_13` double precision NULL, `ventas_t_14` double precision NULL, `ventas_t_15` double precision NULL, `ventas_t_16` double precision NULL, `ventas_t_17` double precision NULL, `ventas_t_18` double precision NULL, `ventas_t_19` double precision NULL, `ventas_t_20` double precision NULL, `ventas_t_21` double precision NULL, `ventas_t_22` double precision NULL, `ventas_t_23` double precision NULL, `ventas_t_24` double precision NULL, `ventas_t_25` double precision NULL, `ventas_t_26` double precision NULL, `ventas_t_27` double precision NULL, `ventas_t_28` double precision NULL, `ventas_t_29` double precision NULL, `ventas_t_30` double precision NULL, `ventas_t_31` double precision NULL, `ventas_t_32` double precision NULL, `ventas_t_33` double precision NULL, `ventas_t_34` double precision NULL, `ventas_t_35` double precision NULL, `ventas_t_36` double precision NULL, `ventas_t_37` double precision NULL, `ventas_t_38` double precision NULL, `ventas_t_39` double precision NULL, `ventas_t_40` double precision NULL, `ventas_t_41` double precision NULL, `ventas_t_42` double precision NULL, `ventas_t_43` double precision NULL, `ventas_t_44` double precision NULL, `ventas_t_45` double precision NULL, `ventas_t_46` double precision NULL, `ventas_t_47` double precision NULL, `ventas_t_48` double precision NULL, `ventas_t_49` double precision NULL, `ventas_t_50` double precision NULL, `ventas_t_51` double precision NULL, `ventas_t_52` double precision NULL, `media_ultimas_4` double precision NULL, `std_pasada_4_semanas` double precision NULL, `coef_var_4` double precision NULL, `media_ultimas_8` double precision NULL, `std_pasada_8_semanas` double precision NULL, `coef_var_8` double precision NULL, `media_ultimas_12` double precision NULL, `std_pasada_12_semanas` double precision NULL, `coef_var_12` double precision NULL, `media_ultimas_26` double precision NULL, `std_pasada_26_semanas` double precision NULL, `coef_var_26` double precision NULL, `media_ultimas_52` double precision NULL, `std_pasada_52_semanas` double precision NULL, `coef_var_52` double precision NULL); args=None; alias=default
+CREATE TABLE `d_externo_registroentrenamiento_intermitente` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(255) NOT NULL, `fecha` date NOT NULL, `cantidad` double precision NULL, `segmento_demanda` varchar(50) NOT NULL, `inflacion_lag_1` double precision NULL, `inflacion_lag_2` double precision NULL, `inflacion_lag_3` double precision NULL, `inflacion_lag_6` double precision NULL, `inflacion_ema_3` double precision NULL, `inflacion_ema_6` double precision NULL, `inflacion_ema_12` double precision NULL, `inflacion_delta` double precision NULL, `ipsa_lag_1` double precision NULL, `ipsa_lag_2` double precision NULL, `ipsa_lag_3` double precision NULL, `ipsa_lag_6` double precision NULL, `ipsa_ema_3` double precision NULL, `ipsa_ema_6` double precision NULL, `ipsa_ema_12` double precision NULL, `ipsa_delta` double precision NULL, `patentamientos_lag_12` double precision NULL, `patentamientos_lag_24` double precision NULL, `patentamientos_lag_36` double precision NULL, `patentamientos_ema_12` double precision NULL, `patentamientos_ema_24` double precision NULL, `patentamientos_delta` double precision NULL, `prenda_lag_1` double precision NULL, `prenda_lag_2` double precision NULL, `prenda_lag_3` double precision NULL, `prenda_lag_6` double precision NULL, `prenda_ema_3` double precision NULL, `prenda_ema_6` double precision NULL, `prenda_ema_12` double precision NULL, `prenda_delta` double precision NULL, `tasa_de_interes_lag_1` double precision NULL, `tasa_de_interes_lag_2` double precision NULL, `tasa_de_interes_lag_3` double precision NULL, `tasa_de_interes_lag_6` double precision NULL, `tasa_de_interes_ema_3` double precision NULL, `tasa_de_interes_ema_6` double precision NULL, `tasa_de_interes_ema_12` double precision NULL, `tasa_de_interes_delta` double precision NULL, `tipo_de_cambio_lag_1` double precision NULL, `tipo_de_cambio_lag_2` double precision NULL, `tipo_de_cambio_lag_3` double precision NULL, `tipo_de_cambio_lag_6` double precision NULL, `tipo_de_cambio_ema_3` double precision NULL, `tipo_de_cambio_ema_6` double precision NULL, `tipo_de_cambio_ema_12` double precision NULL, `tipo_de_cambio_delta` double precision NULL, `mes_1` double precision NULL, `mes_2` double precision NULL, `mes_3` double precision NULL, `mes_4` double precision NULL, `mes_5` double precision NULL, `mes_6` double precision NULL, `mes_7` double precision NULL, `mes_8` double precision NULL, `mes_9` double precision NULL, `mes_10` double precision NULL, `mes_11` double precision NULL, `mes_12` double precision NULL, `semana_1` double precision NULL, `semana_2` double precision NULL, `semana_3` double precision NULL, `semana_4` double precision NULL, `semana_5` double precision NULL, `semana_6` double precision NULL, `semana_7` double precision NULL, `semana_8` double precision NULL, `semana_9` double precision NULL, `semana_10` double precision NULL, `semana_11` double precision NULL, `semana_12` double precision NULL, `semana_13` double precision NULL, `semana_14` double precision NULL, `semana_15` double precision NULL, `semana_16` double precision NULL, `semana_17` double precision NULL, `semana_18` double precision NULL, `semana_19` double precision NULL, `semana_20` double precision NULL, `semana_21` double precision NULL, `semana_22` double precision NULL, `semana_23` double precision NULL, `semana_24` double precision NULL, `semana_25` double precision NULL, `semana_26` double precision NULL, `semana_27` double precision NULL, `semana_28` double precision NULL, `semana_29` double precision NULL, `semana_30` double precision NULL, `semana_31` double precision NULL, `semana_32` double precision NULL, `semana_33` double precision NULL, `semana_34` double precision NULL, `semana_35` double precision NULL, `semana_36` double precision NULL, `semana_37` double precision NULL, `semana_38` double precision NULL, `semana_39` double precision NULL, `semana_40` double precision NULL, `semana_41` double precision NULL, `semana_42` double precision NULL, `semana_43` double precision NULL, `semana_44` double precision NULL, `semana_45` double precision NULL, `semana_46` double precision NULL, `semana_47` double precision NULL, `semana_48` double precision NULL, `semana_49` double precision NULL, `semana_50` double precision NULL, `semana_51` double precision NULL, `semana_52` double precision NULL, `trimestre_1` double precision NULL, `trimestre_2` double precision NULL, `trimestre_3` double precision NULL, `trimestre_4` double precision NULL, `es_semana_feriado` bool NULL, `hubo_venta` bool NULL, `dias_hasta_feriado` integer NULL, `ventas_t_1` double precision NULL, `ventas_t_2` double precision NULL, `ventas_t_3` double precision NULL, `ventas_t_4` double precision NULL, `ventas_t_5` double precision NULL, `ventas_t_6` double precision NULL, `ventas_t_7` double precision NULL, `ventas_t_8` double precision NULL, `ventas_t_9` double precision NULL, `ventas_t_10` double precision NULL, `ventas_t_11` double precision NULL, `ventas_t_12` double precision NULL, `ventas_t_13` double precision NULL, `ventas_t_14` double precision NULL, `ventas_t_15` double precision NULL, `ventas_t_16` double precision NULL, `ventas_t_17` double precision NULL, `ventas_t_18` double precision NULL, `ventas_t_19` double precision NULL, `ventas_t_20` double precision NULL, `ventas_t_21` double precision NULL, `ventas_t_22` double precision NULL, `ventas_t_23` double precision NULL, `ventas_t_24` double precision NULL, `ventas_t_25` double precision NULL, `ventas_t_26` double precision NULL, `media_ultimas_4` double precision NULL, `std_pasada_4_semanas` double precision NULL, `coef_var_4` double precision NULL, `media_ultimas_8` double precision NULL, `std_pasada_8_semanas` double precision NULL, `coef_var_8` double precision NULL, `media_ultimas_12` double precision NULL, `std_pasada_12_semanas` double precision NULL, `coef_var_12` double precision NULL, `media_ultimas_26` double precision NULL, `std_pasada_26_semanas` double precision NULL, `coef_var_26` double precision NULL); (params None)
+(0.046) CREATE TABLE `d_externo_registroentrenamiento_intermitente` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `numero_pieza` varchar(255) NOT NULL, `fecha` date NOT NULL, `cantidad` double precision NULL, `segmento_demanda` varchar(50) NOT NULL, `inflacion_lag_1` double precision NULL, `inflacion_lag_2` double precision NULL, `inflacion_lag_3` double precision NULL, `inflacion_lag_6` double precision NULL, `inflacion_ema_3` double precision NULL, `inflacion_ema_6` double precision NULL, `inflacion_ema_12` double precision NULL, `inflacion_delta` double precision NULL, `ipsa_lag_1` double precision NULL, `ipsa_lag_2` double precision NULL, `ipsa_lag_3` double precision NULL, `ipsa_lag_6` double precision NULL, `ipsa_ema_3` double precision NULL, `ipsa_ema_6` double precision NULL, `ipsa_ema_12` double precision NULL, `ipsa_delta` double precision NULL, `patentamientos_lag_12` double precision NULL, `patentamientos_lag_24` double precision NULL, `patentamientos_lag_36` double precision NULL, `patentamientos_ema_12` double precision NULL, `patentamientos_ema_24` double precision NULL, `patentamientos_delta` double precision NULL, `prenda_lag_1` double precision NULL, `prenda_lag_2` double precision NULL, `prenda_lag_3` double precision NULL, `prenda_lag_6` double precision NULL, `prenda_ema_3` double precision NULL, `prenda_ema_6` double precision NULL, `prenda_ema_12` double precision NULL, `prenda_delta` double precision NULL, `tasa_de_interes_lag_1` double precision NULL, `tasa_de_interes_lag_2` double precision NULL, `tasa_de_interes_lag_3` double precision NULL, `tasa_de_interes_lag_6` double precision NULL, `tasa_de_interes_ema_3` double precision NULL, `tasa_de_interes_ema_6` double precision NULL, `tasa_de_interes_ema_12` double precision NULL, `tasa_de_interes_delta` double precision NULL, `tipo_de_cambio_lag_1` double precision NULL, `tipo_de_cambio_lag_2` double precision NULL, `tipo_de_cambio_lag_3` double precision NULL, `tipo_de_cambio_lag_6` double precision NULL, `tipo_de_cambio_ema_3` double precision NULL, `tipo_de_cambio_ema_6` double precision NULL, `tipo_de_cambio_ema_12` double precision NULL, `tipo_de_cambio_delta` double precision NULL, `mes_1` double precision NULL, `mes_2` double precision NULL, `mes_3` double precision NULL, `mes_4` double precision NULL, `mes_5` double precision NULL, `mes_6` double precision NULL, `mes_7` double precision NULL, `mes_8` double precision NULL, `mes_9` double precision NULL, `mes_10` double precision NULL, `mes_11` double precision NULL, `mes_12` double precision NULL, `semana_1` double precision NULL, `semana_2` double precision NULL, `semana_3` double precision NULL, `semana_4` double precision NULL, `semana_5` double precision NULL, `semana_6` double precision NULL, `semana_7` double precision NULL, `semana_8` double precision NULL, `semana_9` double precision NULL, `semana_10` double precision NULL, `semana_11` double precision NULL, `semana_12` double precision NULL, `semana_13` double precision NULL, `semana_14` double precision NULL, `semana_15` double precision NULL, `semana_16` double precision NULL, `semana_17` double precision NULL, `semana_18` double precision NULL, `semana_19` double precision NULL, `semana_20` double precision NULL, `semana_21` double precision NULL, `semana_22` double precision NULL, `semana_23` double precision NULL, `semana_24` double precision NULL, `semana_25` double precision NULL, `semana_26` double precision NULL, `semana_27` double precision NULL, `semana_28` double precision NULL, `semana_29` double precision NULL, `semana_30` double precision NULL, `semana_31` double precision NULL, `semana_32` double precision NULL, `semana_33` double precision NULL, `semana_34` double precision NULL, `semana_35` double precision NULL, `semana_36` double precision NULL, `semana_37` double precision NULL, `semana_38` double precision NULL, `semana_39` double precision NULL, `semana_40` double precision NULL, `semana_41` double precision NULL, `semana_42` double precision NULL, `semana_43` double precision NULL, `semana_44` double precision NULL, `semana_45` double precision NULL, `semana_46` double precision NULL, `semana_47` double precision NULL, `semana_48` double precision NULL, `semana_49` double precision NULL, `semana_50` double precision NULL, `semana_51` double precision NULL, `semana_52` double precision NULL, `trimestre_1` double precision NULL, `trimestre_2` double precision NULL, `trimestre_3` double precision NULL, `trimestre_4` double precision NULL, `es_semana_feriado` bool NULL, `hubo_venta` bool NULL, `dias_hasta_feriado` integer NULL, `ventas_t_1` double precision NULL, `ventas_t_2` double precision NULL, `ventas_t_3` double precision NULL, `ventas_t_4` double precision NULL, `ventas_t_5` double precision NULL, `ventas_t_6` double precision NULL, `ventas_t_7` double precision NULL, `ventas_t_8` double precision NULL, `ventas_t_9` double precision NULL, `ventas_t_10` double precision NULL, `ventas_t_11` double precision NULL, `ventas_t_12` double precision NULL, `ventas_t_13` double precision NULL, `ventas_t_14` double precision NULL, `ventas_t_15` double precision NULL, `ventas_t_16` double precision NULL, `ventas_t_17` double precision NULL, `ventas_t_18` double precision NULL, `ventas_t_19` double precision NULL, `ventas_t_20` double precision NULL, `ventas_t_21` double precision NULL, `ventas_t_22` double precision NULL, `ventas_t_23` double precision NULL, `ventas_t_24` double precision NULL, `ventas_t_25` double precision NULL, `ventas_t_26` double precision NULL, `media_ultimas_4` double precision NULL, `std_pasada_4_semanas` double precision NULL, `coef_var_4` double precision NULL, `media_ultimas_8` double precision NULL, `std_pasada_8_semanas` double precision NULL, `coef_var_8` double precision NULL, `media_ultimas_12` double precision NULL, `std_pasada_12_semanas` double precision NULL, `coef_var_12` double precision NULL, `media_ultimas_26` double precision NULL, `std_pasada_26_semanas` double precision NULL, `coef_var_26` double precision NULL); args=None; alias=default
+CREATE TABLE `d_externo_tasainteresprestamo` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `tasa_interes` numeric(10, 6) NOT NULL); (params None)
+(0.016) CREATE TABLE `d_externo_tasainteresprestamo` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `tasa_interes` numeric(10, 6) NOT NULL); args=None; alias=default
+CREATE TABLE `d_externo_tipocambio` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `tipo_cambio` numeric(10, 2) NOT NULL); (params None)
+(0.031) CREATE TABLE `d_externo_tipocambio` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `fecha` date NOT NULL, `tipo_cambio` numeric(10, 2) NOT NULL); args=None; alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('d_externo', '0001_initial', '2025-10-28 00:10:32.063652'); args=['d_externo', '0001_initial', '2025-10-28 00:10:32.063652']; alias=default
+ALTER TABLE `d_externo_registroentrenamiento_frecuencia_alta` ADD COLUMN `taller_id` bigint NULL , ADD CONSTRAINT `d_externo_registroen_taller_id_615fb6a1_fk_user_tall` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); (params None)
+(0.094) ALTER TABLE `d_externo_registroentrenamiento_frecuencia_alta` ADD COLUMN `taller_id` bigint NULL , ADD CONSTRAINT `d_externo_registroen_taller_id_615fb6a1_fk_user_tall` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'd_externo_registroentrenamiento_frecuencia_alta' AND
+                table_schema = DATABASE()
+            ; args=['d_externo_registroentrenamiento_frecuencia_alta']; alias=default
+ALTER TABLE `d_externo_registroentrenamiento_intermitente` ADD COLUMN `taller_id` bigint NULL , ADD CONSTRAINT `d_externo_registroen_taller_id_3a012b01_fk_user_tall` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); (params None)
+(0.078) ALTER TABLE `d_externo_registroentrenamiento_intermitente` ADD COLUMN `taller_id` bigint NULL , ADD CONSTRAINT `d_externo_registroen_taller_id_3a012b01_fk_user_tall` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'd_externo_registroentrenamiento_intermitente' AND
+                table_schema = DATABASE()
+            ; args=['d_externo_registroentrenamiento_intermitente']; alias=default
+(0.016) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('d_externo', '0002_initial', '2025-10-28 00:10:32.278321'); args=['d_externo', '0002_initial', '2025-10-28 00:10:32.278321']; alias=default
+CREATE TABLE `inventario_alerta` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nivel` varchar(20) NOT NULL, `codigo` varchar(50) NOT NULL, `mensaje` longtext NOT NULL, `estado` varchar(20) NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `fecha_resolucion` datetime(6) NULL, `datos_snapshot` json NULL); (params None)
+(0.016) CREATE TABLE `inventario_alerta` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nivel` varchar(20) NOT NULL, `codigo` varchar(50) NOT NULL, `mensaje` longtext NOT NULL, `estado` varchar(20) NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `fecha_resolucion` datetime(6) NULL, `datos_snapshot` json NULL); args=None; alias=default
+CREATE TABLE `inventario_deposito` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL); (params None)
+(0.031) CREATE TABLE `inventario_deposito` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `nombre` varchar(120) NOT NULL); args=None; alias=default
+CREATE TABLE `inventario_ingreso` (`id_ingreso` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `cantidad` integer UNSIGNED NOT NULL CHECK (`cantidad` >= 0), `fecha_ingreso` date NOT NULL); (params None)
+(0.016) CREATE TABLE `inventario_ingreso` (`id_ingreso` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `cantidad` integer UNSIGNED NOT NULL CHECK (`cantidad` >= 0), `fecha_ingreso` date NOT NULL); args=None; alias=default
+CREATE TABLE `inventario_movimiento` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `tipo` varchar(10) NOT NULL, `cantidad` integer NOT NULL, `fecha` datetime(6) NOT NULL, `documento` varchar(120) NULL, `externo_id` varchar(200) NULL); (params None)
+(0.015) CREATE TABLE `inventario_movimiento` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `tipo` varchar(10) NOT NULL, `cantidad` integer NOT NULL, `fecha` datetime(6) NOT NULL, `documento` varchar(120) NULL, `externo_id` varchar(200) NULL); args=None; alias=default
+(0.016) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_movimiento' AND
+                table_schema = DATABASE()
+            ; args=['inventario_movimiento']; alias=default
+CREATE TABLE `inventario_objetivokpi` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `tasa_rotacion_objetivo` numeric(5, 2) NOT NULL, `dias_en_mano_objetivo` integer NOT NULL, `dead_stock_objetivo` numeric(5, 2) NOT NULL, `dias_dead_stock` integer NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `fecha_actualizacion` datetime(6) NOT NULL); (params None)
+(0.015) CREATE TABLE `inventario_objetivokpi` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `tasa_rotacion_objetivo` numeric(5, 2) NOT NULL, `dias_en_mano_objetivo` integer NOT NULL, `dead_stock_objetivo` numeric(5, 2) NOT NULL, `dias_dead_stock` integer NOT NULL, `fecha_creacion` datetime(6) NOT NULL, `fecha_actualizacion` datetime(6) NOT NULL); args=None; alias=default
+CREATE TABLE `inventario_stockpordeposito` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `cantidad` integer NOT NULL); (params None)
+(0.016) CREATE TABLE `inventario_stockpordeposito` (`id` bigint AUTO_INCREMENT NOT NULL PRIMARY KEY, `cantidad` integer NOT NULL); args=None; alias=default
+CREATE INDEX `inventario_movimiento_externo_id_cadd482d` ON `inventario_movimiento` (`externo_id`); (params ())
+(0.016) CREATE INDEX `inventario_movimiento_externo_id_cadd482d` ON `inventario_movimiento` (`externo_id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('inventario', '0001_initial', '2025-10-28 00:10:32.429466'); args=['inventario', '0001_initial', '2025-10-28 00:10:32.429466']; alias=default
+ALTER TABLE `inventario_alerta` ADD COLUMN `descartada_por_id` bigint NULL , ADD CONSTRAINT `inventario_alerta_descartada_por_id_063bda5b_fk_custom_user_id` FOREIGN KEY (`descartada_por_id`) REFERENCES `custom_user`(`id`); (params None)
+(0.063) ALTER TABLE `inventario_alerta` ADD COLUMN `descartada_por_id` bigint NULL , ADD CONSTRAINT `inventario_alerta_descartada_por_id_063bda5b_fk_custom_user_id` FOREIGN KEY (`descartada_por_id`) REFERENCES `custom_user`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_alerta' AND
+                table_schema = DATABASE()
+            ; args=['inventario_alerta']; alias=default
+ALTER TABLE `inventario_alerta` ADD COLUMN `repuesto_taller_id` integer NOT NULL , ADD CONSTRAINT `inventario_alerta_repuesto_taller_id_054cd9bf_fk_catalogo_` FOREIGN KEY (`repuesto_taller_id`) REFERENCES `catalogo_repuestotaller`(`id_repuesto_taller`); (params None)
+(0.063) ALTER TABLE `inventario_alerta` ADD COLUMN `repuesto_taller_id` integer NOT NULL , ADD CONSTRAINT `inventario_alerta_repuesto_taller_id_054cd9bf_fk_catalogo_` FOREIGN KEY (`repuesto_taller_id`) REFERENCES `catalogo_repuestotaller`(`id_repuesto_taller`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_alerta' AND
+                table_schema = DATABASE()
+            ; args=['inventario_alerta']; alias=default
+ALTER TABLE `inventario_deposito` ADD COLUMN `taller_id` bigint NOT NULL , ADD CONSTRAINT `inventario_deposito_taller_id_4113903b_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); (params None)
+(0.046) ALTER TABLE `inventario_deposito` ADD COLUMN `taller_id` bigint NOT NULL , ADD CONSTRAINT `inventario_deposito_taller_id_4113903b_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_deposito' AND
+                table_schema = DATABASE()
+            ; args=['inventario_deposito']; alias=default
+ALTER TABLE `inventario_objetivokpi` ADD COLUMN `grupo_id` integer NULL UNIQUE , ADD CONSTRAINT `inventario_objetivokpi_grupo_id_8326538e_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_id`) REFERENCES `user_grupo`(`id_grupo`); (params None)
+(0.063) ALTER TABLE `inventario_objetivokpi` ADD COLUMN `grupo_id` integer NULL UNIQUE , ADD CONSTRAINT `inventario_objetivokpi_grupo_id_8326538e_fk_user_grupo_id_grupo` FOREIGN KEY (`grupo_id`) REFERENCES `user_grupo`(`id_grupo`); args=None; alias=default
+ALTER TABLE `inventario_objetivokpi` ADD COLUMN `taller_id` bigint NULL UNIQUE , ADD CONSTRAINT `inventario_objetivokpi_taller_id_78124093_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); (params None)
+(0.047) ALTER TABLE `inventario_objetivokpi` ADD COLUMN `taller_id` bigint NULL UNIQUE , ADD CONSTRAINT `inventario_objetivokpi_taller_id_78124093_fk_user_taller_id` FOREIGN KEY (`taller_id`) REFERENCES `user_taller`(`id`); args=None; alias=default
+ALTER TABLE `inventario_stockpordeposito` ADD COLUMN `deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_stockpord_deposito_id_64b14ad6_fk_inventari` FOREIGN KEY (`deposito_id`) REFERENCES `inventario_deposito`(`id`); (params None)
+(0.062) ALTER TABLE `inventario_stockpordeposito` ADD COLUMN `deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_stockpord_deposito_id_64b14ad6_fk_inventari` FOREIGN KEY (`deposito_id`) REFERENCES `inventario_deposito`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_stockpordeposito' AND
+                table_schema = DATABASE()
+            ; args=['inventario_stockpordeposito']; alias=default
+ALTER TABLE `inventario_stockpordeposito` ADD COLUMN `repuesto_taller_id` integer NOT NULL , ADD CONSTRAINT `inventario_stockpord_repuesto_taller_id_2922e3b4_fk_catalogo_` FOREIGN KEY (`repuesto_taller_id`) REFERENCES `catalogo_repuestotaller`(`id_repuesto_taller`); (params None)
+(0.047) ALTER TABLE `inventario_stockpordeposito` ADD COLUMN `repuesto_taller_id` integer NOT NULL , ADD CONSTRAINT `inventario_stockpord_repuesto_taller_id_2922e3b4_fk_catalogo_` FOREIGN KEY (`repuesto_taller_id`) REFERENCES `catalogo_repuestotaller`(`id_repuesto_taller`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_stockpordeposito' AND
+                table_schema = DATABASE()
+            ; args=['inventario_stockpordeposito']; alias=default
+ALTER TABLE `inventario_movimiento` ADD COLUMN `stock_por_deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_movimient_stock_por_deposito_i_98690f45_fk_inventari` FOREIGN KEY (`stock_por_deposito_id`) REFERENCES `inventario_stockpordeposito`(`id`); (params None)
+(0.063) ALTER TABLE `inventario_movimiento` ADD COLUMN `stock_por_deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_movimient_stock_por_deposito_i_98690f45_fk_inventari` FOREIGN KEY (`stock_por_deposito_id`) REFERENCES `inventario_stockpordeposito`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_movimiento' AND
+                table_schema = DATABASE()
+            ; args=['inventario_movimiento']; alias=default
+ALTER TABLE `inventario_ingreso` ADD COLUMN `id_stock_por_deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_ingreso_id_stock_por_deposit_bd17db9d_fk_inventari` FOREIGN KEY (`id_stock_por_deposito_id`) REFERENCES `inventario_stockpordeposito`(`id`); (params None)
+(0.047) ALTER TABLE `inventario_ingreso` ADD COLUMN `id_stock_por_deposito_id` bigint NOT NULL , ADD CONSTRAINT `inventario_ingreso_id_stock_por_deposit_bd17db9d_fk_inventari` FOREIGN KEY (`id_stock_por_deposito_id`) REFERENCES `inventario_stockpordeposito`(`id`); args=None; alias=default
+(0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'inventario_ingreso' AND
+                table_schema = DATABASE()
+            ; args=['inventario_ingreso']; alias=default
+ALTER TABLE `inventario_alerta` ADD CONSTRAINT `inventario_alerta_repuesto_taller_id_codigo_estado_1f2d5568_uniq` UNIQUE (`repuesto_taller_id`, `codigo`, `estado`); (params ())
+(0.016) ALTER TABLE `inventario_alerta` ADD CONSTRAINT `inventario_alerta_repuesto_taller_id_codigo_estado_1f2d5568_uniq` UNIQUE (`repuesto_taller_id`, `codigo`, `estado`); args=(); alias=default
+ALTER TABLE `inventario_deposito` ADD CONSTRAINT `inventario_deposito_taller_id_nombre_ae26dae4_uniq` UNIQUE (`taller_id`, `nombre`); (params ())
+(0.016) ALTER TABLE `inventario_deposito` ADD CONSTRAINT `inventario_deposito_taller_id_nombre_ae26dae4_uniq` UNIQUE (`taller_id`, `nombre`); args=(); alias=default
+ALTER TABLE `inventario_stockpordeposito` ADD CONSTRAINT `inventario_stockpordepos_repuesto_taller_id_depos_717a39b8_uniq` UNIQUE (`repuesto_taller_id`, `deposito_id`); (params ())
+(0.031) ALTER TABLE `inventario_stockpordeposito` ADD CONSTRAINT `inventario_stockpordepos_repuesto_taller_id_depos_717a39b8_uniq` UNIQUE (`repuesto_taller_id`, `deposito_id`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('inventario', '0002_initial', '2025-10-28 00:10:33.159016'); args=['inventario', '0002_initial', '2025-10-28 00:10:33.159016']; alias=default
+CREATE TABLE `django_session` (`session_key` varchar(40) NOT NULL PRIMARY KEY, `session_data` longtext NOT NULL, `expire_date` datetime(6) NOT NULL); (params None)
+(0.016) CREATE TABLE `django_session` (`session_key` varchar(40) NOT NULL PRIMARY KEY, `session_data` longtext NOT NULL, `expire_date` datetime(6) NOT NULL); args=None; alias=default
+(0.015) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'django_session' AND
+                table_schema = DATABASE()
+            ; args=['django_session']; alias=default
+CREATE INDEX `django_session_expire_date_a5c62663` ON `django_session` (`expire_date`); (params ())
+(0.016) CREATE INDEX `django_session_expire_date_a5c62663` ON `django_session` (`expire_date`); args=(); alias=default
+(0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('sessions', '0001_initial', '2025-10-28 00:10:33.201001'); args=['sessions', '0001_initial', '2025-10-28 00:10:33.201001']; alias=default
+(0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'admin'; args=('admin',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('admin', 'logentry'); args=('admin', 'logentry'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'admin' AND `django_content_type`.`model` = 'logentry') LIMIT 21; args=('admin', 'logentry'); alias=default
+(0.015) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (1) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(1,); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add log entry', 1, 'add_logentry'), ('Can change log entry', 1, 'change_logentry'), ('Can delete log entry', 1, 'delete_logentry'), ('Can view log entry', 1, 'view_logentry'); args=('Can add log entry', 1, 'add_logentry', 'Can change log entry', 1, 'change_logentry', 'Can delete log entry', 1, 'delete_logentry', 'Can view log entry', 1, 'view_logentry'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'admin'; args=('admin',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'auth'; args=('auth',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('auth', 'permission'), ('auth', 'group'); args=('auth', 'permission', 'auth', 'group'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'auth' AND `django_content_type`.`model` = 'permission') LIMIT 21; args=('auth', 'permission'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'auth' AND `django_content_type`.`model` = 'group') LIMIT 21; args=('auth', 'group'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (2, 3) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(2, 3); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add permission', 2, 'add_permission'), ('Can change permission', 2, 'change_permission'), ('Can delete permission', 2, 'delete_permission'), ('Can view permission', 2, 'view_permission'), ('Can add group', 3, 'add_group'), ('Can change group', 3, 'change_group'), ('Can delete group', 3, 'delete_group'), ('Can view group', 3, 'view_group'); args=('Can add permission', 2, 'add_permission', 'Can change permission', 2, 'change_permission', 'Can delete permission', 2, 'delete_permission', 'Can view permission', 2, 'view_permission', 'Can add group', 3, 'add_group', 'Can change group', 3, 'change_group', 'Can delete group', 3, 'delete_group', 'Can view group', 3, 'view_group'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'auth'; args=('auth',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('contenttypes', 'contenttype'); args=('contenttypes', 'contenttype'); alias=default
+(0.016) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'contenttypes' AND `django_content_type`.`model` = 'contenttype') LIMIT 21; args=('contenttypes', 'contenttype'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (4) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(4,); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add content type', 4, 'add_contenttype'), ('Can change content type', 4, 'change_contenttype'), ('Can delete content type', 4, 'delete_contenttype'), ('Can view content type', 4, 'view_contenttype'); args=('Can add content type', 4, 'add_contenttype', 'Can change content type', 4, 'change_contenttype', 'Can delete content type', 4, 'delete_contenttype', 'Can view content type', 4, 'view_contenttype'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('sessions', 'session'); args=('sessions', 'session'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'sessions' AND `django_content_type`.`model` = 'session') LIMIT 21; args=('sessions', 'session'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (5) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(5,); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add session', 5, 'add_session'), ('Can change session', 5, 'change_session'), ('Can delete session', 5, 'delete_session'), ('Can view session', 5, 'view_session'); args=('Can add session', 5, 'add_session', 'Can change session', 5, 'change_session', 'Can delete session', 5, 'delete_session', 'Can view session', 5, 'view_session'); alias=default
+(0.015) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_crontab'; args=('django_crontab',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_crontab'; args=('django_crontab',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'catalogo'; args=('catalogo',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('catalogo', 'categoria'), ('catalogo', 'marca'), ('catalogo', 'modelo'), ('catalogo', 'repuesto'), ('catalogo', 'modelorepuesto'), ('catalogo', 'repuestotaller'); args=('catalogo', 'categoria', 'catalogo', 'marca', 'catalogo', 'modelo', 'catalogo', 'repuesto', 'catalogo', 'modelorepuesto', 'catalogo', 'repuestotaller'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'categoria') LIMIT 21; args=('catalogo', 'categoria'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'marca') LIMIT 21; args=('catalogo', 'marca'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'modelo') LIMIT 21; args=('catalogo', 'modelo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'repuesto') LIMIT 21; args=('catalogo', 'repuesto'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'modelorepuesto') LIMIT 21; args=('catalogo', 'modelorepuesto'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'catalogo' AND `django_content_type`.`model` = 'repuestotaller') LIMIT 21; args=('catalogo', 'repuestotaller'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (6, 7, 8, 9, 10, 11) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(6, 7, 8, 9, 10, 11); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add categoria', 6, 'add_categoria'), ('Can change categoria', 6, 'change_categoria'), ('Can delete categoria', 6, 'delete_categoria'), ('Can view categoria', 6, 'view_categoria'), ('Can add marca', 7, 'add_marca'), ('Can change marca', 7, 'change_marca'), ('Can delete marca', 7, 'delete_marca'), ('Can view marca', 7, 'view_marca'), ('Can add modelo', 8, 'add_modelo'), ('Can change modelo', 8, 'change_modelo'), ('Can delete modelo', 8, 'delete_modelo'), ('Can view modelo', 8, 'view_modelo'), ('Can add repuesto', 9, 'add_repuesto'), ('Can change repuesto', 9, 'change_repuesto'), ('Can delete repuesto', 9, 'delete_repuesto'), ('Can view repuesto', 9, 'view_repuesto'), ('Can add modelo repuesto', 10, 'add_modelorepuesto'), ('Can change modelo repuesto', 10, 'change_modelorepuesto'), ('Can delete modelo repuesto', 10, 'delete_modelorepuesto'), ('Can view modelo repuesto', 10, 'view_modelorepuesto'), ('Can add repuesto taller', 11, 'add_repuestotaller'), ('Can change repuesto taller', 11, 'change_repuestotaller'), ('Can delete repuesto taller', 11, 'delete_repuestotaller'), ('Can view repuesto taller', 11, 'view_repuestotaller'); args=('Can add categoria', 6, 'add_categoria', 'Can change categoria', 6, 'change_categoria', 'Can delete categoria', 6, 'delete_categoria', 'Can view categoria', 6, 'view_categoria', 'Can add marca', 7, 'add_marca', 'Can change marca', 7, 'change_marca', 'Can delete marca', 7, 'delete_marca', 'Can view marca', 7, 'view_marca', 'Can add modelo', 8, 'add_modelo', 'Can change modelo', 8, 'change_modelo', 'Can delete modelo', 8, 'delete_modelo', 'Can view modelo', 8, 'view_modelo', 'Can add repuesto', 9, 'add_repuesto', 'Can change repuesto', 9, 'change_repuesto', 'Can delete repuesto', 9, 'delete_repuesto', 'Can view repuesto', 9, 'view_repuesto', 'Can add modelo repuesto', 10, 'add_modelorepuesto', 'Can change modelo repuesto', 10, 'change_modelorepuesto', 'Can delete modelo repuesto', 10, 'delete_modelorepuesto', 'Can view modelo repuesto', 10, 'view_modelorepuesto', 'Can add repuesto taller', 11, 'add_repuestotaller', 'Can change repuesto taller', 11, 'change_repuestotaller', 'Can delete repuesto taller', 11, 'delete_repuestotaller', 'Can view repuesto taller', 11, 'view_repuestotaller'); alias=default
+(0.016) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'catalogo'; args=('catalogo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'inventario'; args=('inventario',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('inventario', 'alerta'), ('inventario', 'deposito'), ('inventario', 'ingreso'), ('inventario', 'movimiento'), ('inventario', 'objetivokpi'), ('inventario', 'stockpordeposito'); args=('inventario', 'alerta', 'inventario', 'deposito', 'inventario', 'ingreso', 'inventario', 'movimiento', 'inventario', 'objetivokpi', 'inventario', 'stockpordeposito'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'alerta') LIMIT 21; args=('inventario', 'alerta'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'deposito') LIMIT 21; args=('inventario', 'deposito'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'ingreso') LIMIT 21; args=('inventario', 'ingreso'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'movimiento') LIMIT 21; args=('inventario', 'movimiento'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'objetivokpi') LIMIT 21; args=('inventario', 'objetivokpi'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'inventario' AND `django_content_type`.`model` = 'stockpordeposito') LIMIT 21; args=('inventario', 'stockpordeposito'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (12, 13, 14, 15, 16, 17) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(12, 13, 14, 15, 16, 17); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add alerta', 12, 'add_alerta'), ('Can change alerta', 12, 'change_alerta'), ('Can delete alerta', 12, 'delete_alerta'), ('Can view alerta', 12, 'view_alerta'), ('Can add deposito', 13, 'add_deposito'), ('Can change deposito', 13, 'change_deposito'), ('Can delete deposito', 13, 'delete_deposito'), ('Can view deposito', 13, 'view_deposito'), ('Can add ingreso', 14, 'add_ingreso'), ('Can change ingreso', 14, 'change_ingreso'), ('Can delete ingreso', 14, 'delete_ingreso'), ('Can view ingreso', 14, 'view_ingreso'), ('Can add movimiento', 15, 'add_movimiento'), ('Can change movimiento', 15, 'change_movimiento'), ('Can delete movimiento', 15, 'delete_movimiento'), ('Can view movimiento', 15, 'view_movimiento'), ('Can add Objetivo KPI', 16, 'add_objetivokpi'), ('Can change Objetivo KPI', 16, 'change_objetivokpi'), ('Can delete Objetivo KPI', 16, 'delete_objetivokpi'), ('Can view Objetivo KPI', 16, 'view_objetivokpi'), ('Can add stock por deposito', 17, 'add_stockpordeposito'), ('Can change stock por deposito', 17, 'change_stockpordeposito'), ('Can delete stock por deposito', 17, 'delete_stockpordeposito'), ('Can view stock por deposito', 17, 'view_stockpordeposito'); args=('Can add alerta', 12, 'add_alerta', 'Can change alerta', 12, 'change_alerta', 'Can delete alerta', 12, 'delete_alerta', 'Can view alerta', 12, 'view_alerta', 'Can add deposito', 13, 'add_deposito', 'Can change deposito', 13, 'change_deposito', 'Can delete deposito', 13, 'delete_deposito', 'Can view deposito', 13, 'view_deposito', 'Can add ingreso', 14, 'add_ingreso', 'Can change ingreso', 14, 'change_ingreso', 'Can delete ingreso', 14, 'delete_ingreso', 'Can view ingreso', 14, 'view_ingreso', 'Can add movimiento', 15, 'add_movimiento', 'Can change movimiento', 15, 'change_movimiento', 'Can delete movimiento', 15, 'delete_movimiento', 'Can view movimiento', 15, 'view_movimiento', 'Can add Objetivo KPI', 16, 'add_objetivokpi', 'Can change Objetivo KPI', 16, 'change_objetivokpi', 'Can delete Objetivo KPI', 16, 'delete_objetivokpi', 'Can view Objetivo KPI', 16, 'view_objetivokpi', 'Can add stock por deposito', 17, 'add_stockpordeposito', 'Can change stock por deposito', 17, 'change_stockpordeposito', 'Can delete stock por deposito', 17, 'delete_stockpordeposito', 'Can view stock por deposito', 17, 'view_stockpordeposito'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'inventario'; args=('inventario',); alias=default
+(0.016) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'user'; args=('user',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('user', 'direccion'), ('user', 'taller'), ('user', 'grupo'), ('user', 'grupotaller'), ('user', 'user'); args=('user', 'direccion', 'user', 'taller', 'user', 'grupo', 'user', 'grupotaller', 'user', 'user'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'direccion') LIMIT 21; args=('user', 'direccion'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'taller') LIMIT 21; args=('user', 'taller'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'grupo') LIMIT 21; args=('user', 'grupo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'grupotaller') LIMIT 21; args=('user', 'grupotaller'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'user' AND `django_content_type`.`model` = 'user') LIMIT 21; args=('user', 'user'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (18, 19, 20, 21, 22) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(18, 19, 20, 21, 22); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add direccion', 18, 'add_direccion'), ('Can change direccion', 18, 'change_direccion'), ('Can delete direccion', 18, 'delete_direccion'), ('Can view direccion', 18, 'view_direccion'), ('Can add taller', 19, 'add_taller'), ('Can change taller', 19, 'change_taller'), ('Can delete taller', 19, 'delete_taller'), ('Can view taller', 19, 'view_taller'), ('Can add grupo', 20, 'add_grupo'), ('Can change grupo', 20, 'change_grupo'), ('Can delete grupo', 20, 'delete_grupo'), ('Can view grupo', 20, 'view_grupo'), ('Can add grupo taller', 21, 'add_grupotaller'), ('Can change grupo taller', 21, 'change_grupotaller'), ('Can delete grupo taller', 21, 'delete_grupotaller'), ('Can view grupo taller', 21, 'view_grupotaller'), ('Can add user', 22, 'add_user'), ('Can change user', 22, 'change_user'), ('Can delete user', 22, 'delete_user'), ('Can view user', 22, 'view_user'); args=('Can add direccion', 18, 'add_direccion', 'Can change direccion', 18, 'change_direccion', 'Can delete direccion', 18, 'delete_direccion', 'Can view direccion', 18, 'view_direccion', 'Can add taller', 19, 'add_taller', 'Can change taller', 19, 'change_taller', 'Can delete taller', 19, 'delete_taller', 'Can view taller', 19, 'view_taller', 'Can add grupo', 20, 'add_grupo', 'Can change grupo', 20, 'change_grupo', 'Can delete grupo', 20, 'delete_grupo', 'Can view grupo', 20, 'view_grupo', 'Can add grupo taller', 21, 'add_grupotaller', 'Can change grupo taller', 21, 'change_grupotaller', 'Can delete grupo taller', 21, 'delete_grupotaller', 'Can view grupo taller', 21, 'view_grupotaller', 'Can add user', 22, 'add_user', 'Can change user', 22, 'change_user', 'Can delete user', 22, 'delete_user', 'Can view user', 22, 'view_user'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'user'; args=('user',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'd_externo'; args=('d_externo',); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('d_externo', 'inflacion'), ('d_externo', 'ipsa'), ('d_externo', 'patentamiento'), ('d_externo', 'prenda'), ('d_externo', 'registroentrenamiento_frecuencia_alta'), ('d_externo', 'registroentrenamiento_intermitente'), ('d_externo', 'tasainteresprestamo'), ('d_externo', 'tipocambio'); args=('d_externo', 'inflacion', 'd_externo', 'ipsa', 'd_externo', 'patentamiento', 'd_externo', 'prenda', 'd_externo', 'registroentrenamiento_frecuencia_alta', 'd_externo', 'registroentrenamiento_intermitente', 'd_externo', 'tasainteresprestamo', 'd_externo', 'tipocambio'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.015) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'inflacion') LIMIT 21; args=('d_externo', 'inflacion'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'ipsa') LIMIT 21; args=('d_externo', 'ipsa'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'patentamiento') LIMIT 21; args=('d_externo', 'patentamiento'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'prenda') LIMIT 21; args=('d_externo', 'prenda'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'registroentrenamiento_frecuencia_alta') LIMIT 21; args=('d_externo', 'registroentrenamiento_frecuencia_alta'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'registroentrenamiento_intermitente') LIMIT 21; args=('d_externo', 'registroentrenamiento_intermitente'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'tasainteresprestamo') LIMIT 21; args=('d_externo', 'tasainteresprestamo'); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE (`django_content_type`.`app_label` = 'd_externo' AND `django_content_type`.`model` = 'tipocambio') LIMIT 21; args=('d_externo', 'tipocambio'); alias=default
+(0.000) SELECT `auth_permission`.`content_type_id`, `auth_permission`.`codename` FROM `auth_permission` INNER JOIN `django_content_type` ON (`auth_permission`.`content_type_id` = `django_content_type`.`id`) WHERE `auth_permission`.`content_type_id` IN (23, 24, 25, 26, 27, 28, 29, 30) ORDER BY `django_content_type`.`app_label` ASC, `django_content_type`.`model` ASC, `auth_permission`.`codename` ASC; args=(23, 24, 25, 26, 27, 28, 29, 30); alias=default
+(0.000) BEGIN; args=None; alias=default
+(0.000) INSERT INTO `auth_permission` (`name`, `content_type_id`, `codename`) VALUES ('Can add inflacion', 23, 'add_inflacion'), ('Can change inflacion', 23, 'change_inflacion'), ('Can delete inflacion', 23, 'delete_inflacion'), ('Can view inflacion', 23, 'view_inflacion'), ('Can add ipsa', 24, 'add_ipsa'), ('Can change ipsa', 24, 'change_ipsa'), ('Can delete ipsa', 24, 'delete_ipsa'), ('Can view ipsa', 24, 'view_ipsa'), ('Can add patentamiento', 25, 'add_patentamiento'), ('Can change patentamiento', 25, 'change_patentamiento'), ('Can delete patentamiento', 25, 'delete_patentamiento'), ('Can view patentamiento', 25, 'view_patentamiento'), ('Can add prenda', 26, 'add_prenda'), ('Can change prenda', 26, 'change_prenda'), ('Can delete prenda', 26, 'delete_prenda'), ('Can view prenda', 26, 'view_prenda'), ('Can add registro entrenamiento_ frecuencia_ alta', 27, 'add_registroentrenamiento_frecuencia_alta'), ('Can change registro entrenamiento_ frecuencia_ alta', 27, 'change_registroentrenamiento_frecuencia_alta'), ('Can delete registro entrenamiento_ frecuencia_ alta', 27, 'delete_registroentrenamiento_frecuencia_alta'), ('Can view registro entrenamiento_ frecuencia_ alta', 27, 'view_registroentrenamiento_frecuencia_alta'), ('Can add registro entrenamiento_intermitente', 28, 'add_registroentrenamiento_intermitente'), ('Can change registro entrenamiento_intermitente', 28, 'change_registroentrenamiento_intermitente'), ('Can delete registro entrenamiento_intermitente', 28, 'delete_registroentrenamiento_intermitente'), ('Can view registro entrenamiento_intermitente', 28, 'view_registroentrenamiento_intermitente'), ('Can add tasa interes prestamo', 29, 'add_tasainteresprestamo'), ('Can change tasa interes prestamo', 29, 'change_tasainteresprestamo'), ('Can delete tasa interes prestamo', 29, 'delete_tasainteresprestamo'), ('Can view tasa interes prestamo', 29, 'view_tasainteresprestamo'), ('Can add tipo cambio', 30, 'add_tipocambio'), ('Can change tipo cambio', 30, 'change_tipocambio'), ('Can delete tipo cambio', 30, 'delete_tipocambio'), ('Can view tipo cambio', 30, 'view_tipocambio'); args=('Can add inflacion', 23, 'add_inflacion', 'Can change inflacion', 23, 'change_inflacion', 'Can delete inflacion', 23, 'delete_inflacion', 'Can view inflacion', 23, 'view_inflacion', 'Can add ipsa', 24, 'add_ipsa', 'Can change ipsa', 24, 'change_ipsa', 'Can delete ipsa', 24, 'delete_ipsa', 'Can view ipsa', 24, 'view_ipsa', 'Can add patentamiento', 25, 'add_patentamiento', 'Can change patentamiento', 25, 'change_patentamiento', 'Can delete patentamiento', 25, 'delete_patentamiento', 'Can view patentamiento', 25, 'view_patentamiento', 'Can add prenda', 26, 'add_prenda', 'Can change prenda', 26, 'change_prenda', 'Can delete prenda', 26, 'delete_prenda', 'Can view prenda', 26, 'view_prenda', 'Can add registro entrenamiento_ frecuencia_ alta', 27, 'add_registroentrenamiento_frecuencia_alta', 'Can change registro entrenamiento_ frecuencia_ alta', 27, 'change_registroentrenamiento_frecuencia_alta', 'Can delete registro entrenamiento_ frecuencia_ alta', 27, 'delete_registroentrenamiento_frecuencia_alta', 'Can view registro entrenamiento_ frecuencia_ alta', 27, 'view_registroentrenamiento_frecuencia_alta', 'Can add registro entrenamiento_intermitente', 28, 'add_registroentrenamiento_intermitente', 'Can change registro entrenamiento_intermitente', 28, 'change_registroentrenamiento_intermitente', 'Can delete registro entrenamiento_intermitente', 28, 'delete_registroentrenamiento_intermitente', 'Can view registro entrenamiento_intermitente', 28, 'view_registroentrenamiento_intermitente', 'Can add tasa interes prestamo', 29, 'add_tasainteresprestamo', 'Can change tasa interes prestamo', 29, 'change_tasainteresprestamo', 'Can delete tasa interes prestamo', 29, 'delete_tasainteresprestamo', 'Can view tasa interes prestamo', 29, 'view_tasainteresprestamo', 'Can add tipo cambio', 30, 'add_tipocambio', 'Can change tipo cambio', 30, 'change_tipocambio', 'Can delete tipo cambio', 30, 'delete_tipocambio', 'Can view tipo cambio', 30, 'view_tipocambio'); alias=default
+(0.000) COMMIT; args=None; alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'd_externo'; args=('d_externo',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
+(0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'django_extensions'; args=('django_extensions',); alias=default
+(0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+(0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+(0.016) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+(0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+(0.000) SELECT `custom_user`.`id`, `custom_user`.`password`, `custom_user`.`last_login`, `custom_user`.`is_superuser`, `custom_user`.`username`, `custom_user`.`first_name`, `custom_user`.`last_name`, `custom_user`.`email`, `custom_user`.`is_staff`, `custom_user`.`is_active`, `custom_user`.`date_joined`, `custom_user`.`taller_id`, `custom_user`.`grupo_id`, `custom_user`.`direccion_id`, `custom_user`.`telefono`, `custom_user`.`rol_en_grupo` FROM `custom_user` WHERE `custom_user`.`username` = 'agus' LIMIT 21; args=('agus',); alias=default
+(0.000) INSERT INTO `custom_user` (`password`, `last_login`, `is_superuser`, `username`, `first_name`, `last_name`, `email`, `is_staff`, `is_active`, `date_joined`, `taller_id`, `grupo_id`, `direccion_id`, `telefono`, `rol_en_grupo`) VALUES ('pbkdf2_sha256$720000$OnAP9q6BAYy59ll5nWM9EQ$vzQLKc5CQsaVy1tJk8BHoUhGF3oOqIA3ZUDzYrfixFA=', NULL, 1, 'agus', '', '', 'agtorres@frba.utn.edu.ar', 1, 1, '2025-10-28 00:11:09.647565', NULL, NULL, NULL, '', 'member'); args=['pbkdf2_sha256$720000$OnAP9q6BAYy59ll5nWM9EQ$vzQLKc5CQsaVy1tJk8BHoUhGF3oOqIA3ZUDzYrfixFA=', None, True, 'agus', '', '', 'agtorres@frba.utn.edu.ar', True, True, '2025-10-28 00:11:09.647565', None, None, None, '', 'member']; alias=default
