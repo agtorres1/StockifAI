@@ -611,7 +611,9 @@ class KPIsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def tasa_rotacion(self, request):
         """GET /api/kpis/tasa_rotacion/"""
-        user = User.objects.get(id=request.session['user_id'])
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ##############################user = User.objects.get(id=request.session['user_id'])
         objetivo_kpi = self._get_objetivo_kpi(user)
 
         if not objetivo_kpi:
@@ -646,7 +648,9 @@ class KPIsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def dias_en_mano(self, request):
         """GET /api/kpis/dias_en_mano/"""
-        user = User.objects.get(id=request.session['user_id'])
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ##################################user = User.objects.get(id=request.session['user_id'])
         objetivo_kpi = self._get_objetivo_kpi(user)
 
         if not objetivo_kpi:
@@ -679,7 +683,9 @@ class KPIsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def dead_stock(self, request):
         """GET /api/kpis/dead_stock/"""
-        user = User.objects.get(id=request.session['user_id'])
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ###############################user = User.objects.get(id=request.session['user_id'])
         objetivo_kpi = self._get_objetivo_kpi(user)
 
         if not objetivo_kpi:
@@ -711,7 +717,10 @@ class KPIsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """GET /api/kpis/resumen/"""
-        user = User.objects.get(id=request.session['user_id'])
+
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+       ####################################### user = User.objects.get(id=request.session['user_id'])
         objetivo_kpi = self._get_objetivo_kpi(user)
 
         if not objetivo_kpi:

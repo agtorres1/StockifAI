@@ -16,9 +16,12 @@ import { RegisterComponent } from './session/register/register.component';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './session/login/login.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   // Rutas de autenticación (SIN sidebar)
+  { path: '', redirectTo: '/auth/login', pathMatch: 'full' },  // ← AGREGAR
+  // { path: 'callback', component: CallbackComponent },
   {
     path: 'auth',
     component: AuthLayoutComponent,
@@ -32,6 +35,7 @@ export const routes: Routes = [
   {
     path: '',
     component: LayoutComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
@@ -64,7 +68,7 @@ export const routes: Routes = [
   },
 
   // Catch-all
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: '/auth/login' }  // ← CAMBIAR
 ];
 
 @NgModule({

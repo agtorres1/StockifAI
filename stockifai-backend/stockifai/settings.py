@@ -36,7 +36,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware","django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'user.middleware.Auth0Middleware',
+   # 'user.middleware.Auth0Middleware',
     #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"

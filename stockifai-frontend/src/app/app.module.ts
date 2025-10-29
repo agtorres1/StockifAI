@@ -26,6 +26,8 @@ import { SharedModule } from './shared/shared.module';
 import { RegisterComponent } from './session/register/register.component';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { LoginComponent } from './session/login/login.component';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
@@ -70,6 +72,12 @@ registerLocaleData(localeEsAr, 'es-AR');
         provideCharts(withDefaultRegisterables()),
         { provide: LOCALE_ID, useValue: 'es-AR' },
         { provide: DEFAULT_CURRENCY_CODE, useValue: '$' },
+        {
+            provide: HTTP_INTERCEPTORS,
+            useClass: AuthInterceptor,
+            multi: true
+        }
+
     ],
     bootstrap: [AppComponent],
 })

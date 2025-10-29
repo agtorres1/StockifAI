@@ -33,6 +33,90 @@ from ...auth0_utils import get_mgmt_token  # tu función para el token de Auth0
 from user.api.serializers.user_serializer import UserSerializer
 from user.api.models.models import Taller
 
+
+@csrf_exempt
+def login_with_credentials(request):
+    """Login directo con email/password usando Auth0"""
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        email = data.get('email')
+        password = data.get('password')
+
+        print(f"🔍 Intentando login con: {email}")  # ← DEBUG
+
+        # Autenticar con Auth0 usando Resource Owner Password
+        auth_response = requests.post(
+            f"https://{settings.AUTH0_DOMAIN}/oauth/token",
+            json={
+                "grant_type": "password",
+                "username": email,
+                "password": password,
+                "client_id": settings.AUTH0_CLIENT_ID,
+                "client_secret": settings.AUTH0_CLIENT_SECRET,
+                "audience": settings.AUTH0_AUDIENCE,
+                "scope": "openid profile email",
+                "realm": "Username-Password-Authentication"
+            }
+        )
+
+        print(f"🔍 Status code de Auth0: {auth_response.status_code}")  # ← DEBUG
+        print(f"🔍 Respuesta de Auth0: {auth_response.text}")  # ← DEBUG
+
+        if auth_response.status_code != 200:
+            return JsonResponse({
+                "error": "Credenciales inválidas",
+                "details": auth_response.text  # ← Ver qué dice Auth0
+            }, status=401)
+
+        tokens = auth_response.json()
+        id_token = tokens.get('id_token')
+
+        # Decodificar token
+        user_info = jwt.decode(id_token, options={"verify_signature": False})
+        email = user_info.get('email')
+
+        # Buscar o crear usuario local
+        try:
+            local_user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            local_user = User.objects.create(
+                username=email,
+                email=email,
+                first_name=user_info.get('given_name', ''),
+                last_name=user_info.get('family_name', '')
+            )
+
+        # Guardar en sesión
+        request.session['user_id'] = local_user.id
+        request.session['email'] = email
+
+        return JsonResponse({
+            "message": "Login exitoso",
+            "user": {
+                "id": local_user.id,
+                "email": local_user.email,
+                "username": local_user.username,
+                "taller": {
+                    "id": local_user.taller.id,  # ← Cambiar id_taller por id
+                    "nombre": local_user.taller.nombre
+                } if local_user.taller else None,
+                "grupo": {
+                    "id": local_user.grupo.id_grupo,  # ← Este puede que esté bien o sea .id también
+                    "nombre": local_user.grupo.nombre,
+                    "rol": local_user.rol_en_grupo
+                } if local_user.grupo else None,
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
+
 @csrf_exempt
 def login_view(request):
     # Redirigir al usuario a la página de login de Auth0
@@ -86,7 +170,7 @@ def callback(request):
     request.session['auth0_token'] = id_token  
 
     # Redirigir al frontend
-    return redirect('http://localhost:3000/dashboard')
+    return redirect('http://localhost:4200/callback')
 
 
 @csrf_exempt
