@@ -891,10 +891,10 @@ class ExportarUrgentesView(APIView):
 class SaludInventarioPorCategoriaView(APIView):
     """
     GET /api/talleres/<taller_id>/salud-por-categoria/
-
-    Devuelve un resumen de la salud del inventario agrupado por categoría y
-    sub-agrupado por frecuencia de rotación (como string).
+    Devuelve un resumen de salud (conteo por estado) y valor total,
+    agrupado por categoría y frecuencia.
     """
+
     def get(self, request, taller_id: int):
 
         rt_qs = RepuestoTaller.objects.filter(
@@ -908,16 +908,21 @@ class SaludInventarioPorCategoriaView(APIView):
         ).select_related('repuesto__categoria')
 
         health_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+        health_values = defaultdict(lambda: defaultdict(Decimal))
 
         NIVEL_TO_SALUD = {
-            "CRITICO": "critico",
+            "CRÍTICO": "critico",
             "ADVERTENCIA": "advertencia",
             "INFORMATIVO": "sobrestock",
         }
         SALUD_KEYS = ["critico", "advertencia", "saludable", "sobrestock"]
 
+        # Iterar y Clasificar cada RepuestoTaller
         for rt in rt_qs:
             stock = Decimal(rt.stock_total or 0)
+            costo = Decimal(getattr(rt, 'costo', 0) or 0)
+            valor_stock = stock * costo  # Valor total del stock de este repuesto
+
             pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
             frecuencia_str = getattr(rt, 'frecuencia', None) or "DESCONOCIDA"
 
@@ -932,7 +937,6 @@ class SaludInventarioPorCategoriaView(APIView):
                 Decimal(getattr(rt, 'pred_4', 0) or 0),
             ]
             mos = calcular_mos(stock, forecast_semanas)
-
             alertas_potenciales = generar_alertas_inventario(
                 stock_total=stock, pred_1=pred_1, mos_en_semanas=mos,
                 frecuencia_rotacion=frecuencia_str
@@ -944,28 +948,43 @@ class SaludInventarioPorCategoriaView(APIView):
                 status = NIVEL_TO_SALUD.get(primer_nivel_alerta, "saludable")
 
             health_counts[categoria_nombre][frecuencia_str][status] += 1
+            health_values[categoria_nombre][frecuencia_str] += valor_stock
 
         response_data = []
         for categoria, frecuencias_data in health_counts.items():
-            categoria_obj = {"categoria": categoria, "frecuencias": {}, "total_items_categoria": 0}
+            categoria_obj = {
+                "categoria": categoria,
+                "frecuencias": {},
+                "total_items_categoria": 0,
+                "total_valor_categoria": Decimal(0)
+            }
             total_items_categoria = 0
+            total_valor_categoria = Decimal(0)
 
             for freq_key, counts in frecuencias_data.items():
                 frecuencia_obj = {}
                 total_items_frecuencia = 0
 
+                # Obtener el valor total para esta frecuencia/categoría
+                total_valor_frecuencia = health_values[categoria].get(freq_key, Decimal(0))
+
+                # Obtener los conteos de salud
                 for salud_key in SALUD_KEYS:
                     count_value = counts.get(salud_key, 0)
-                    frecuencia_obj[salud_key] = count_value
+                    frecuencia_obj[salud_key] = count_value  # Solo el conteo
                     total_items_frecuencia += count_value
 
                 if total_items_frecuencia > 0:
-                     frecuencia_obj["total_items_frecuencia"] = total_items_frecuencia
-                     categoria_obj["frecuencias"][freq_key] = frecuencia_obj
-                     total_items_categoria += total_items_frecuencia
+                    frecuencia_obj["total_items_frecuencia"] = total_items_frecuencia
+                    frecuencia_obj["total_valor_frecuencia"] = float(total_valor_frecuencia)
+                    categoria_obj["frecuencias"][freq_key] = frecuencia_obj
+
+                    total_items_categoria += total_items_frecuencia
+                    total_valor_categoria += total_valor_frecuencia
 
             if total_items_categoria > 0:
                 categoria_obj["total_items_categoria"] = total_items_categoria
+                categoria_obj["total_valor_categoria"] = float(total_valor_categoria)
                 response_data.append(categoria_obj)
 
         response_data.sort(key=lambda x: x['categoria'])
