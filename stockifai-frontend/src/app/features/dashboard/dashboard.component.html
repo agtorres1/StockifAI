@@ -1,1 +1,298 @@
-<p>dashboard works!</p>
+<div class="row g-3 sfa-kpi-row mb-3">
+
+    <ng-container *ngIf="loadingKpis; else kpisLoaded">
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--green">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
+                </div>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--blue">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
+                </div>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--gray">
+                <div class="sfa-kpi__label">
+                    <div class="skeleton skeleton-text w-75"></div>
+                </div>
+                <div class="mt-4">
+                    <div class="skeleton skeleton-text w-25"></div>
+                </div>
+            </div>
+        </div>
+    </ng-container>
+
+    <ng-template #kpisLoaded>
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--green">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    Tasa de rotación
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiRotacion | number:'1.1-1' }}<span class="sfa-kpi__unit">x</span>
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objRotacion | number:'1.1-1' }} x
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--blue">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-regular fa-hourglass-half"></i>
+                    Días en mano
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiDiasEnMano | number:'1.0-0' }}<span class="sfa-kpi__unit">d</span>
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objDiasEnMano | number:'1.0-0' }} d
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="sfa-kpi sfa-kpi--gray">
+                <div class="sfa-kpi__label d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-skull-crossbones"></i>
+                    Dead stock
+                </div>
+
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div class="sfa-kpi__value">
+                        {{ kpiDeadStock | percent:'1.0-1' }}
+                    </div>
+
+                    <div class="d-flex align-items-end">
+                        <span class="sfa-kpi__sep" aria-hidden="true"></span>
+                        <span class="sfa-kpi__goal-pill" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Objetivo" data-bs-trigger="hover">
+                            {{ objDeadStock | percent:'1.0-1' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+</div>
+
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body pt-4 pb-4 ps-3 pe-3">
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0 fw-bold text-danger">
+                <i class="fa-solid fa-circle-exclamation text-danger me-2"></i>
+                URGE COMPRAR
+            </h5>
+
+            <button class="btn btn-sm btn-outline-success" [disabled]="exportando"
+                (click)="exportarListadoUrgeComprar()">
+                <span *ngIf="!exportando">
+                    <i class="fa-solid fa-file-excel me-1"></i> Exportar
+                </span>
+                <span *ngIf="exportando">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Generando…
+                </span>
+            </button>
+        </div>
+
+        <div *ngIf="loadingUrgentes" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <span>Cargando…</span>
+        </div>
+
+        <div *ngIf="errorUrgentes" class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            <span class="text-sm">{{ errorUrgentes }}</span>
+        </div>
+
+        <div *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) === 0"
+            class="alert alert-warning fade show mt-4 mb-4" role="alert">
+            <span class="text-center text-muted py-3">No hay urgencias de compra por el momento.</span>
+        </div>
+
+        <table class="table table-sm table-hover align-middle sfa-table"
+            *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) > 0">
+            <thead class="table-light">
+                <tr>
+                    <th>Repuesto</th>
+                    <th class="text-center">Stock Actual</th>
+                    <th class="text-center">Demanda Prox. Semana</th>
+                    <th class="text-center">Cant. a Comprar</th>
+                    <th class="text-center">Fecha</th>
+                    <th style="width:50px;"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <ng-container *ngFor="let alerta of listaUrgeComprar">
+                    <tr class="sfa-row table-danger">
+                        <td>
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold">{{ alerta.repuesto_taller.repuesto.numero_pieza }}</span>
+                                    <span class="text-muted">{{ alerta.repuesto_taller.repuesto.descripcion }}</span>
+                                    <span class="badge rounded-pill"
+                                        [ngClass]="(alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.css">
+                                        {{ (alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.label ||
+                                        alerta.repuesto_taller.frecuencia }}
+                                    </span>
+                                </div>
+
+                            </div>
+                        </td>
+
+                        <td class="text-center fw-semibold">{{alerta.datos_snapshot ?
+                            alerta.datos_snapshot['stock_total'] : ''}}</td>
+
+                        <td class="text-center fw-semibold">
+                            {{ alerta.repuesto_taller.pred_1 }}
+                        </td>
+
+                        <td class="text-center">{{ alerta.datos_snapshot && alerta.repuesto_taller.pred_1 ?
+                            alerta.repuesto_taller.pred_1 - alerta.datos_snapshot['stock_total'] : ''}}</td>
+
+                        <td class="text-center">
+                            {{ alerta.fecha_creacion | date:'dd/MM HH:mm' }}
+                        </td>
+
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom" title="Ver forecast"
+                                    (mousedown)="$event.preventDefault()" data-bs-trigger="hover"
+                                    data-bs-container="body" (click)="viewForecast(alerta.repuesto_taller)">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+
+        <div class="d-flex align-items-center justify-content-end py-2 mt-2"
+            *ngIf="!loadingUrgentes && (listaUrgeComprar?.length ?? 0) > 0">
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" style="width:auto" [ngModel]="pageSize"
+                    (ngModelChange)="onPageSizeChange($event)">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="20">20</option>
+                    <option [ngValue]="50">50</option>
+                </select>
+
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" [class.disabled]="page===1">
+                        <button class="page-link" (click)="goPreviousPage()" [disabled]="page===1">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let p of paginationItems" [class.active]="p===page"
+                        [class.disabled]="p==='…'">
+                        <span class="page-link" *ngIf="p==='…'">&hellip;</span>
+                        <button class="page-link" *ngIf="p!=='…'" (click)="goToPage(+p)">{{ p }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="page===totalPages">
+                        <button class="page-link" (click)="goNextPage()" [disabled]="page===totalPages">
+                            Siguiente
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+<div class="card p-3">
+    <div class="row g-3 text-center">
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart [label]="'Stock muerto'" [porcentaje]="deadStockPercentage" [total]="deadStockTotal"
+                [loading]="loadingSaludInventario" [color]="deadStockColor" [iconClass]="deadStockIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart [label]="'Alta Rotación'" [porcentaje]="altaRotacionPercentage" [total]="altaRotacionTotal"
+                [loading]="loadingSaludInventario" [color]="altaRotacionColor" [iconClass]="altaRotacionIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart label="Stock Lento" [porcentaje]="lentaRotacionPercentage" [total]="lentaRotacionTotal"
+                [loading]="loadingSaludInventario" [color]="lentaRotacionColor" [iconClass]="lentaRotacionIcon">
+            </app-gauge-chart>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-3">
+            <app-gauge-chart label="Obsoleto" [porcentaje]="obsoletoPercentage" [total]="obsoletoTotal"
+                [loading]="loadingSaludInventario" [color]="obsoletoColor" [iconClass]="obsoletoIcon">
+            </app-gauge-chart>
+        </div>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="sfa-health p-3">
+        <div class="row align-items-center g-3">
+            <div class="col-12 col-lg sfa-health__metercol">
+                <div class="fw-semibold mb-2">SALUD GENERAL DEL STOCK</div>
+
+                <ng-container *ngIf="loadingSaludInventario; else healthBar">
+                    <div class="skeleton w-100 sfa-health-meter"></div>
+                </ng-container>
+
+                <ng-template #healthBar>
+                    <div class="sfa-health-meter">
+                        <canvas baseChart [type]="'bar'" [data]="healthBarData" [options]="healthBarOpts">
+                        </canvas>
+                    </div>
+                </ng-template>
+            </div>
+
+            <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end me-4" *ngIf="!loadingSaludInventario">
+                <div
+                    class="sfa-health__score d-flex align-items-center gap-4 w-100 justify-content-between justify-content-lg-end">
+                    <div class="text-end me-2">
+                        <div class="sfa-health__pct fw-bold mb-0">{{ saludGeneral | number:'1.0-0' }}%</div>
+                        <div class="fw-semibold sfa-health__label" [style.color]="saludColorText">{{ saludLabel }}</div>
+                    </div>
+                    <i [class]="saludIcon" [style.color]="saludColor" class="sfa-health__icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

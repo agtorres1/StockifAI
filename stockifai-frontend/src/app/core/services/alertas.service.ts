@@ -1,4 +1,4 @@
-import { HttpParams } from '@angular/common/http';
+import { HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
     catchError,
@@ -17,6 +17,7 @@ import { Alerta, NivelAlerta } from '../models/alerta';
 import { AlertasResumen } from '../models/alertas-resumen';
 import { PagedResponse } from '../models/paged-response';
 import { RestService } from './rest.service';
+import { TotalesPorCategoria } from '../models/salud-inventario';
 
 @Injectable({ providedIn: 'root' })
 export class AlertasService {
@@ -56,7 +57,10 @@ export class AlertasService {
     ): Observable<PagedResponse<Alerta>> {
         const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
 
-        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`, params);
+        return this.restService.get<PagedResponse<Alerta>>(
+            `talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`,
+            params
+        );
     }
 
     dismissAlerta(alertaId: number) {
@@ -69,6 +73,14 @@ export class AlertasService {
 
     triggerResumenRefresh(tallerId: number) {
         this.resumenRefresh$.next(tallerId);
+    }
+
+    exportarListadoComprarUrgentes(tallerId: number): Observable<HttpResponse<Blob>> {
+        return this.restService.getBlobResponse(`talleres/${tallerId}/exportar-urgentes/`);
+    }
+
+    getSaludInventario(tallerId: number): Observable<TotalesPorCategoria[]> {
+        return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`);
     }
 
     private getResumenAlertas(tallerId: number): Observable<AlertasResumen> {
