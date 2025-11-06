@@ -188,23 +188,25 @@ export class DashboardComponent implements OnInit {
         for (const cat of data || []) {
             for (const [freq, det] of Object.entries(cat.frecuencias || {})) {
                 if (!acc[freq]) acc[freq] = { items: 0, valor: 0 };
-                acc[freq].items += det?.total_items_frecuencia ?? 0;
-                acc[freq].valor += det?.total_valor_frecuencia ?? 0;
+
+                const items = Number(det?.total_items_frecuencia ?? 0);
+                const valor = Number(det?.total_valor_frecuencia ?? 0);
+
+                acc[freq].items += isFinite(items) ? items : 0;
+                acc[freq].valor += isFinite(valor) ? valor : 0;
             }
         }
 
-        const totalGlobalItems = Object.values(acc).reduce((a, b) => a + b.items, 0);
-        //const totalGlobalValor = Object.values(acc).reduce((a, b) => a + b.valor, 0);
+        const totalValor = Object.values(acc).reduce((a, b) => a + b.valor, 0);
 
         const res = Object.entries(acc).map(([frecuencia, { items, valor }]) => ({
             frecuencia,
             total_items: items,
             total_valor: valor,
-            porcentaje: totalGlobalItems ? +((items * 100) / totalGlobalItems).toFixed(2) : 0,
-            //porcentaje_valor: totalGlobalValor ? +((valor * 100) / totalGlobalValor).toFixed(2) : 0,
+            porcentaje: totalValor > 0 ? +((valor * 100) / totalValor).toFixed(2) : 0,
         }));
 
-        res.sort((a, b) => b.total_items - a.total_items);
+        res.sort((a, b) => b.total_valor - a.total_valor);
         return res;
     }
 
