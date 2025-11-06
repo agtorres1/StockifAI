@@ -62,7 +62,6 @@ export class DashboardComponent implements OnInit {
 
     intermediaRotacionPercentage: number = 0;
 
-
     constructor(private alertasService: AlertasService, private router: Router) {}
 
     ngOnInit(): void {
@@ -146,19 +145,19 @@ export class DashboardComponent implements OnInit {
             console.log('Salud inventario chart data:', this.chartData);
 
             const deadStock = this.chartData.find((c) => c.frecuencia === 'MUERTO');
-            this.deadStockTotal = deadStock?.total ?? 0;
+            this.deadStockTotal = deadStock?.total_valor ?? 0;
             this.deadStockPercentage = deadStock?.porcentaje ?? 0;
 
             const altaRotacion = this.chartData.find((c) => c.frecuencia === 'ALTA_ROTACION');
-            this.altaRotacionTotal = altaRotacion?.total ?? 0;
+            this.altaRotacionTotal = altaRotacion?.total_valor ?? 0;
             this.altaRotacionPercentage = altaRotacion?.porcentaje ?? 0;
 
             const lentaRotacion = this.chartData.find((c) => c.frecuencia === 'LENTO');
-            this.lentaRotacionTotal = lentaRotacion?.total ?? 0;
+            this.lentaRotacionTotal = lentaRotacion?.total_valor ?? 0;
             this.lentaRotacionPercentage = lentaRotacion?.porcentaje ?? 0;
 
             const obsoleto = this.chartData.find((c) => c.frecuencia === 'OBSOLETO');
-            this.obsoletoTotal = obsoleto?.total ?? 0;
+            this.obsoletoTotal = obsoleto?.total_valor ?? 0;
             this.obsoletoPercentage = obsoleto?.porcentaje ?? 0;
 
             const intermedia = this.chartData.find((c) => c.frecuencia === 'INTERMEDIO');
@@ -239,20 +238,30 @@ export class DashboardComponent implements OnInit {
     }
 
     convertirSaludInventarioPorFrecuencia(data: TotalesPorCategoria[]): SaludInventarioChartData[] {
-        const acc: Record<string, number> = {};
+        const acc: Record<string, { items: number; valor: number }> = {};
+
         for (const cat of data || []) {
             for (const [freq, det] of Object.entries(cat.frecuencias || {})) {
-                acc[freq] = (acc[freq] || 0) + (det?.total_items_frecuencia ?? 0);
+                if (!acc[freq]) acc[freq] = { items: 0, valor: 0 };
+
+                const items = Number(det?.total_items_frecuencia ?? 0);
+                const valor = Number(det?.total_valor_frecuencia ?? 0);
+
+                acc[freq].items += isFinite(items) ? items : 0;
+                acc[freq].valor += isFinite(valor) ? valor : 0;
             }
         }
-        const totalGlobal = Object.values(acc).reduce((a, b) => a + b, 0);
-        const res = Object.entries(acc).map(([frecuencia, total]) => ({
+
+        const totalValor = Object.values(acc).reduce((a, b) => a + b.valor, 0);
+
+        const res = Object.entries(acc).map(([frecuencia, { items, valor }]) => ({
             frecuencia,
-            total,
-            porcentaje: totalGlobal ? +((total * 100) / totalGlobal).toFixed(2) : 0,
+            total_items: items,
+            total_valor: valor,
+            porcentaje: totalValor > 0 ? +((valor * 100) / totalValor).toFixed(2) : 0,
         }));
 
-        res.sort((a, b) => b.total - a.total);
+        res.sort((a, b) => b.total_valor - a.total_valor);
         return res;
     }
 
