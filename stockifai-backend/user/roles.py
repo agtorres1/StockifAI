@@ -8,6 +8,10 @@ class MiembroGrupo(models.Model):
         ('member', 'Miembro'),
         ('viewer', 'Observador'),
     ]
+    ROLES_EN_TALLER = [  # ← NUEVO
+        ('owner', 'Dueño del Taller'),
+        ('member', 'miembro'),
+    ]
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     grupo = models.ForeignKey(Grupo, on_delete=models.CASCADE)

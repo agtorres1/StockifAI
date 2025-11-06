@@ -39,9 +39,11 @@ class CatalogoImportSerializer(serializers.Serializer):
 
 
 class DepositoSerializer(serializers.ModelSerializer):
+    taller_nombre = serializers.CharField(source='taller.nombre', read_only=True)
+
     class Meta:
         model = Deposito
-        fields = ["id", "nombre", "taller_id"]
+        fields = ["id", "nombre", "taller_id", "taller_nombre"]
 
 
 class CategoriaSerializer(serializers.ModelSerializer):

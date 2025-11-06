@@ -45,7 +45,7 @@ def login_with_credentials(request):
         email = data.get('email')
         password = data.get('password')
 
-        print(f"🔍 Intentando login con: {email}")  # ← DEBUG
+        print(f"🔍 Intentando login con: {email}")
 
         # Autenticar con Auth0 usando Resource Owner Password
         auth_response = requests.post(
@@ -62,13 +62,13 @@ def login_with_credentials(request):
             }
         )
 
-        print(f"🔍 Status code de Auth0: {auth_response.status_code}")  # ← DEBUG
-        print(f"🔍 Respuesta de Auth0: {auth_response.text}")  # ← DEBUG
+        print(f"🔍 Status code de Auth0: {auth_response.status_code}")
+        print(f"🔍 Respuesta de Auth0: {auth_response.text}")
 
         if auth_response.status_code != 200:
             return JsonResponse({
                 "error": "Credenciales inválidas",
-                "details": auth_response.text  # ← Ver qué dice Auth0
+                "details": auth_response.text
             }, status=401)
 
         tokens = auth_response.json()
@@ -78,9 +78,9 @@ def login_with_credentials(request):
         user_info = jwt.decode(id_token, options={"verify_signature": False})
         email = user_info.get('email')
 
-        # Buscar o crear usuario local
+        # MODIFICAR: Buscar usuario con select_related
         try:
-            local_user = User.objects.get(email=email)
+            local_user = User.objects.select_related('taller', 'grupo').get(email=email)
         except User.DoesNotExist:
             local_user = User.objects.create(
                 username=email,
@@ -93,25 +93,35 @@ def login_with_credentials(request):
         request.session['user_id'] = local_user.id
         request.session['email'] = email
 
+        # AGREGAR DEBUG
+        print(f"👤 Usuario: {local_user.username}")
+        print(f"🏭 Taller: {local_user.taller}")
+        print(f"📦 Grupo: {local_user.grupo}")
+
         return JsonResponse({
-            "message": "Login exitoso",
-            "user": {
-                "id": local_user.id,
-                "email": local_user.email,
-                "username": local_user.username,
-                "taller": {
-                    "id": local_user.taller.id,  # ← Cambiar id_taller por id
-                    "nombre": local_user.taller.nombre
-                } if local_user.taller else None,
-                "grupo": {
-                    "id": local_user.grupo.id_grupo,  # ← Este puede que esté bien o sea .id también
-                    "nombre": local_user.grupo.nombre,
-                    "rol": local_user.rol_en_grupo
-                } if local_user.grupo else None,
-            }
+            "authenticated": True,
+            "user_id": local_user.id,
+            "email": local_user.email,
+            "username": local_user.username,
+            "nombre": local_user.first_name,      # ✅ CAMBIAR
+            "apellido": local_user.last_name,
+            "is_staff": local_user.is_staff,
+            "is_superuser": local_user.is_superuser,
+            "grupo": {
+                "id_grupo": local_user.grupo.id_grupo,
+                "nombre": local_user.grupo.nombre,
+                "rol": local_user.rol_en_grupo
+            } if local_user.grupo else None,
+            "taller": {
+                "id": local_user.taller.id,
+                "nombre": local_user.taller.nombre
+            } if local_user.taller else None,
         })
 
     except Exception as e:
+        print(f"❌ Error en login: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -175,6 +185,7 @@ def callback(request):
 
 @csrf_exempt
 def register_api(request):
+    """Admin crea un usuario y lo registra en Auth0"""
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
@@ -183,18 +194,39 @@ def register_api(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "JSON inválido"}, status=400)
 
-    form = RegisterForm(data)
-    if not form.is_valid():
-        return JsonResponse({"error": form.errors}, status=400)
+    # Obtener datos del formulario
+    nombre = data.get("first_name", "")
+    apellido = data.get("last_name", "")
+    email = data.get("email")
+    username = data.get("username")
+    password = data.get("password")
+    telefono = data.get("telefono", "")
 
-    nombre = form.cleaned_data.get("nombre", "")
-    apellido = form.cleaned_data.get("apellido", "")
-    email = form.cleaned_data["email"]
-    password = form.cleaned_data["password"]
-    calle = form.cleaned_data.get("calle", "")
-    ciudad = form.cleaned_data.get("ciudad", "")
-    codigo_postal = form.cleaned_data.get("codigo_postal", "")
-    telefono = form.cleaned_data.get("telefono", "")
+    # Dirección
+    direccion_data = data.get("direccion", {})
+    calle = direccion_data.get("calle", "")
+    ciudad = direccion_data.get("ciudad", "")
+    codigo_postal = direccion_data.get("codigo_postal", "")
+
+    # Taller/Grupo/Roles
+    id_taller = data.get("id_taller")
+    id_grupo = data.get("id_grupo")
+    rol_en_taller = data.get("rol_en_taller")
+    rol_en_grupo = data.get("rol_en_grupo")
+
+    # Validaciones básicas
+    if not email or not password or not username:
+        return JsonResponse({
+            "error": "Email, username y contraseña son requeridos"
+        }, status=400)
+
+    if len(password) < 8:
+        return JsonResponse({
+            "error": "La contraseña debe tener al menos 8 caracteres"
+        }, status=400)
+
+    direccion_obj = None
+    local_user = None
 
     try:
         # 1. Crear dirección
@@ -202,7 +234,9 @@ def register_api(request):
             calle=calle,
             ciudad=ciudad,
             codigo_postal=codigo_postal,
+            pais='Argentina'
         )
+        print(f"✅ Dirección creada: ID={direccion_obj.id_direccion}")
 
         # 2. Crear usuario en Auth0
         mgmt_token = get_mgmt_token()
@@ -224,37 +258,71 @@ def register_api(request):
         }
 
         r = requests.post(url, json=payload, headers=headers)
+
+        if r.status_code == 409:
+            # Limpiar si el email ya existe
+            if direccion_obj:
+                direccion_obj.delete()
+            return JsonResponse({
+                "error": "Este email ya está registrado en Auth0."
+            }, status=409)
+
         r.raise_for_status()
         auth0_user = r.json()
         auth0_id = auth0_user.get("user_id")
+        print(f"✅ Usuario creado en Auth0: {auth0_id}")
 
-        # 3. Crear usuario local (sin password, porque Auth0 lo maneja)
-        local_user = User.objects.create(
-            username=email,
+        # 3. Crear usuario local
+        local_user = User(
+            username=username,
             email=email,
             first_name=nombre,
             last_name=apellido,
+            telefono=telefono,
             direccion=direccion_obj,
-            telefono=telefono
-            # ❌ NO pongas password aquí, Auth0 lo maneja
+            taller_id=id_taller if id_taller else None,
+            grupo_id=id_grupo if id_grupo else None,
+            rol_en_taller=rol_en_taller if id_taller else None,
+            rol_en_grupo=rol_en_grupo if id_grupo else None,
         )
 
-        request.session['user_id'] = local_user.id
-        request.session['email'] = email
-
-        # Opcional: guardar el auth0_id en tu modelo
-        # local_user.auth0_id = auth0_id
-        # local_user.save()
+        # Guardar sin ejecutar clean() para evitar conflictos
+        local_user.save(force_insert=True)
+        print(f"✅ Usuario local creado: ID={local_user.id}")
 
         return JsonResponse({
             "message": "Usuario creado correctamente",
             "auth0_id": auth0_id,
-            "local_id": local_user.id
-        })
+            "user": {
+                "id": local_user.id,
+                "username": local_user.username,
+                "email": local_user.email,
+                "first_name": local_user.first_name,
+                "last_name": local_user.last_name,
+            }
+        }, status=201)
 
     except requests.exceptions.HTTPError as e:
-        return JsonResponse({"error": str(e), "response": r.text}, status=r.status_code)
+        # Limpiar si Auth0 falla
+        if direccion_obj:
+            direccion_obj.delete()
+
+        return JsonResponse({
+            "error": "Error al crear usuario en Auth0",
+            "details": r.text
+        }, status=r.status_code)
+
     except Exception as e:
+        # Rollback: eliminar todo lo creado
+        if local_user and local_user.id:
+            local_user.delete()
+        if direccion_obj and direccion_obj.id_direccion:
+            direccion_obj.delete()
+
+        print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         return JsonResponse({"error": str(e)}, status=500)
 
 @csrf_exempt
@@ -266,7 +334,7 @@ def logout_view(request):
     logout_url = (
         f"https://{settings.AUTH0_DOMAIN}/v2/logout?"
         f"client_id={settings.AUTH0_CLIENT_ID}&"
-        f"returnTo=http://localhost:3000/"  # Tu frontend
+        f"returnTo=http://localhost:4200/"  # Tu frontend
     )
 
     return JsonResponse({
@@ -377,44 +445,50 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Taller desvinculado"})
 
-
-
     @action(detail=True, methods=['post'])
-    def asignar_grupo(self, request, pk=None):
-        """POST /api/usuarios/{id}/asignar_grupo/"""
-        usuario = self.get_object()
-        current_user = User.objects.get(id=request.session['user_id'])
-
-        grupo_id = request.data.get('grupo_id')
-        rol = request.data.get('rol', 'member')
-
+    def asignar_taller(self, request, pk=None):
+        """Asignar taller al grupo"""
         try:
-            grupo = Grupo.objects.get(id_grupo=grupo_id)
+            print("📥 Entró a asignar_taller")
+
+            grupo = self.get_object()
+            print(f"✅ Grupo obtenido: {grupo.nombre}")
+
+            user = User.objects.get(id=request.session['user_id'])
+            print(f"👤 Usuario: {user.email}")
 
             # Verificar permisos
-            if not current_user.is_staff:
-                if not (current_user.grupo and
-                        current_user.grupo.id_grupo == grupo_id and
-                        current_user.rol_en_grupo == 'admin'):
-                    raise PermissionDenied("No tienes permiso")
+            if not PermissionChecker.puede_gestionar_grupo(user, grupo):
+                print("🚫 Sin permisos")
+                raise PermissionDenied("No tienes permiso")
 
-            # Validar
-            if usuario.taller:
-                return Response({
-                    "error": "El usuario ya tiene un taller"
-                }, status=400)
+            # Obtener taller_id del request
+            taller_id = request.data.get('taller_id')
+            print(f"🔍 Taller ID recibido: {taller_id}")
 
-            # Asignar
-            usuario.grupo = grupo
-            usuario.rol_en_grupo = rol
-            usuario.save()
+            # Verificar si existe
+            from user.api.models.models import Taller  # Asegurate de importar si no está
+            taller = Taller.objects.get(id=taller_id)
+            print(f"✅ Taller encontrado: {taller.nombre}")
+
+            # Crear relación
+            GrupoTaller.objects.create(
+                id_grupo=grupo,
+                id_taller=taller
+            )
+            print("✅ Relación Grupo-Taller creada correctamente")
 
             return Response({
-                "message": f"Usuario asignado al grupo {grupo.nombre} como {rol}"
+                "message": f"Taller {taller.nombre} asignado al grupo"
             })
 
-        except Grupo.DoesNotExist:
-            return Response({"error": "Grupo no encontrado"}, status=404)
+        except Exception as e:
+            import traceback
+            print("❌ ERROR EN asignar_taller:")
+            print(traceback.format_exc())
+            return Response({"error": str(e)}, status=500)
+
+
 
     @action(detail=True, methods=['post'])
     def asignar_taller(self, request, pk=None):

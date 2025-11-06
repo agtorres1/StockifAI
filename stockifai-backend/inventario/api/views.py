@@ -4,7 +4,7 @@ from datetime import date, timedelta, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Set, Union
 from collections import defaultdict
-
+from user.permissions import PermissionChecker
 import pandas as pd
 
 from django.conf import settings
@@ -110,6 +110,50 @@ class DepositosPorTallerView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class GrupoDetailView(APIView):
+    def get(self, request, grupo_id):
+        grupo = get_object_or_404(Grupo, id_grupo=grupo_id)
+
+        # Contar talleres del grupo
+        talleres_count = GrupoTaller.objects.filter(id_grupo=grupo).count()
+
+        return Response({
+            'id': grupo.id_grupo,
+            'nombre': grupo.nombre,
+            'descripcion': grupo.descripcion,
+            'total_talleres': talleres_count,
+            'stock_inicial_cargado': True  # Por ahora siempre True para grupos
+        })
+
+class DepositosPorGrupoView(APIView):
+    """
+    Obtiene todos los depósitos de todos los talleres que pertenecen a un grupo
+    """
+
+    def get(self, request, grupo_id):
+        # Verificar que el grupo existe
+        grupo = get_object_or_404(Grupo, id_grupo=grupo_id)
+
+        # Obtener todos los talleres del grupo a través de la tabla intermedia
+        talleres_ids = GrupoTaller.objects.filter(
+            id_grupo=grupo
+        ).values_list('id_taller', flat=True)
+
+        # Obtener todos los depósitos de esos talleres
+        depositos = Deposito.objects.filter(
+            taller_id__in=talleres_ids
+        ).select_related('taller')  # Optimización para traer info del taller
+
+        # Serializar los depósitos
+        serializer = DepositoSerializer(depositos, many=True)
+
+        return Response({
+            'grupo': grupo.nombre,
+            'total_talleres': len(talleres_ids),
+            'total_depositos': depositos.count(),
+            'depositos': serializer.data
+        })
+
 
 class _StockPagination(PageNumberPagination):
     page_size = 50
@@ -134,6 +178,26 @@ class ConsultarStockView(APIView):
     pagination_class = _StockPagination
 
     def get(self, request, taller_id: int):
+        # ===== AGREGAR FILTRO DE PERMISOS =====
+        user = PermissionChecker.get_user_from_session(request)
+
+        # Verificar que el usuario pueda ver este taller
+        try:
+            from user.api.models.models import Taller
+            taller = Taller.objects.get(id=taller_id)
+
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response(
+                {"error": "Taller no encontrado"},
+                status=404
+            )
+        # ===== FIN FILTRO =====
+
         q = request.query_params.get("q")
         numero_pieza = request.query_params.get("numero_pieza")
         exact = request.query_params.get("exact", "1")
@@ -233,6 +297,16 @@ class LocalizarRepuestoView(APIView):
     """Localiza talleres dentro del grupo del taller solicitante con stock disponible."""
 
     def get(self, request, taller_id: int) -> Response:
+        user = PermissionChecker.get_user_from_session(request)
+
+        taller_origen = get_object_or_404(Taller, pk=taller_id)
+
+        if not PermissionChecker.puede_ver_taller(user, taller_origen):
+            return Response(
+                {"error": "No tienes permiso para ver este taller"},
+                status=403
+            )
+
         numero_pieza = request.query_params.get("numero_pieza")
         repuesto_id = request.query_params.get("repuesto_id")
 
@@ -242,7 +316,6 @@ class LocalizarRepuestoView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        taller_origen = get_object_or_404(Taller, pk=taller_id)
 
         if repuesto_id:
             repuesto = get_object_or_404(Repuesto, pk=repuesto_id)
@@ -415,6 +488,19 @@ class LocalizarRepuestoView(APIView):
 
 class EjecutarForecastPorTallerView(APIView):
     def post(self, request, taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_editar_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ejecutar forecast en este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+
         fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
 
         out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
@@ -789,6 +875,18 @@ class DetalleForecastingView(APIView):
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
         # 1. Recuperar el RepuestoTaller y anotar el stock total
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
         try:
             rt_qs = (
                 RepuestoTaller.objects
@@ -930,6 +1028,19 @@ class ConsultarForecastingListView(APIView):
     pagination_class = _StockPagination  # Reutiliza la paginación
 
     def get(self, request, taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver forecasting de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+
         q = request.query_params.get("q")
         ordering = request.query_params.get("ordering")
 
@@ -1015,8 +1126,23 @@ class AlertsListView(APIView):
     pagination_class = _StockPagination  # O el nombre de tu clase de paginación
 
     def get(self, request, taller_id: int):
-        summary_mode = request.query_params.get("summary") == "1"
 
+        user = PermissionChecker.get_user_from_session(request)
+        
+        try:
+            from user.api.models.models import Taller
+            taller = Taller.objects.get(id=taller_id)
+
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+        summary_mode = request.query_params.get("summary") == "1"
+        
         if summary_mode:
             active_alerts_qs = Alerta.objects.filter(
                 repuesto_taller__taller_id=taller_id,
@@ -1071,12 +1197,22 @@ class DismissAlertView(APIView):
 
     Cambia el estado de una alerta a 'DESCARTADA' para ocultarla de la vista principal.
     """
+
     def post(self, request, alerta_id: int):
-        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
         alerta = get_object_or_404(Alerta, id=alerta_id)
+        taller = alerta.repuesto_taller.taller
+
+        if not PermissionChecker.puede_ver_taller(user, taller):
+            return Response(
+                {"error": "No tienes permiso para descartar esta alerta"},
+                status=403
+            )
+        # ===== FIN FILTRO =====
 
         alerta.estado = Alerta.EstadoAlerta.DESCARTADA
-        #alerta.descartada_por = request.user # Asigna el usuario que la descartó
         alerta.save(update_fields=['estado', 'descartada_por'])
 
         return Response(
@@ -1093,14 +1229,19 @@ class MarkAsSeenAlertView(APIView):
     """
 
     def post(self, request, alerta_id: int):
-        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
         alerta = get_object_or_404(Alerta, pk=alerta_id)
+        taller = alerta.repuesto_taller.taller
 
-        # Opcional: Verificación de permisos
-        # if alerta.repuesto_taller.taller != request.user.taller:
-        #     return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
+        if not PermissionChecker.puede_ver_taller(user, taller):
+            return Response(
+                {"error": "No tienes permiso para marcar esta alerta"},
+                status=403
+            )
+        # ===== FIN FILTRO =====
 
-        # Solo cambiamos el estado si es 'NUEVA' para evitar acciones innecesarias
         if alerta.estado == Alerta.EstadoAlerta.NUEVA:
             alerta.estado = Alerta.EstadoAlerta.VISTA
             alerta.save(update_fields=['estado'])
@@ -1118,7 +1259,22 @@ class MarkAllAsSeenView(APIView):
         Cambia el estado de una lista específica de alertas 'NUEVA' a 'VISTA'.
         Recibe un array de IDs en el cuerpo de la petición.
         """
+
     def post(self, request, taller_id: int):
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para marcar alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+        # ===== FIN FILTRO =====
+
         alerta_ids = request.data.get('alerta_ids')
 
         if not isinstance(alerta_ids, list):
@@ -1131,6 +1287,7 @@ class MarkAllAsSeenView(APIView):
                 {"status": "No se proporcionaron IDs para marcar."},
                 status=status.HTTP_200_OK
             )
+
         alertas_a_marcar = Alerta.objects.filter(
             pk__in=alerta_ids,
             repuesto_taller__taller_id=taller_id,
@@ -1141,6 +1298,7 @@ class MarkAllAsSeenView(APIView):
             {"status": f"{count} alertas marcadas como vistas"},
             status=status.HTTP_200_OK
         )
+
 class AlertsForRepuestoView(APIView):
     """
     GET /talleres/<taller_id>/repuestos/<repuesto_taller_id>/alertas/
@@ -1151,6 +1309,18 @@ class AlertsForRepuestoView(APIView):
     pagination_class = _StockPagination
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
         historial_alertas = Alerta.objects.filter(
             repuesto_taller__taller_id=taller_id,
             repuesto_taller_id=repuesto_taller_id
@@ -1193,6 +1363,18 @@ class ExportarUrgentesView(APIView):
     y la cantidad sugerida a comprar para cubrir la demanda de la próxima semana.
     """
     def get(self, request, taller_id: int):
+
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para exportar alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
 
         # Alertas CRÍTICAS activas
         alertas_criticas_qs = Alerta.objects.filter(

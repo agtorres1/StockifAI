@@ -122,6 +122,11 @@ class User(AbstractUser):
         ('viewer', 'Observador'),
     ]
 
+    ROLES_EN_TALLER = [
+        ('owner', 'Dueño del Taller'),
+        ('member', 'Miembro'),
+    ]
+
     taller = models.ForeignKey(
         Taller,
         on_delete=models.SET_NULL,
@@ -143,6 +148,7 @@ class User(AbstractUser):
         blank=True
     )
     telefono = models.CharField(max_length=20, blank=True)
+
     rol_en_grupo = models.CharField(
         max_length=20,
         choices=ROLES_EN_GRUPO,
@@ -150,6 +156,15 @@ class User(AbstractUser):
         blank=True,
         null=True,
         help_text="Solo aplica si pertenece a un grupo"
+    )
+
+    # ← AGREGAR ESTE CAMPO
+    rol_en_taller = models.CharField(
+        max_length=20,
+        choices=ROLES_EN_TALLER,
+        blank=True,
+        null=True,
+        help_text="Solo aplica si pertenece a un taller"
     )
 
     class Meta:
@@ -172,9 +187,19 @@ class User(AbstractUser):
                 "Si el usuario pertenece a un grupo, debe tener un rol asignado."
             )
 
-        # Validar que si tiene taller, NO debe tener rol_en_grupo
+        # ← AGREGAR: Validar que si tiene taller, debe tener rol_en_taller
+        if self.taller and not self.rol_en_taller:
+            raise ValidationError(
+                "Si el usuario pertenece a un taller, debe tener un rol asignado."
+            )
+
+        # Limpiar roles cruzados
         if self.taller and self.rol_en_grupo:
             self.rol_en_grupo = None
+
+        # ← AGREGAR: Si tiene grupo, limpiar rol de taller
+        if self.grupo and self.rol_en_taller:
+            self.rol_en_taller = None
 
     def save(self, *args, **kwargs):
         """Ejecutar validación antes de guardar"""

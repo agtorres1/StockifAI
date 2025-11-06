@@ -20,7 +20,9 @@ from .views import (
     MarkAllAsSeenView,
     ExportarUrgentesView,
     SaludInventarioPorCategoriaView,
-    KPIsViewSet
+    KPIsViewSet,
+    DepositosPorGrupoView,
+    GrupoDetailView,
 )
 
 router = DefaultRouter()
@@ -33,6 +35,9 @@ urlpatterns = [
     path("importaciones/stock", ImportarStockView.as_view(), name="importar-stock"),
     path("importaciones/catalogo", ImportarCatalogoView.as_view(), name="importar-catalogo"),
     path("talleres/<int:taller_id>/depositos", DepositosPorTallerView.as_view(), name="depositos-por-taller"),
+    path("grupos/<int:grupo_id>/depositos", DepositosPorGrupoView.as_view(), name="depositos-por-grupo"),
+    path("grupos/<int:grupo_id>/", GrupoDetailView.as_view(), name="grupo-detail"),
+
     path("talleres/<int:taller_id>/movimientos", MovimientosListView.as_view(), name="movimientos-list"),
     path("talleres/<int:taller_id>/stock", ConsultarStockView.as_view(), name="consultar-stock"),
     path("talleres/<int:taller_id>/localizador", LocalizarRepuestoView.as_view(), name="localizar-repuesto"),

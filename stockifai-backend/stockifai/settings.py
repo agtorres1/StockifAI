@@ -151,10 +151,17 @@ PERMITIR_STOCK_NEGATIVO=os.getenv("PERMITIR_STOCK_NEGATIVO","False").lower() in 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
+    "http://localhost:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 
+SESSION_COOKIE_HTTPONLY = True   # Seguridad: no accesible desde JavaScript
+
+SESSION_COOKIE_AGE = 86400       # 24 horas
+SESSION_SAVE_EVERY_REQUEST = True  # Renueva la sesión en cada petición
+SESSION_COOKIE_SAMESITE = None  # ← Alternativa
+SESSION_COOKIE_SECURE = False
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
@@ -195,7 +202,6 @@ REST_FRAMEWORK = {
 #        'rest_framework.permissions.AllowAny',
 #    ),
 #}
-
 LOGGING = {
     'version': 1,
     'handlers': {
@@ -204,8 +210,8 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': 'import_debug.log',
         },
-        'console': {  # ← AGREGAR ESTO
-            'level': 'ERROR',
+        'console': {
+            'level': 'DEBUG',  # ← CAMBIAR de ERROR a DEBUG
             'class': 'logging.StreamHandler',
         },
     },
@@ -214,12 +220,16 @@ LOGGING = {
             'handlers': ['file'],
             'level': 'DEBUG',
         },
-        'django.request': {  # ← AGREGAR ESTO
+        'django.request': {
             'handlers': ['console'],
-            'level': 'ERROR',
+            'level': 'DEBUG',  # ← CAMBIAR de ERROR a DEBUG
             'propagate': False,
         },
-    }
+    },
+    'root': {  # ← AGREGAR ESTO para capturar todos los prints
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
 }
 
 ##########codigo del auth0

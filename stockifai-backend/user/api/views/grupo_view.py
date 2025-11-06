@@ -1,15 +1,44 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
-from user.api.models.models import Grupo, GrupoTaller, User
+from user.api.models.models import Grupo, GrupoTaller, User, Taller
 from user.api.serializers.grupo_serializer import GrupoSerializer, GrupoTallerSerializer
 
-
+from rest_framework.exceptions import PermissionDenied
+from user.permissions import PermissionChecker
+from rest_framework.response import Response
 
 
 class GrupoViewSet(viewsets.ModelViewSet):
     queryset = Grupo.objects.all()  # ← AGREGAR ESTO
     serializer_class = GrupoSerializer
+
+    @action(detail=True, methods=['post'])
+    def desasignar_taller(self, request, pk=None):
+        """Desasignar taller del grupo"""
+        grupo = self.get_object()
+        user = User.objects.get(id=request.session['user_id'])
+
+        if not PermissionChecker.puede_gestionar_grupo(user, grupo):
+            raise PermissionDenied("No tienes permiso")
+
+        taller_id = request.data.get('taller_id')
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+
+            # Eliminar la relación
+            GrupoTaller.objects.filter(
+                id_grupo=grupo,
+                id_taller=taller
+            ).delete()
+
+            return Response({
+                "message": f"Taller {taller.nombre} desasignado del grupo"
+            })
+
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
 
     def get_queryset(self):
         """Filtrar grupos"""
@@ -83,31 +112,36 @@ class GrupoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def asignar_taller(self, request, pk=None):
-        """Asignar taller al grupo"""
+        print("📥 Entró a asignar_taller")
         grupo = self.get_object()
-        user = User.objects.get(id=request.session['user_id'])
+        print("✅ Grupo obtenido:", grupo)
+
+        try:
+            user = User.objects.get(id=request.session['user_id'])
+        except Exception as e:
+            print("❌ Error obteniendo user:", e)
+            raise
+
+        print("👤 Usuario:", user)
 
         if not PermissionChecker.puede_gestionar_grupo(user, grupo):
             raise PermissionDenied("No tienes permiso")
 
         taller_id = request.data.get('taller_id')
+        print("🧱 ID taller recibido:", taller_id)
 
         try:
             taller = Taller.objects.get(id=taller_id)
+            print("🎯 Taller encontrado:", taller)
 
-            GrupoTaller.objects.create(
-                id_grupo=grupo,
-                id_taller=taller
-            )
+            GrupoTaller.objects.create(id_grupo=grupo, id_taller=taller)
+            print("✅ Relación creada correctamente")
 
-            return Response({
-                "message": f"Taller {taller.nombre} asignado al grupo"
-            })
+            return Response({"message": f"Taller {taller.nombre} asignado al grupo"})
 
-        except Taller.DoesNotExist:
-            return Response({"error": "Taller no encontrado"}, status=404)
-
-
+        except Exception as e:
+            print("💥 Error asignando taller:", e)
+            raise
 
 
 class GrupoTallerViewSet(viewsets.ModelViewSet):
