@@ -35,46 +35,40 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
 }
-
 .logo-container {
     position: relative;
     z-index: 2;
     text-align: center;
-    margin-bottom: 40px;
+    margin-top: 80px;
+    margin-bottom: -10px;
 }
 
 .logo-icon {
-    width: 120px;
-    height: 120px;
-    background: white;
-    border-radius: 20px;
+    width: 280px !important;
+    height: 280px !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-
-
-.logo-icon {
-    width: 120px;
-    height: 120px;
-    background: white;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin: 0 auto -5px;
     position: relative;
 }
 
 .logo-icon img {
-    width: 70px;
-    height: 70px;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: contain;
+}
+
+.logo-text {
+    font-size: 4rem !important;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: -10px;
+    letter-spacing: -1px;
+}
+
+.logo-text .ai {
+    color: #00bcd4;
 }
 
 .welcome-content {
@@ -82,12 +76,14 @@
     z-index: 2;
     text-align: center;
     max-width: 400px;
+    margin-top: -5px;
 }
 
 .welcome-title {
     font-size: 2rem;
     font-weight: 700;
     color: #1e293b;
+    margin-top: 0;
     margin-bottom: 16px;
     line-height: 1.3;
 }
