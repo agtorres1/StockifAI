@@ -7,14 +7,17 @@ import { Taller } from '../../../core/models/taller';
 import { StockService } from '../../../core/services/stock.service';
 import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-movimientos',
     templateUrl: './movimientos.component.html',
     styleUrl: './movimientos.component.scss',
+
 })
 export class MovimientosComponent implements OnInit {
     tallerId: number = 1;
+    grupoId?: number;
     filtro = { idDeposito: '', searchText: '', desde: '', hasta: '' };
 
     depositos: Deposito[] = [];
@@ -35,6 +38,8 @@ export class MovimientosComponent implements OnInit {
     successMsg = '';
     loadingArchivo = false;
     erroresImport: any[] = [];
+    initialized = false;
+
 
     private search$ = new Subject<string>();
 
@@ -45,25 +50,64 @@ export class MovimientosComponent implements OnInit {
         private stockService: StockService,
         private talleresService: TalleresService,
         private route: ActivatedRoute,
-        private router: Router
+        private authService: AuthService,
+        private router: Router,
     ) {
         this.titleService.setTitle('Movimientos');
         this.fecha = new Date().toISOString().split('T')[0];
     }
 
     ngOnInit(): void {
+      if (this.initialized) return; // 👈 evita el bucle
+      this.initialized = true;
+
+        const user = this.authService.getCurrentUser();
+        if (!user) {
+            this.errorMessage = 'Usuario no autenticado';
+            this.loading = false;
+            return;
+        }
+
+        if (user.grupo?.id) {
+            this.grupoId =  user.grupo.id;
+        }
+
+      else if (user.taller?.id) {
+            this.tallerId = user.taller.id;
+        } else {
+            this.errorMessage = 'Usuario no tiene taller ni grupo asignado';
+            this.loading = false;
+            return;
+        }
+
         this.getQueryParams();
         this.loading = true;
 
+        const depositosObservable = this.grupoId
+            ? this.talleresService.getDepositosPorGrupo(this.grupoId)
+            : this.talleresService.getDepositos(this.tallerId);
+
         forkJoin({
-            taller: this.talleresService.getTallerData(this.tallerId),
-            depositos: this.talleresService.getDepositos(this.tallerId),
-            movimientos: this.stockService.getMovimientos(this.tallerId, this.page, this.pageSize, this.filtro),
+            taller: this.grupoId
+                ? this.talleresService.getGrupoData(this.grupoId) // Necesitarás crear este método
+                : this.talleresService.getTallerData(this.tallerId),
+            depositos: depositosObservable,
+            movimientos: this.stockService.getMovimientos(
+                this.tallerId,
+                this.page,
+                this.pageSize,
+                this.filtro
+            ),
         }).subscribe({
             next: ({ taller, depositos, movimientos }) => {
                 this.taller = taller;
                 this.stockInicialCargado = taller.stock_inicial_cargado;
-                this.depositos = depositos;
+
+                // Si es grupo, los depósitos vienen en data.depositos
+                this.depositos = this.grupoId && (depositos as any).depositos
+                    ? (depositos as any).depositos
+                    : depositos;
+
                 this.movimientos = movimientos.results;
                 this.totalPages = movimientos.total_pages;
                 this.loading = false;
@@ -76,10 +120,11 @@ export class MovimientosComponent implements OnInit {
         });
 
         this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
-            this.page = 1;
-            this.filtro.searchText = text;
-            this.cargarPagina(this.page);
-        });
+        this.page = 1;
+        this.filtro.searchText = text;
+        this.cargarPagina(this.page);
+    });
+
     }
 
     filtrar() {
@@ -97,32 +142,33 @@ export class MovimientosComponent implements OnInit {
     }
 
     private cargarPagina(p: number) {
-        if (p < 1 || p > this.totalPages) return;
+  if (p < 1 || p > this.totalPages) return;
 
-        this.page = p;
+  this.page = p;
 
-        this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: this.buildQueryParams(),
-            replaceUrl: true,
-        });
+  // 🚫 Evitamos el bucle: no actualizamos la URL
+  // this.router.navigate([], {
+  //   relativeTo: this.route,
+  //   queryParams: this.buildQueryParams(),
+  //   replaceUrl: true,
+  // });
 
-        this.loading = true;
-        this.stockService.getMovimientos(this.tallerId, p, this.pageSize, this.filtro).subscribe({
-            next: (resp) => {
-                this.movimientos = resp.results;
-                this.totalPages = resp.total_pages;
-                this.page = resp.page;
-                this.pageSize = resp.page_size;
-                this.loading = false;
-                this.errorMessage = '';
-            },
-            error: (err) => {
-                this.errorMessage = err?.message ?? 'Error al cargar';
-                this.loading = false;
-            },
-        });
-    }
+  this.loading = true;
+  this.stockService.getMovimientos(this.tallerId, p, this.pageSize, this.filtro).subscribe({
+    next: (resp) => {
+      this.movimientos = resp.results;
+      this.totalPages = resp.total_pages;
+      this.page = resp.page;
+      this.pageSize = resp.page_size;
+      this.loading = false;
+      this.errorMessage = '';
+    },
+    error: (err) => {
+      this.errorMessage = err?.message ?? 'Error al cargar';
+      this.loading = false;
+    },
+  });
+}
 
     goPreviousPage() {
         this.cargarPagina(this.page - 1);

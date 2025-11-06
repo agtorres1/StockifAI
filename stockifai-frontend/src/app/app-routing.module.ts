@@ -9,7 +9,6 @@ import { LocalizadorComponent } from './features/repuestos/localizador/localizad
 import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
 import { MovimientosComponent } from './features/repuestos/movimientos/movimientos.component';
 import { StockComponent } from './features/repuestos/stock/stock.component';
-import { TalleresGruposComponent } from './features/talleres/grupos/grupos.component';
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
 import { RegisterComponent } from './session/register/register.component';
@@ -17,6 +16,7 @@ import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component'
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './session/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
+import { GruposComponent } from './features/talleres/grupos/grupos.component';
 
 export const routes: Routes = [
   // Rutas de autenticación (SIN sidebar)
@@ -46,7 +46,7 @@ export const routes: Routes = [
         path: 'talleres',
         children: [
           { path: 'listado', component: TalleresListadoComponent },
-          { path: 'grupos', component: TalleresGruposComponent },
+          { path: 'grupos', component: GruposComponent},
           { path: 'usuarios', component: TalleresUsuariosComponent },
         ]
       },

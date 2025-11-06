@@ -4,7 +4,7 @@ import { catchError, Observable, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RestService {
-    private baseUrl = 'http://127.0.0.1:8000/api/';
+     private baseUrl = 'http://localhost:8000/api/';
 
     constructor(private http: HttpClient) {}
 
@@ -13,6 +13,7 @@ export class RestService {
             .get<T>(`${this.baseUrl}${endpoint}`, {
                 params,
                 headers: new HttpHeaders(headers || {}),
+                withCredentials: true  // ← AGREGAR
             })
             .pipe(catchError((err) => throwError(() => err)));
     }
@@ -21,6 +22,7 @@ export class RestService {
         return this.http
             .post<T>(`${this.baseUrl}${endpoint}`, body, {
                 headers: new HttpHeaders(headers || {}),
+                withCredentials: true
             })
             .pipe(catchError((err) => throwError(() => err)));
     }
@@ -29,6 +31,7 @@ export class RestService {
         return this.http
             .put<T>(`${this.baseUrl}${endpoint}`, body, {
                 headers: new HttpHeaders(headers || {}),
+                withCredentials: true
             })
             .pipe(catchError((err) => throwError(() => err)));
     }
@@ -38,6 +41,7 @@ export class RestService {
             .delete<T>(`${this.baseUrl}${endpoint}`, {
                 params,
                 headers: new HttpHeaders(headers || {}),
+                withCredentials: true
             })
             .pipe(catchError((err) => throwError(() => err)));
     }
@@ -46,6 +50,7 @@ export class RestService {
         return this.http
             .post<T>(`${this.baseUrl}${endpoint}`, formData, {
                 headers: new HttpHeaders(headers || {}),
+                withCredentials: true
             })
             .pipe(catchError((err) => throwError(() => err)));
     }
@@ -56,6 +61,7 @@ export class RestService {
                 params,
                 responseType: 'blob',
                 observe: 'response',
+                withCredentials: true
             })
             .pipe(catchError((err) => throwError(() => err)));
     }

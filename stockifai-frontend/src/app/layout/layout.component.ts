@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { TitleService } from '../core/services/title.service';
+import { AuthService } from '../core/services/auth.service';
 
 @Component({
     selector: 'app-layout',
@@ -9,6 +10,7 @@ import { TitleService } from '../core/services/title.service';
 })
 export class LayoutComponent {
     isCollapsed = false;
+    loggingOut = false;
 
     menuItems: MenuItem[] = [
         { title: 'Dashboard', icon: 'fas fa-home', route: '/dashboard' },
@@ -43,7 +45,11 @@ export class LayoutComponent {
 
     menuExpanded: { [key: string]: boolean } = {};
 
-    constructor(public titleService: TitleService, private router: Router) {}
+   constructor(
+        public titleService: TitleService,
+        private router: Router,
+        private authService: AuthService // ← AGREGAR
+    ) {}
 
     toggleSidebar() {
         this.isCollapsed = !this.isCollapsed;
@@ -80,7 +86,9 @@ export class LayoutComponent {
     }
 
     logout() {
-        console.log('Logout');
+        this.loggingOut = true;
+        this.authService.logout();
+
     }
 
     change(title: string) {

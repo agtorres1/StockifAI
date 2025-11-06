@@ -11,6 +11,8 @@ interface User {
   taller?: any;
   grupo?: any;
   rol_en_grupo?: string;
+  is_superuser?: boolean; // ← AGREGAR
+  is_staff?: boolean;
 }
 
 @Injectable({
@@ -20,7 +22,7 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api';
+  private readonly API_URL = 'http://localhost:8000/api';
 
   constructor(
     private http: HttpClient,
@@ -61,14 +63,26 @@ export class AuthService {
 
   logout(): void {
     this.http.post(`${this.API_URL}/logout/`, {}, {
-      withCredentials: true
-    }).subscribe((response: any) => {
-      this.currentUserSubject.next(null);
-      localStorage.removeItem('user');
-      // Redirigir a logout de Auth0
-      window.location.href = response.logout_url;
+        withCredentials: true
+    }).subscribe({
+        next: (response: any) => {
+            console.log('🔍 URL de logout:', response.logout_url);  // ← AGREGAR ESTO
+            console.log('🔍 Respuesta completa:', response);        // ← Y ESTO
+
+            this.currentUserSubject.next(null);
+            localStorage.removeItem('user');
+
+            // Redirigir a logout de Auth0
+            window.location.href = response.logout_url;
+        },
+        error: (err) => {
+            console.error('Error al cerrar sesión:', err);
+            this.currentUserSubject.next(null);
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
     });
-  }
+}
 
   isLoggedIn(): boolean {
     return this.currentUserSubject.value !== null;

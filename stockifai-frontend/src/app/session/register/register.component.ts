@@ -99,7 +99,21 @@ export class RegisterComponent {
     }
 
     this.isSubmitting = true;
-    const data = this.registroForm.value;
+    const formData = this.registroForm.value;
+
+    // Armar el objeto en el formato que espera tu backend Django
+    const data = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      email: formData.email,
+      password: formData.password,
+      telefono: formData.telefono || '',
+      calle: formData.direccion,  // El campo "direccion" del form es la calle
+      ciudad: formData.ciudad,
+      codigo_postal: formData.codigoPostal
+    };
+
+    console.log('Datos a enviar:', data);
 
     try {
       const res: any = await this.http.post('/api/register/', data).toPromise();

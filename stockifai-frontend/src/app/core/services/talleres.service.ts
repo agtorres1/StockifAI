@@ -31,4 +31,12 @@ export class TalleresService {
     eliminarTaller(tallerId: number): Observable<any> {
         return this.restService.delete<any>(`talleres/${tallerId}/`);
     }
+
+    getDepositosPorGrupo(grupoId: number): Observable<any> {
+    return this.restService.get<any>(`grupos/${grupoId}/depositos`);
+    }
+
+    getGrupoData(grupoId: number): Observable<any> {
+        return this.restService.get<any>(`grupos/${grupoId}/`);
+    }
 }

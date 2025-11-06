@@ -17,7 +17,6 @@ import { LocalizadorComponent } from './features/repuestos/localizador/localizad
 import { MarcasComponent } from './features/repuestos/marcas/marcas.component';
 import { MovimientosComponent } from './features/repuestos/movimientos/movimientos.component';
 import { StockComponent } from './features/repuestos/stock/stock.component';
-import { TalleresGruposComponent } from './features/talleres/grupos/grupos.component';
 import { TalleresListadoComponent } from './features/talleres/listado/listado.component';
 import { EditUsuarioComponent } from './features/talleres/usuarios/edit/edit-usuario.component';
 import { TalleresUsuariosComponent } from './features/talleres/usuarios/usuarios.component';
@@ -28,6 +27,7 @@ import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component'
 import { LoginComponent } from './session/login/login.component';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { GruposComponent } from './features/talleres/grupos/grupos.component';
 
 import { registerLocaleData } from '@angular/common';
 import localeEsAr from '@angular/common/locales/es-AR';
@@ -42,7 +42,7 @@ registerLocaleData(localeEsAr, 'es-AR');
         StockComponent,
         ForecastingComponent,
         MovimientosComponent,
-        TalleresGruposComponent,
+        GruposComponent,
         TalleresListadoComponent,
         TalleresUsuariosComponent,
         CatalogoComponent,

@@ -15,7 +15,7 @@
                         <span class="flex-grow-1 text-start">{{ item.title }}</span>
                         <i class="fas fa-chevron-down ms-auto"></i>
                     </button>
-                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)" 
+                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)"
                         #collapseDiv [class.show]="isSubItemActive(collapseDiv, item.subItems)">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li *ngFor="let sub of item.subItems" class="">
@@ -51,16 +51,25 @@
                 <div class="vr divider"></div>
 
                 <div class="dropdown">
-                    <button class="btn btn-link p-0 dropdown-toggle" type="button" id="userDropdown"
-                        data-bs-toggle="dropdown" aria-expanded="false" aria-label="Usuario">
-                        <i class="fas fa-user-circle fa-lg"></i>
-                    </button>
+                  <button class="btn btn-link p-0 dropdown-toggle" type="button" id="userDropdown"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Usuario">
+                  <i class="fas fa-user-circle fa-lg"></i>
+                  </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li>
-                            <a class="dropdown-item pointer" (click)="logout()">Logout</a>
-                        </li>
-                    </ul>
-                </div>
+                      <li>
+                          <a class="dropdown-item pointer" (click)="logout()" [class.disabled]="loggingOut">
+                          <span *ngIf="!loggingOut">
+                          <i class="fas fa-right-from-bracket me-2"></i>
+                           Cerrar sesión
+                        </span>
+                        <span *ngIf="loggingOut">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Cerrando...
+                </span>
+            </a>
+        </li>
+    </ul>
+</div>
             </div>
         </header>
 

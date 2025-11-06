@@ -14,6 +14,8 @@ export interface Usuario {
 
     id_grupo?: number;
     id_taller?: number;
+    rol_en_grupo?: string;
+    rol_en_taller?: string;
 }
 
 export interface Direccion {

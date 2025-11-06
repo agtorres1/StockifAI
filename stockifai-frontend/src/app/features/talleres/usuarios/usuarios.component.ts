@@ -4,6 +4,7 @@ import { Usuario } from '../../../core/models/usuario';
 import { TitleService } from '../../../core/services/title.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 declare const bootstrap: any;
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-usuarios',
@@ -14,6 +15,7 @@ export class TalleresUsuariosComponent implements OnInit {
     usuarios: Usuario[] = [];
     loading: boolean = false;
     errorMessage: string = '';
+    isSuperUser = false;
 
     private modalRef: any | null = null;
     selectedUser: any | null = null;
@@ -23,26 +25,44 @@ export class TalleresUsuariosComponent implements OnInit {
     deleting = false;
     deleteErrorMessage = '';
 
-    constructor(private titleService: TitleService, private usuariosService: UsuariosService) {
-        this.titleService.setTitle('Usuarios');
+    constructor(
+    private titleService: TitleService,
+    private usuariosService: UsuariosService,
+    private authService: AuthService
+    ) {
+    this.titleService.setTitle('Usuarios');
     }
 
     ngOnInit() {
         this.loadUsuarios();
+        this.checkIfSuperUser();
     }
 
+    checkIfSuperUser() {
+    const currentUser = this.authService.getCurrentUser();
+    console.log('👤 Usuario actual:', currentUser); // Para debug
+    this.isSuperUser = (currentUser as any)?.is_superuser || false;
+}
+
+
     async loadUsuarios() {
-        this.loading = true;
-        try {
-            const res = await firstValueFrom(this.usuariosService.getUsuarios());
-            this.usuarios = res;
-            this.loading = false;
-            this.errorMessage = '';
-        } catch (error: any) {
-            this.errorMessage = error?.message ?? 'Error al cargar';
-            this.loading = false;
-        }
+    this.loading = true;
+    console.log('🔍 Cargando usuarios...');
+
+    try {
+        const res = await firstValueFrom(this.usuariosService.getUsuarios());
+        console.log('✅ Usuarios recibidos:', res);
+        console.log('📊 Primer usuario completo:', res[0]); // <-- AGREGAR ESTO
+
+        this.usuarios = res;
+        this.loading = false;
+        this.errorMessage = '';
+    } catch (error: any) {
+        console.error('❌ Error al cargar usuarios:', error);
+        this.errorMessage = error?.message ?? 'Error al cargar';
+        this.loading = false;
     }
+}
 
     openCrearUsuarioDialog() {
         this.selectedUser = undefined as any;

@@ -56,20 +56,25 @@
     position: relative;
 }
 
-.logo-icon svg {
-    width: 80px;
-    height: 80px;
+
+
+.logo-icon {
+    width: 120px;
+    height: 120px;
+    background: white;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
-.logo-text {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #1e293b;
-    margin-bottom: 10px;
-}
-
-.logo-text .ai {
-    color: #00bcd4;
+.logo-icon img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
 }
 
 .welcome-content {

@@ -1,1 +1,249 @@
-<p>grupos works!</p>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Grupos</h2>
+        <button class="btn btn-primary" (click)="crearGrupo()">
+            <i class="fas fa-plus-circle me-2"></i>
+            Nuevo Grupo
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2">Cargando grupos...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="errorMessage && !loading" class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!loading && !errorMessage" class="card shadow-sm">
+        <div class="card-body p-0">
+            <div *ngIf="grupos.length === 0" class="text-center py-5 text-muted">
+                <i class="fas fa-users-slash fa-3x mb-3 d-block"></i>
+                <p class="mb-0">No hay grupos registrados</p>
+            </div>
+
+            <table *ngIf="grupos.length > 0" class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Talleres Asociados</th>
+                        <th>Grupo Padre</th>
+                        <th style="width: 100px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let grupo of grupos">
+    <td class="fw-semibold">{{ grupo.id_grupo }}</td>
+    <td class="fw-semibold">{{ grupo.nombre }}</td>
+    <td>{{ grupo.descripcion || '-' }}</td>
+    <td>
+        <div *ngIf="grupo.talleres && grupo.talleres.length > 0">
+            <span
+                *ngFor="let taller of grupo.talleres"
+                class="badge bg-primary me-1 mb-1">
+                {{ taller.nombre }}
+            </span>
+        </div>
+        <span *ngIf="!grupo.talleres || grupo.talleres.length === 0" class="text-muted">
+            Sin talleres
+        </span>
+    </td>
+    <td>
+        <span *ngIf="grupo.grupo_padre" class="badge bg-secondary">
+            ID: {{ grupo.grupo_padre }}
+        </span>
+        <span *ngIf="!grupo.grupo_padre" class="text-muted">-</span>
+    </td>
+
+    <!-- 🔽 Aquí va la versión actualizada -->
+    <td>
+    <div class="d-flex gap-1">
+        <!-- Gestionar talleres y eliminar: solo superuser -->
+        <button
+            *ngIf="isSuperUser"
+            class="btn btn-sm btn-outline-info"
+            (click)="gestionarTalleres(grupo)"
+            title="Gestionar Talleres">
+            <i class="fas fa-store"></i>
+        </button>
+
+        <!-- Editar: visible para todos -->
+        <button
+            class="btn btn-sm btn-outline-secondary"
+            (click)="editarGrupo(grupo)"
+            title="Editar">
+            <i class="fas fa-pencil-alt"></i>
+        </button>
+
+        <button
+            *ngIf="isSuperUser"
+            class="btn btn-sm btn-outline-danger"
+            (click)="eliminarGrupo(grupo)"
+            title="Eliminar">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </div>
+</td>
+</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Grupo -->
+<div class="modal fade" id="grupoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ isEditMode ? 'Editar Grupo' : 'Nuevo Grupo' }}
+                </h5>
+                <button type="button" class="btn-close" (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        [(ngModel)]="grupoForm.nombre"
+                        placeholder="Nombre del grupo">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción <span class="text-danger">*</span></label>
+                    <textarea
+                        class="form-control"
+                        rows="3"
+                        [(ngModel)]="grupoForm.descripcion"
+                        placeholder="Descripción del grupo"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeModal()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" (click)="submitGrupo()">
+                    <i class="fas fa-save me-2"></i>
+                    {{ isEditMode ? 'Guardar Cambios' : 'Crear Grupo' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar Grupo -->
+<div class="modal fade" id="deleteGrupoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Eliminar Grupo</h5>
+                <button type="button" class="btn-close btn-close-white" (click)="closeDeleteModal()"></button>
+            </div>
+            <div class="modal-body">
+                <div *ngIf="deleteErrorMessage" class="alert alert-danger">
+                    {{ deleteErrorMessage }}
+                </div>
+                <p>¿Estás seguro de que deseas eliminar el grupo?</p>
+                <div *ngIf="selectedGrupo" class="alert alert-warning">
+                    <strong>{{ selectedGrupo.nombre }}</strong>
+                    <p class="mb-0 small">{{ selectedGrupo.descripcion }}</p>
+                </div>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="closeDeleteModal()"
+                    [disabled]="deleting">
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    (click)="confirmarEliminar()"
+                    [disabled]="deleting">
+                    <span *ngIf="deleting" class="spinner-border spinner-border-sm me-2"></span>
+                    <i *ngIf="!deleting" class="fas fa-trash me-2"></i>
+                    {{ deleting ? 'Eliminando...' : 'Eliminar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal Gestionar Talleres -->
+<div class="modal fade" id="talleresModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-store me-2"></i>
+                    Gestionar Talleres - {{ selectedGrupo?.nombre }}
+                </h5>
+                <button type="button" class="btn-close" (click)="closeTalleresModal()"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Selecciona los talleres que pertenecen a este grupo:</p>
+
+                <div *ngIf="talleresDisponibles.length === 0" class="alert alert-info">
+                    No hay talleres disponibles
+                </div>
+
+                <div class="list-group">
+                    <label
+                        *ngFor="let taller of talleresDisponibles"
+                        class="list-group-item list-group-item-action d-flex align-items-center"
+                        [class.active]="isTallerAsignado(taller.id)"
+                        style="cursor: pointer;">
+                        <input
+                            type="checkbox"
+                            class="form-check-input me-3"
+                            [checked]="isTallerAsignado(taller.id)"
+                            (change)="toggleTaller(taller.id)">
+                        <div class="flex-grow-1">
+                            <strong>{{ taller.nombre }}</strong>
+                            <div class="small text-muted">
+                                {{ taller.direccion }} - {{ taller.telefono }}
+                            </div>
+                        </div>
+                        <span *ngIf="isTallerAsignado(taller.id)" class="badge bg-success">
+                            <i class="fas fa-check"></i> Asignado
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="closeTalleresModal()"
+                    [disabled]="loadingTalleres">
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="guardarTalleres()"
+                    [disabled]="loadingTalleres">
+                    <span *ngIf="loadingTalleres" class="spinner-border spinner-border-sm me-2"></span>
+                    <i *ngIf="!loadingTalleres" class="fas fa-save me-2"></i>
+                    {{ loadingTalleres ? 'Guardando...' : 'Guardar Cambios' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
