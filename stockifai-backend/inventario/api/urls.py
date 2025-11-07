@@ -17,7 +17,7 @@ from .views import (
     MarkAsSeenAlertView,
     AlertsForRepuestoView,
     MarkAllAsSeenView,
-    ExportarUrgentesView, SaludInventarioPorCategoriaView
+    ExportarUrgentesView, SaludInventarioPorCategoriaView, ExportarSaludInventarioView
 )
 urlpatterns = [
     path('importaciones/movimientos', ImportarMovimientosView.as_view(), name='importar-movimientos'),
@@ -38,6 +38,7 @@ urlpatterns = [
     path("talleres/<int:taller_id>/repuestos/<int:repuesto_taller_id>/alertas/", AlertsForRepuestoView.as_view(), name="alertas-por-repuesto"),
     path("talleres/<int:taller_id>/exportar-urgentes/", ExportarUrgentesView.as_view(), name="exportar-urgentes"),
     path("talleres/<int:taller_id>/salud-por-categoria/", SaludInventarioPorCategoriaView.as_view(), name="salud-por-categoria"),
+    path("talleres/<int:taller_id>/salud-inventario/exportar/", ExportarSaludInventarioView.as_view(), name="exportar-salud-inventario"),
 ]
 
 
