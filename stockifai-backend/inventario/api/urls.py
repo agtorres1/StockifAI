@@ -18,7 +18,7 @@ from .views import (
     MarkAsSeenAlertView,
     AlertsForRepuestoView,
     MarkAllAsSeenView,
-    ExportarUrgentesView, SaludInventarioPorCategoriaView, ExportarSaludInventarioView
+    ExportarUrgentesView, SaludInventarioPorCategoriaView, ExportarSaludInventarioView,
     ExportarUrgentesView,
     SaludInventarioPorCategoriaView,
     KPIsViewSet,
