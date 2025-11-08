@@ -12,6 +12,7 @@ import {
     withLatestFrom,
 } from 'rxjs/operators';
 import { Alerta, NivelAlerta } from '../../../core/models/alerta';
+import { RepuestoTaller } from '../../../core/models/repuesto-taller';
 import { AlertasService } from '../../../core/services/alertas.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TitleService } from '../../../core/services/title.service';

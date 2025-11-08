@@ -31,7 +31,7 @@
                     </span>
                 </div>
 
-                <p class="repuesto-line mb-1" *ngIf="alerta.repuesto_taller as rt">
+                <p class="repuesto-line mb-1 pointer" *ngIf="alerta.repuesto_taller as rt" (click)="viewForecast(rt.repuesto.numero_pieza)">
                     <span class="label text-muted me-1">Repuesto:</span>
                     <strong class="part-number">
                         {{ rt.repuesto.numero_pieza }}
