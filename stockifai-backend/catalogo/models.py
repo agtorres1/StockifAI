@@ -1,5 +1,9 @@
 
 from django.db import models
+from user.permissions import PermissionChecker
+
+
+
 
 class Marca(models.Model): ####
     nombre=models.CharField(max_length=120, unique=True)

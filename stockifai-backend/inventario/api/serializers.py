@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
 from catalogo.models import Repuesto, Categoria, Marca
-from inventario.models import Deposito, Movimiento, Alerta
+from inventario.models import Deposito, Movimiento, Alerta, ObjetivoKPI
 from catalogo.models import RepuestoTaller
-from user.models import Grupo, Taller
+from user.api.models.models import Taller
+from user.models import Grupo
+
 
 class MovimientosImportSerializer(serializers.Serializer):
     file = serializers.FileField()
@@ -37,9 +39,11 @@ class CatalogoImportSerializer(serializers.Serializer):
 
 
 class DepositoSerializer(serializers.ModelSerializer):
+    taller_nombre = serializers.CharField(source='taller.nombre', read_only=True)
+
     class Meta:
         model = Deposito
-        fields = ["id", "nombre", "taller_id"]
+        fields = ["id", "nombre", "taller_id", "taller_nombre"]
 
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -112,6 +116,22 @@ class RepuestoStockSerializer(serializers.Serializer):
     depositos = StockDepositoDetalleSerializer(many=True)
 
 
+class ObjetivoKPISerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ObjetivoKPI
+        fields = [
+            'id',
+            'taller',
+            'grupo',
+            'tasa_rotacion_objetivo',
+            'dias_en_mano_objetivo',
+            'dead_stock_objetivo',
+            'dias_dead_stock',
+            'fecha_actualizacion'
+        ]
+        read_only_fields = ['id', 'fecha_actualizacion']
+
+
 class GrupoResumenSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
@@ -150,5 +170,5 @@ class AlertaSerializer(serializers.ModelSerializer):
             'mensaje',
             'estado',
             'fecha_creacion',
-            'datos_snapshot' # El snapshot es clave para el contexto
+            'datos_snapshot'
         ]

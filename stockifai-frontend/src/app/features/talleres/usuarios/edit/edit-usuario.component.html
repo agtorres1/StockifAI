@@ -59,6 +59,28 @@
                         </div>
                     </div>
 
+                    <!-- NUEVO: Campo de contraseña -->
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            Contraseña
+                            <span class="text-danger" *ngIf="!isEdit">*</span>
+                            <small class="text-muted" *ngIf="isEdit">(dejar en blanco para mantener actual)</small>
+                        </label>
+                        <input
+                            type="password"
+                            class="form-control"
+                            name="password"
+                            [(ngModel)]="passwordField"
+                            [required]="!isEdit"
+                            minlength="8"
+                            #password="ngModel"
+                            [ngClass]="{'is-invalid': userForm.submitted && !isEdit && password.invalid}"
+                        />
+                        <div class="invalid-feedback d-block" *ngIf="userForm.submitted && !isEdit && password.invalid">
+                            La contraseña es requerida (mínimo 8 caracteres).
+                        </div>
+                    </div>
+
                     <div class="col-md-6">
                         <label class="form-label">Calle</label>
                         <input #direccion="ngModel" class="form-control" name="direccion_calle"
@@ -68,6 +90,33 @@
                             La dirección es requerida.
                         </div>
                     </div>
+
+                    <div class="col-md-6" *ngIf="!isSuperUser && scopeType === 'taller'">
+    <label class="form-label">Rol en el Taller <span class="text-danger">*</span></label>
+    <select class="form-select" name="rol_en_taller_admin" [(ngModel)]="usuario.rol_en_taller"
+        [ngClass]="{'is-invalid': userForm.submitted && !usuario.rol_en_taller}">
+        <option [ngValue]="null" disabled>Seleccioná un rol</option>
+        <option value="owner">Dueño del Taller</option>
+        <option value="member">Miembro</option>
+    </select>
+    <div class="invalid-feedback d-block" *ngIf="userForm.submitted && !usuario.rol_en_taller">
+        Seleccioná un rol para el taller.
+    </div>
+</div>
+
+<div class="col-md-6" *ngIf="!isSuperUser && scopeType === 'grupo'">
+    <label class="form-label">Rol en el Grupo <span class="text-danger">*</span></label>
+    <select class="form-select" name="rol_en_grupo_admin" [(ngModel)]="usuario.rol_en_grupo"
+        [ngClass]="{'is-invalid': userForm.submitted && !usuario.rol_en_grupo}">
+        <option [ngValue]="null" disabled>Seleccioná un rol</option>
+        <option value="admin">Administrador del Grupo</option>
+        <option value="member">Miembro</option>
+        <option value="viewer">Observador</option>
+    </select>
+    <div class="invalid-feedback d-block" *ngIf="userForm.submitted && !usuario.rol_en_grupo">
+        Seleccioná un rol para el grupo.
+    </div>
+</div>
 
                     <div class="col-md-3">
                         <label class="form-label">Ciudad</label>
@@ -102,51 +151,85 @@
                         </select>
                     </div>
 
-                    <hr>
+                    <!-- MODIFICADO: Solo visible para superusers -->
+                    <ng-container *ngIf="isSuperUser">
+                        <hr>
 
-                    <div class="col-12 mt-0">
-                        <label class="form-label d-block">Pertenece a <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-3 align-items-center">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" id="optTaller" name="scope"
-                                    [value]="'taller'" [(ngModel)]="scopeType" (change)="onScopeChange('taller')">
-                                <label class="form-check-label" for="optTaller">Taller</label>
+                        <div class="col-12 mt-0">
+                            <label class="form-label d-block">Pertenece a <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="optTaller" name="scope"
+                                        [value]="'taller'" [(ngModel)]="scopeType" (change)="onScopeChange('taller')">
+                                    <label class="form-check-label" for="optTaller">Taller</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="optGrupo" name="scope"
+                                        [value]="'grupo'" [(ngModel)]="scopeType" (change)="onScopeChange('grupo')">
+                                    <label class="form-check-label" for="optGrupo">Grupo</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" id="optGrupo" name="scope"
-                                    [value]="'grupo'" [(ngModel)]="scopeType" (change)="onScopeChange('grupo')">
-                                <label class="form-check-label" for="optGrupo">Grupo</label>
+                        </div>
+
+                        <div class="col-md-6" *ngIf="!loadingTalleres">
+                            <label class="form-label">Taller</label>
+                            <select class="form-select" name="taller" [(ngModel)]="usuario.id_taller"
+                                [disabled]="scopeType !== 'taller'" (ngModelChange)="usuario.grupo = undefined"
+                                [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.id_taller}">
+                                <option [ngValue]="null" disabled></option>
+                                <option *ngFor="let t of talleres" [ngValue]="t.id">{{ t.nombre }}</option>
+                            </select>
+                            <div class="invalid-feedback d-block"
+                                *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.id_taller">
+                                Seleccioná un taller.
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-md-6" *ngIf="!loadingTalleres">
-                        <label class="form-label">Taller</label>
-                        <select class="form-select" name="taller" [(ngModel)]="usuario.id_taller"
-                            [disabled]="scopeType !== 'taller'" (ngModelChange)="usuario.grupo = undefined"
-                            [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.id_taller}">
-                            <option [ngValue]="null" disabled></option>
-                            <option *ngFor="let t of talleres" [ngValue]="t.id">{{ t.nombre }}</option>
-                        </select>
-                        <div class="invalid-feedback d-block"
-                            *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.id_taller">
-                            Seleccioná un taller.
+                        <div class="col-md-6" *ngIf="!loadingTalleres">
+                            <label class="form-label">Grupo</label>
+                            <select class="form-select" name="grupo" [(ngModel)]="usuario.id_grupo"
+                                [disabled]="scopeType !== 'grupo'" (ngModelChange)="usuario.taller = undefined"
+                                [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo}">
+                                <option [ngValue]="null" disabled></option>
+                                <option *ngFor="let g of grupos" [ngValue]="g.id_grupo">{{ g.nombre }}</option>
+                            </select>
+                            <div class="invalid-feedback d-block"
+                                *ngIf="userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo">
+                                Seleccioná un grupo.
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="col-md-6" *ngIf="!loadingTalleres">
-                        <label class="form-label">Grupo</label>
-                        <select class="form-select" name="grupo" [(ngModel)]="usuario.id_grupo"
-                            [disabled]="scopeType !== 'grupo'" (ngModelChange)="usuario.taller = undefined"
-                            [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo}">
-                            <option [ngValue]="null" disabled></option>
-                            <option *ngFor="let g of grupos" [ngValue]="g.id_grupo">{{ g.nombre }}</option>
-                        </select>
-                        <div class="invalid-feedback d-block"
-                            *ngIf="userForm.submitted && scopeType === 'grupo' && !usuario.id_grupo">
-                            Seleccioná un grupo.
+                        <!-- Selector de Rol para Grupo -->
+                        <div class="col-md-6" *ngIf="scopeType === 'grupo' && !loadingTalleres">
+                            <label class="form-label">Rol en el Grupo <span class="text-danger">*</span></label>
+                            <select class="form-select" name="rol_en_grupo" [(ngModel)]="usuario.rol_en_grupo"
+                                [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'grupo' && !usuario.rol_en_grupo}">
+                                <option [ngValue]="null" disabled>Seleccioná un rol</option>
+                                <option value="admin">Administrador del Grupo</option>
+                                <option value="member">Miembro</option>
+                                <option value="viewer">Observador</option>
+                            </select>
+                            <div class="invalid-feedback d-block"
+                                *ngIf="userForm.submitted && scopeType === 'grupo' && !usuario.rol_en_grupo">
+                                Seleccioná un rol para el grupo.
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- NUEVO: Selector de Rol para Taller -->
+                        <div class="col-md-6" *ngIf="scopeType === 'taller' && !loadingTalleres">
+                            <label class="form-label">Rol en el Taller <span class="text-danger">*</span></label>
+                            <select class="form-select" name="rol_en_taller" [(ngModel)]="usuario.rol_en_taller"
+                                [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller}">
+                                <option [ngValue]="null" disabled>Seleccioná un rol</option>
+                                <option value="owner">Dueño del Taller</option>
+                                <option value="member">Miembro</option>
+                            </select>
+                            <div class="invalid-feedback d-block"
+                                *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller">
+                                Seleccioná un rol para el taller.
+                            </div>
+                        </div>
+                    </ng-container>
 
                 </div>
 

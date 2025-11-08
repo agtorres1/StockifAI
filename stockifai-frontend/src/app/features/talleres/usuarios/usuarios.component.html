@@ -21,49 +21,54 @@
         </div>
 
         <div class="table-responsive" *ngIf="!loading">
-            <table class="table table-bordered table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>Usuario</th>
-                        <th>Email</th>
-                        <th>Teléfono</th>
-                        <th>Taller</th>
-                        <th>Grupo</th>
-                        <th style="width:50px; white-space:nowrap;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let usuario of usuarios">
-                        <td>{{ usuario.id }}</td>
-                        <td>{{ usuario.first_name }}</td>
-                        <td>{{ usuario.last_name }}</td>
-                        <td>{{ usuario.username }}</td>
-                        <td>{{ usuario.email }}</td>
-                        <td>{{ usuario.telefono }}</td>
-                        <td>{{ usuario.taller?.nombre }}</td>
-                        <td>{{ usuario.grupo?.nombre }}</td>
-                        <td>
-                            <div class="d-inline-flex align-items-center gap-1">
-                                <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                    title="Editar" (click)="onEditUsuarioClick(usuario)">
-                                    <i class="fa fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                    title="Eliminar" (click)="onDeleteUsuarioClick(usuario)">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr *ngIf="usuarios.length === 0">
-                        <td colspan="9" class="text-center text-muted py-3">No hay usuarios para mostrar.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <table class="table table-bordered table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Usuario</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <!-- Solo mostrar si es superuser -->
+                <th *ngIf="isSuperUser">Taller</th>
+                <th *ngIf="isSuperUser">Grupo</th>
+                <th style="width:50px; white-space:nowrap;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let usuario of usuarios">
+                <td>{{ usuario.id }}</td>
+                <td>{{ usuario.first_name }}</td>
+                <td>{{ usuario.last_name }}</td>
+                <td>{{ usuario.username }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.telefono }}</td>
+                <!-- Solo mostrar si es superuser -->
+                <td *ngIf="isSuperUser">{{ usuario.taller?.nombre || '-' }}</td>
+                <td *ngIf="isSuperUser">{{ usuario.grupo?.nombre || '-' }}</td>
+                <td>
+                    <div class="d-inline-flex align-items-center gap-1">
+                        <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Editar" (click)="onEditUsuarioClick(usuario)">
+                            <i class="fa fa-pen"></i>
+                        </button>
+                        <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                            title="Eliminar" (click)="onDeleteUsuarioClick(usuario)">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            <tr *ngIf="usuarios.length === 0">
+                <!-- Ajustar colspan según si es superuser o no -->
+                <td [attr.colspan]="isSuperUser ? 9 : 7" class="text-center text-muted py-3">
+                    No hay usuarios para mostrar.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
     </div>
 </div>
 

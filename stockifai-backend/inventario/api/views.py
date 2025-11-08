@@ -4,29 +4,31 @@ from datetime import date, timedelta, datetime, time
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Set, Union
 from collections import defaultdict
+from user.permissions import PermissionChecker
+import pandas as pd
+
 from django.conf import settings
 from django.db import transaction
-from django.db.models import F, Prefetch, Q, Sum, Count
+from django.db.models import F, Prefetch, Q, Sum, Count, Avg
 from django.db.models.expressions import Case, Value, When
-from django.db.models.fields import IntegerField
+from django.db.models.fields import IntegerField, DecimalField
 from django.db.models.functions import TruncWeek
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import status
+from django.utils import timezone
+
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-import pandas as pd
-from django.http import HttpResponse
-from rest_framework.views import APIView
-from rest_framework import status
-from datetime import datetime
-from django.db.models import Sum, Q, F, DecimalField
-
 from AI.services.forecast_pipeline import ejecutar_forecast_pipeline_por_taller, ejecutar_forecast_talleres
 from catalogo.models import Repuesto, RepuestoTaller
-from inventario.models import Deposito, Movimiento, StockPorDeposito, Alerta
+from inventario.models import Deposito, Movimiento, StockPorDeposito, Alerta, ObjetivoKPI
 from user.models import Grupo, GrupoTaller, Taller
+from user.api.models.models import User
 
 from ..services._helpers import (
     MESES_ABREV,
@@ -45,6 +47,7 @@ from .serializers import (
     CatalogoImportSerializer,
     DepositoSerializer,
     MovimientosImportSerializer,
+    ObjetivoKPISerializer,
     RepuestoStockSerializer,
     RepuestoTallerSerializer,
     StockDepositoDetalleSerializer,
@@ -53,6 +56,7 @@ from .serializers import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 class ImportarMovimientosView(APIView):
     def post(self, request):
@@ -106,6 +110,50 @@ class DepositosPorTallerView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class GrupoDetailView(APIView):
+    def get(self, request, grupo_id):
+        grupo = get_object_or_404(Grupo, id_grupo=grupo_id)
+
+        # Contar talleres del grupo
+        talleres_count = GrupoTaller.objects.filter(id_grupo=grupo).count()
+
+        return Response({
+            'id': grupo.id_grupo,
+            'nombre': grupo.nombre,
+            'descripcion': grupo.descripcion,
+            'total_talleres': talleres_count,
+            'stock_inicial_cargado': True  # Por ahora siempre True para grupos
+        })
+
+class DepositosPorGrupoView(APIView):
+    """
+    Obtiene todos los depósitos de todos los talleres que pertenecen a un grupo
+    """
+
+    def get(self, request, grupo_id):
+        # Verificar que el grupo existe
+        grupo = get_object_or_404(Grupo, id_grupo=grupo_id)
+
+        # Obtener todos los talleres del grupo a través de la tabla intermedia
+        talleres_ids = GrupoTaller.objects.filter(
+            id_grupo=grupo
+        ).values_list('id_taller', flat=True)
+
+        # Obtener todos los depósitos de esos talleres
+        depositos = Deposito.objects.filter(
+            taller_id__in=talleres_ids
+        ).select_related('taller')  # Optimización para traer info del taller
+
+        # Serializar los depósitos
+        serializer = DepositoSerializer(depositos, many=True)
+
+        return Response({
+            'grupo': grupo.nombre,
+            'total_talleres': len(talleres_ids),
+            'total_depositos': depositos.count(),
+            'depositos': serializer.data
+        })
+
 
 class _StockPagination(PageNumberPagination):
     page_size = 50
@@ -130,6 +178,26 @@ class ConsultarStockView(APIView):
     pagination_class = _StockPagination
 
     def get(self, request, taller_id: int):
+        # ===== AGREGAR FILTRO DE PERMISOS =====
+        user = PermissionChecker.get_user_from_session(request)
+
+        # Verificar que el usuario pueda ver este taller
+        try:
+            from user.api.models.models import Taller
+            taller = Taller.objects.get(id=taller_id)
+
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response(
+                {"error": "Taller no encontrado"},
+                status=404
+            )
+        # ===== FIN FILTRO =====
+
         q = request.query_params.get("q")
         numero_pieza = request.query_params.get("numero_pieza")
         exact = request.query_params.get("exact", "1")
@@ -229,6 +297,16 @@ class LocalizarRepuestoView(APIView):
     """Localiza talleres dentro del grupo del taller solicitante con stock disponible."""
 
     def get(self, request, taller_id: int) -> Response:
+        user = PermissionChecker.get_user_from_session(request)
+
+        taller_origen = get_object_or_404(Taller, pk=taller_id)
+
+        if not PermissionChecker.puede_ver_taller(user, taller_origen):
+            return Response(
+                {"error": "No tienes permiso para ver este taller"},
+                status=403
+            )
+
         numero_pieza = request.query_params.get("numero_pieza")
         repuesto_id = request.query_params.get("repuesto_id")
 
@@ -238,7 +316,6 @@ class LocalizarRepuestoView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        taller_origen = get_object_or_404(Taller, pk=taller_id)
 
         if repuesto_id:
             repuesto = get_object_or_404(Repuesto, pk=repuesto_id)
@@ -411,6 +488,19 @@ class LocalizarRepuestoView(APIView):
 
 class EjecutarForecastPorTallerView(APIView):
     def post(self, request, taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_editar_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ejecutar forecast en este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+
         fecha_lunes = request.data.get("fecha_lunes")  # "YYYY-MM-DD" (lunes)
 
         out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
@@ -423,6 +513,358 @@ class EjecutarForecastView(APIView):
         out = ejecutar_forecast_talleres(fecha_lunes)
         return Response({"status": "ok", "details": out}, status=status.HTTP_200_OK)
 
+
+
+class KPIsViewSet(viewsets.ViewSet):
+
+    def _get_objetivo_kpi(self, user):
+        """Obtener u crear objetivos KPI para el usuario"""
+        if user.taller:
+            objetivo, created = ObjetivoKPI.objects.get_or_create(
+                taller=user.taller,
+                defaults={
+                    'tasa_rotacion_objetivo': 1.5,
+                    'dias_en_mano_objetivo': 60,
+                    'dead_stock_objetivo': 10.0,
+                    'dias_dead_stock': 730
+                }
+            )
+            return objetivo
+
+        if user.grupo:
+            objetivo, created = ObjetivoKPI.objects.get_or_create(
+                grupo=user.grupo,
+                defaults={
+                    'tasa_rotacion_objetivo': 1.5,
+                    'dias_en_mano_objetivo': 60,
+                    'dead_stock_objetivo': 10.0,
+                    'dias_dead_stock': 730
+                }
+            )
+            return objetivo
+
+        return None
+
+    def _calcular_tasa_rotacion(self, user):
+        """Calcular tasa de rotación de los ÚLTIMOS 3 MESES"""
+        hoy = timezone.now()
+        fecha_inicio = hoy - timedelta(days=90)
+        fecha_fin = hoy
+
+        if user.taller:
+            stock_filter = Q(deposito__taller=user.taller)
+            movimiento_filter = Q(stock_por_deposito__deposito__taller=user.taller)
+        elif user.grupo:
+            from user.api.models.models import GrupoTaller
+            talleres_del_grupo = GrupoTaller.objects.filter(
+                id_grupo=user.grupo
+            ).values_list('id_taller', flat=True)
+
+            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
+            movimiento_filter = Q(stock_por_deposito__deposito__taller__in=talleres_del_grupo)
+        else:
+            return None
+
+        movimientos_egreso = Movimiento.objects.filter(
+            movimiento_filter,
+            tipo='EGRESO',
+            fecha__gte=fecha_inicio,
+            fecha__lte=fecha_fin
+        ).select_related('stock_por_deposito__repuesto_taller')
+
+        ventas_totales = Decimal('0')
+
+        for mov in movimientos_egreso:
+            precio = mov.stock_por_deposito.repuesto_taller.precio
+            if precio:
+                ventas_totales += mov.cantidad * precio
+
+        stocks = StockPorDeposito.objects.filter(
+            stock_filter
+        ).select_related('repuesto_taller')
+
+        stock_valor = Decimal('0')
+
+        for stock in stocks:
+            precio = stock.repuesto_taller.precio
+            if precio:
+                stock_valor += stock.cantidad * precio
+
+        stock_promedio = stock_valor
+        tasa_rotacion = float(ventas_totales) / float(stock_promedio) if stock_promedio > 0 else 0
+
+        return {'tasa_rotacion': round(tasa_rotacion, 2)}
+
+    def _calcular_dias_en_mano(self, user):
+        """Calcular días en mano de los ÚLTIMOS 3 MESES"""
+        hoy = timezone.now()
+        fecha_inicio = hoy - timedelta(days=90)
+        fecha_fin = hoy
+        dias_periodo = 90
+
+        if user.taller:
+            stock_filter = Q(deposito__taller=user.taller)
+            movimiento_filter = Q(stock_por_deposito__deposito__taller=user.taller)
+        elif user.grupo:
+            from user.api.models.models import GrupoTaller
+            talleres_del_grupo = GrupoTaller.objects.filter(
+                id_grupo=user.grupo
+            ).values_list('id_taller', flat=True)
+
+            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
+            movimiento_filter = Q(stock_por_deposito__deposito__taller__in=talleres_del_grupo)
+        else:
+            return None
+
+        movimientos_egreso = Movimiento.objects.filter(
+            movimiento_filter,
+            tipo='EGRESO',
+            fecha__gte=fecha_inicio,
+            fecha__lte=fecha_fin
+        ).select_related('stock_por_deposito__repuesto_taller')
+
+        ventas_totales = Decimal('0')
+
+        for mov in movimientos_egreso:
+            precio = mov.stock_por_deposito.repuesto_taller.precio
+            if precio:
+                ventas_totales += mov.cantidad * precio
+
+        stocks = StockPorDeposito.objects.filter(
+            stock_filter
+        ).select_related('repuesto_taller')
+
+        stock_valor = Decimal('0')
+
+        for stock in stocks:
+            precio = stock.repuesto_taller.precio
+            if precio:
+                stock_valor += stock.cantidad * precio
+
+        stock_promedio = stock_valor
+        ventas_diarias = float(ventas_totales) / dias_periodo if dias_periodo > 0 else 0
+        dias_en_mano = float(stock_promedio) / ventas_diarias if ventas_diarias > 0 else 0
+
+        return {'dias_en_mano': round(dias_en_mano, 1)}
+
+    def _calcular_dead_stock(self, user, objetivo_kpi):
+        """Calcular porcentaje de stock muerto"""
+        fecha_limite = timezone.now() - timedelta(days=objetivo_kpi.dias_dead_stock)
+
+        if user.taller:
+            stock_filter = Q(deposito__taller=user.taller)
+        elif user.grupo:
+            from user.api.models.models import GrupoTaller
+            talleres_del_grupo = GrupoTaller.objects.filter(
+                id_grupo=user.grupo
+            ).values_list('id_taller', flat=True)
+
+            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
+        else:
+            return None
+
+        total_items = StockPorDeposito.objects.filter(
+            stock_filter,
+            cantidad__gt=0
+        ).count()
+
+        stocks = StockPorDeposito.objects.filter(
+            stock_filter,
+            cantidad__gt=0
+        ).select_related('repuesto_taller__repuesto')
+
+        items_muertos = 0
+
+        for stock in stocks:
+            tiene_ventas = Movimiento.objects.filter(
+                stock_por_deposito=stock,
+                tipo='EGRESO'
+            ).exists()
+
+            if tiene_ventas:
+                ultimo_egreso = Movimiento.objects.filter(
+                    stock_por_deposito=stock,
+                    tipo='EGRESO'
+                ).order_by('-fecha').first()
+
+                if ultimo_egreso and ultimo_egreso.fecha < fecha_limite:
+                    items_muertos += 1
+
+        porcentaje = round((items_muertos / total_items * 100), 1) if total_items > 0 else 0
+
+        return porcentaje
+
+    @action(detail=False, methods=['get'])
+    def tasa_rotacion(self, request):
+        """GET /api/kpis/tasa_rotacion/"""
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ##############################user = User.objects.get(id=request.session['user_id'])
+        objetivo_kpi = self._get_objetivo_kpi(user)
+
+        if not objetivo_kpi:
+            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+
+        resultado = self._calcular_tasa_rotacion(user)
+
+        if not resultado:
+            return Response({"error": "No se pudieron calcular los KPIs"}, status=400)
+
+        valor = resultado['tasa_rotacion']
+        objetivo = float(objetivo_kpi.tasa_rotacion_objetivo)
+
+        diferencia = round(valor - objetivo, 2)
+        cumplimiento = round((valor / objetivo) * 100, 1) if objetivo else 0
+
+        if cumplimiento >= 100:
+            estado = "✅ Cumple"
+        elif cumplimiento >= 80:
+            estado = "⚡ Cerca del objetivo"
+        else:
+            estado = "⚠️ Por debajo del objetivo"
+
+        return Response({
+            "valor": valor,
+            "objetivo": objetivo,
+            "diferencia": diferencia,
+            "cumplimiento_porcentaje": cumplimiento,
+            "estado": estado
+        })
+
+    @action(detail=False, methods=['get'])
+    def dias_en_mano(self, request):
+        """GET /api/kpis/dias_en_mano/"""
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ##################################user = User.objects.get(id=request.session['user_id'])
+        objetivo_kpi = self._get_objetivo_kpi(user)
+
+        if not objetivo_kpi:
+            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+
+        resultado = self._calcular_dias_en_mano(user)
+
+        if not resultado:
+            return Response({"error": "No se pudieron calcular los días en mano"}, status=400)
+
+        valor = resultado['dias_en_mano']
+        objetivo = objetivo_kpi.dias_en_mano_objetivo
+
+        diferencia = round(valor - objetivo, 1)
+
+        if abs(diferencia) <= 10:
+            estado = "✅ Dentro del objetivo"
+        elif diferencia > 10:
+            estado = "⚠️ Por encima del objetivo"
+        else:
+            estado = "⚠️ Por debajo del objetivo"
+
+        return Response({
+            "valor": valor,
+            "objetivo": objetivo,
+            "diferencia": diferencia,
+            "estado": estado
+        })
+
+    @action(detail=False, methods=['get'])
+    def dead_stock(self, request):
+        """GET /api/kpis/dead_stock/"""
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+        ###############################user = User.objects.get(id=request.session['user_id'])
+        objetivo_kpi = self._get_objetivo_kpi(user)
+
+        if not objetivo_kpi:
+            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+
+        valor = self._calcular_dead_stock(user, objetivo_kpi)
+
+        if valor is None:
+            return Response({"error": "No se pudo calcular el dead stock"}, status=400)
+
+        objetivo = float(objetivo_kpi.dead_stock_objetivo)
+
+        diferencia = round(valor - objetivo, 1)
+
+        if valor <= objetivo:
+            estado = "✅ Dentro del objetivo"
+        elif valor <= objetivo * 1.5:
+            estado = "⚡ Ligeramente por encima"
+        else:
+            estado = "⚠️ Por encima del objetivo"
+
+        return Response({
+            "valor": valor,
+            "objetivo": objetivo,
+            "diferencia": diferencia,
+            "estado": estado
+        })
+
+    @action(detail=False, methods=['get'])
+    def resumen(self, request):
+        """GET /api/kpis/resumen/"""
+
+        from inventario.utils import get_user_from_request
+        user = get_user_from_request(request)
+       ####################################### user = User.objects.get(id=request.session['user_id'])
+        objetivo_kpi = self._get_objetivo_kpi(user)
+
+        if not objetivo_kpi:
+            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+
+        tasa_rot = self._calcular_tasa_rotacion(user)
+        dias_mano = self._calcular_dias_en_mano(user)
+        #dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
+        dead_porcentaje = 0
+
+        if not tasa_rot or not dias_mano or dead_porcentaje is None:
+            return Response({"error": "No se pudieron calcular los KPIs"}, status=400)
+
+        return Response({
+            "tasa_rotacion": {
+                "valor": tasa_rot['tasa_rotacion'],
+                "objetivo": float(objetivo_kpi.tasa_rotacion_objetivo)
+            },
+            "dias_en_mano": {
+                "valor": dias_mano['dias_en_mano'],
+                "objetivo": objetivo_kpi.dias_en_mano_objetivo
+            },
+            "dead_stock": {
+                "porcentaje": dead_porcentaje,
+                "objetivo": float(objetivo_kpi.dead_stock_objetivo)
+            }
+        })
+
+    @action(detail=False, methods=['get', 'put'])
+    def objetivos(self, request):
+        """GET/PUT /api/kpis/objetivos/"""
+        user = User.objects.get(id=request.session['user_id'])
+
+        if user.grupo and user.rol_en_grupo not in ['admin']:
+            if request.method == 'PUT':
+                raise PermissionDenied("Solo admins del grupo pueden modificar objetivos")
+
+        objetivo_kpi = self._get_objetivo_kpi(user)
+
+        if not objetivo_kpi:
+            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+
+        if request.method == 'GET':
+            serializer = ObjetivoKPISerializer(objetivo_kpi)
+            return Response(serializer.data)
+
+        elif request.method == 'PUT':
+            serializer = ObjetivoKPISerializer(objetivo_kpi, data=request.data, partial=True)
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "message": "Objetivos actualizados correctamente",
+                    "data": serializer.data
+                })
+
+            return Response(serializer.errors, status=400)
+
 class DetalleForecastingView(APIView):
     """
     GET /talleres/<taller_id>/repuestos/<repuesto_taller_id>/forecasting
@@ -434,6 +876,18 @@ class DetalleForecastingView(APIView):
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
         # 1. Recuperar el RepuestoTaller y anotar el stock total
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
         try:
             rt_qs = (
                 RepuestoTaller.objects
@@ -575,6 +1029,19 @@ class ConsultarForecastingListView(APIView):
     pagination_class = _StockPagination  # Reutiliza la paginación
 
     def get(self, request, taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver forecasting de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+
         q = request.query_params.get("q")
         ordering = request.query_params.get("ordering")
 
@@ -660,8 +1127,23 @@ class AlertsListView(APIView):
     pagination_class = _StockPagination  # O el nombre de tu clase de paginación
 
     def get(self, request, taller_id: int):
-        summary_mode = request.query_params.get("summary") == "1"
 
+        user = PermissionChecker.get_user_from_session(request)
+        
+        try:
+            from user.api.models.models import Taller
+            taller = Taller.objects.get(id=taller_id)
+
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
+        summary_mode = request.query_params.get("summary") == "1"
+        
         if summary_mode:
             active_alerts_qs = Alerta.objects.filter(
                 repuesto_taller__taller_id=taller_id,
@@ -716,12 +1198,22 @@ class DismissAlertView(APIView):
 
     Cambia el estado de una alerta a 'DESCARTADA' para ocultarla de la vista principal.
     """
+
     def post(self, request, alerta_id: int):
-        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
         alerta = get_object_or_404(Alerta, id=alerta_id)
+        taller = alerta.repuesto_taller.taller
+
+        if not PermissionChecker.puede_ver_taller(user, taller):
+            return Response(
+                {"error": "No tienes permiso para descartar esta alerta"},
+                status=403
+            )
+        # ===== FIN FILTRO =====
 
         alerta.estado = Alerta.EstadoAlerta.DESCARTADA
-        #alerta.descartada_por = request.user # Asigna el usuario que la descartó
         alerta.save(update_fields=['estado', 'descartada_por'])
 
         return Response(
@@ -738,14 +1230,19 @@ class MarkAsSeenAlertView(APIView):
     """
 
     def post(self, request, alerta_id: int):
-        # Buscamos la alerta. Si no existe, devuelve un error 404.
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
         alerta = get_object_or_404(Alerta, pk=alerta_id)
+        taller = alerta.repuesto_taller.taller
 
-        # Opcional: Verificación de permisos
-        # if alerta.repuesto_taller.taller != request.user.taller:
-        #     return Response({"detail": "Permiso denegado."}, status=status.HTTP_403_FORBIDDEN)
+        if not PermissionChecker.puede_ver_taller(user, taller):
+            return Response(
+                {"error": "No tienes permiso para marcar esta alerta"},
+                status=403
+            )
+        # ===== FIN FILTRO =====
 
-        # Solo cambiamos el estado si es 'NUEVA' para evitar acciones innecesarias
         if alerta.estado == Alerta.EstadoAlerta.NUEVA:
             alerta.estado = Alerta.EstadoAlerta.VISTA
             alerta.save(update_fields=['estado'])
@@ -763,7 +1260,22 @@ class MarkAllAsSeenView(APIView):
         Cambia el estado de una lista específica de alertas 'NUEVA' a 'VISTA'.
         Recibe un array de IDs en el cuerpo de la petición.
         """
+
     def post(self, request, taller_id: int):
+        # ===== AGREGAR FILTRO =====
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para marcar alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+        # ===== FIN FILTRO =====
+
         alerta_ids = request.data.get('alerta_ids')
 
         if not isinstance(alerta_ids, list):
@@ -776,6 +1288,7 @@ class MarkAllAsSeenView(APIView):
                 {"status": "No se proporcionaron IDs para marcar."},
                 status=status.HTTP_200_OK
             )
+
         alertas_a_marcar = Alerta.objects.filter(
             pk__in=alerta_ids,
             repuesto_taller__taller_id=taller_id,
@@ -786,6 +1299,7 @@ class MarkAllAsSeenView(APIView):
             {"status": f"{count} alertas marcadas como vistas"},
             status=status.HTTP_200_OK
         )
+
 class AlertsForRepuestoView(APIView):
     """
     GET /talleres/<taller_id>/repuestos/<repuesto_taller_id>/alertas/
@@ -796,6 +1310,18 @@ class AlertsForRepuestoView(APIView):
     pagination_class = _StockPagination
 
     def get(self, request, taller_id: int, repuesto_taller_id: int):
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para ver alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
+
         historial_alertas = Alerta.objects.filter(
             repuesto_taller__taller_id=taller_id,
             repuesto_taller_id=repuesto_taller_id
@@ -838,6 +1364,18 @@ class ExportarUrgentesView(APIView):
     y la cantidad sugerida a comprar para cubrir la demanda de la próxima semana.
     """
     def get(self, request, taller_id: int):
+
+        user = PermissionChecker.get_user_from_session(request)
+
+        try:
+            taller = Taller.objects.get(id=taller_id)
+            if not PermissionChecker.puede_ver_taller(user, taller):
+                return Response(
+                    {"error": "No tienes permiso para exportar alertas de este taller"},
+                    status=403
+                )
+        except Taller.DoesNotExist:
+            return Response({"error": "Taller no encontrado"}, status=404)
 
         # Alertas CRÍTICAS activas
         alertas_criticas_qs = Alerta.objects.filter(
@@ -1005,157 +1543,3 @@ class SaludInventarioPorCategoriaView(APIView):
 
         return Response(response_data)
 
-
-class ExportarSaludInventarioView(APIView):
-    """
-    GET /talleres/<taller_id>/salud-inventario/exportar/
-
-    Genera un archivo Excel con el resumen de la salud del inventario.
-    La hoja de detalle está ordenada por Frecuencia y luego por Ponderación.
-    """
-
-    def get(self, request, taller_id: int):
-
-        rt_qs = RepuestoTaller.objects.filter(
-            taller_id=taller_id
-        ).annotate(
-            stock_total=Sum(
-                "stocks__cantidad",
-                filter=Q(stocks__deposito__taller_id=taller_id),
-                output_field=DecimalField(max_digits=10, decimal_places=2)
-            )
-        ).select_related('repuesto__categoria')
-
-        valor_por_frecuencia = defaultdict(Decimal)
-        datos_crudos_excel = []
-
-        NIVEL_TO_SALUD = {
-            "CRÍTICO": "critico",
-            "ADVERTENCIA": "advertencia",
-            "INFORMATIVO": "sobrestock",
-        }
-
-        for rt in rt_qs:
-            stock = Decimal(rt.stock_total or 0)
-            costo = Decimal(getattr(rt, 'costo', 0) or 0)
-            valor_stock = stock * costo
-            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
-            frecuencia_str = getattr(rt, 'frecuencia', None) or "DESCONOCIDA"
-            categoria_nombre = "Sin Categoría"
-            if rt.repuesto and rt.repuesto.categoria:
-                categoria_nombre = rt.repuesto.categoria.nombre
-
-            forecast_semanas = [
-                pred_1,
-                Decimal(getattr(rt, 'pred_2', 0) or 0),
-                Decimal(getattr(rt, 'pred_3', 0) or 0),
-                Decimal(getattr(rt, 'pred_4', 0) or 0),
-            ]
-            mos = calcular_mos(stock, forecast_semanas)
-            alertas_potenciales = generar_alertas_inventario(
-                stock_total=stock, pred_1=pred_1, mos_en_semanas=mos,
-                frecuencia_rotacion=frecuencia_str
-            )
-            if not alertas_potenciales:
-                status = "saludable"
-            else:
-                primer_nivel_alerta = alertas_potenciales[0]['nivel']
-                status = NIVEL_TO_SALUD.get(primer_nivel_alerta, "saludable")
-
-            valor_por_frecuencia[frecuencia_str] += valor_stock
-
-            datos_crudos_excel.append({
-                "Numero Pieza": rt.repuesto.numero_pieza,
-                "Descripcion": rt.repuesto.descripcion,
-                "Categoria": categoria_nombre,
-                "Frecuencia": frecuencia_str,
-                "Estado de Salud": status.upper(),
-                "Stock Actual (U)": float(stock),
-                "Costo Unitario ($)": float(costo),
-                "Valor Stock ($)": float(valor_stock),
-            })
-
-        total_valor_inventario = sum(valor_por_frecuencia.values())
-
-        for row in datos_crudos_excel:
-            frecuencia_sku = row['Frecuencia']
-            valor_sku = row['Valor Stock ($)']
-            total_valor_grupo = valor_por_frecuencia.get(frecuencia_sku, Decimal(0))
-
-            if total_valor_grupo > 0:
-                ponderacion = (Decimal(valor_sku) / total_valor_grupo)
-            else:
-                ponderacion = Decimal(0)
-
-            row['Ponderacion Frecuencia (%)'] = float(ponderacion)
-
-        frecuencia_order = {
-            "MUERTO": 0,
-            "OBSOLETO": 1,
-            "LENTO": 2,
-            "INTERMEDIO": 3,
-            "ALTA_ROTACION": 4,
-            "DESCONOCIDA": 5
-        }
-
-        datos_crudos_excel.sort(key=lambda row: (
-            frecuencia_order.get(row['Frecuencia'], 99),  # Clave 1: Prioridad de Frecuencia (asc)
-            -row['Ponderacion Frecuencia (%)']  # Clave 2: Ponderación (desc)
-        ))
-
-        # Hoja 1: Resumen por Frecuencia
-        data_resumen_frecuencia = []
-        for freq, valor in valor_por_frecuencia.items():
-            porcentaje_decimal = (valor / total_valor_inventario) if total_valor_inventario > 0 else 0
-            data_resumen_frecuencia.append({
-                "Frecuencia": freq,
-                "Valor Total ($)": float(valor),
-                "Porcentaje (%)": float(porcentaje_decimal)
-            })
-        df_resumen_frecuencia = pd.DataFrame(data_resumen_frecuencia)
-        df_resumen_frecuencia['sort_key'] = df_resumen_frecuencia['Frecuencia'].map(frecuencia_order)
-        df_resumen_frecuencia = df_resumen_frecuencia.sort_values(by='sort_key').drop(columns='sort_key')
-
-        # Hoja 2: Detalle
-        df_detalle = pd.DataFrame(datos_crudos_excel)
-
-        fecha_actual = datetime.now().strftime("%Y%m%d_%H%M")
-        nombre_archivo = f"reporte_salud_inventario_{taller_id}_{fecha_actual}.xlsx"
-
-        response = HttpResponse(
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        )
-        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
-
-        with pd.ExcelWriter(response, engine='openpyxl') as writer:
-            df_resumen_frecuencia.to_excel(writer, sheet_name='Resumen_por_Frecuencia', index=False)
-            df_detalle.to_excel(writer, sheet_name='Detalle_Inventario', index=False)
-
-            workbook = writer.book
-            ws_resumen = workbook['Resumen_por_Frecuencia']
-            for cell in ws_resumen['B'][1:]:  # Columna "Valor Total ($)"
-                cell.number_format = '$ #,##0.00'
-            for cell in ws_resumen['C'][1:]:  # Columna "Porcentaje (%)"
-                cell.number_format = '0.00%'
-
-            ws_detalle = workbook['Detalle_Inventario']
-            for cell in ws_detalle['F'][1:]:  # Columna "Stock Actual (U)"
-                cell.number_format = '#,##0'
-            for cell in ws_detalle['G'][1:]:  # Columna "Costo Unitario ($)"
-                cell.number_format = '$ #,##0.00'
-            for cell in ws_detalle['H'][1:]:  # Columna "Valor Stock ($)"
-                cell.number_format = '$ #,##0.00'
-            for cell in ws_detalle['I'][1:]:  # Columna "Ponderacion Frecuencia (%)"
-                cell.number_format = '0.00%'
-
-            for sheet_name in workbook.sheetnames:
-                worksheet = workbook[sheet_name]
-                for col in worksheet.columns:
-                    max_length = 0
-                    column_letter = col[0].column_letter
-                    for cell in col:
-                        if cell.value:
-                            max_length = max(max_length, len(str(cell.value)))
-                    worksheet.column_dimensions[column_letter].width = max_length + 4
-
-        return response

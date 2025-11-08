@@ -1,86 +1,126 @@
-
-
-
 <div class="container">
-  <div class="left-section">
-    <div class="logo-container">
-      <div class="logo-icon">
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="20" y="30" width="60" height="40" rx="8" stroke="#00bcd4" stroke-width="3" fill="none"/>
-          <rect x="15" y="25" width="70" height="50" rx="10" stroke="#0097a7" stroke-width="2" fill="none"/>
-          <circle cx="35" cy="45" r="3" fill="#00bcd4"/>
-          <circle cx="50" cy="45" r="3" fill="#00bcd4"/>
-          <circle cx="65" cy="45" r="3" fill="#00bcd4"/>
-          <path d="M25 60 L35 55 L50 65 L65 50 L75 60" stroke="#00bcd4" stroke-width="2" fill="none"/>
-          <circle cx="15" cy="15" r="2" fill="#4dd0e1"/>
-          <circle cx="85" cy="20" r="2" fill="#4dd0e1"/>
-          <circle cx="90" cy="80" r="2" fill="#4dd0e1"/>
-          <circle cx="10" cy="85" r="2" fill="#4dd0e1"/>
-        </svg>
-      </div>
-      <div class="logo-text">Stockif<span class="ai">AI</span></div>
+    <div class="left-section">
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="30" width="60" height="40" rx="8" stroke="#00bcd4" stroke-width="3" fill="none"/>
+                    <rect x="15" y="25" width="70" height="50" rx="10" stroke="#0097a7" stroke-width="2" fill="none"/>
+                    <circle cx="35" cy="45" r="3" fill="#00bcd4"/>
+                    <circle cx="50" cy="45" r="3" fill="#00bcd4"/>
+                    <circle cx="65" cy="45" r="3" fill="#00bcd4"/>
+                    <path d="M25 60 L35 55 L50 65 L65 50 L75 60" stroke="#00bcd4" stroke-width="2" fill="none"/>
+                    <circle cx="15" cy="15" r="2" fill="#4dd0e1"/>
+                    <circle cx="85" cy="20" r="2" fill="#4dd0e1"/>
+                    <circle cx="90" cy="80" r="2" fill="#4dd0e1"/>
+                    <circle cx="10" cy="85" r="2" fill="#4dd0e1"/>
+                </svg>
+            </div>
+            <div class="logo-text">Stockif<span class="ai">AI</span></div>
+        </div>
+
+        <div class="welcome-content">
+            <h1 class="welcome-title">¡Bienvenido a nuestra plataforma!</h1>
+            <p class="welcome-subtitle">Descubrí el camino que te conectará con nuevas oportunidades de negocio. ¡Comencemos juntos!</p>
+        </div>
     </div>
-    <div class="welcome-content">
-      <h1 class="welcome-title">¡Bienvenido a nuestra plataforma!</h1>
-      <p class="welcome-subtitle">Descubrí el camino que te conectará con nuevas oportunidades de negocio. ¡Comencemos juntos!</p>
+
+    <div class="right-section">
+        <div class="form-container">
+            <div class="form-header">
+                <h2 class="form-title">Crear Cuenta</h2>
+                <p class="form-subtitle">Ingresá tus datos para registrarte</p>
+            </div>
+
+            <div class="success-message" *ngIf="showSuccessMessage">
+                ¡Registro exitoso! Bienvenido a StockifAI.
+            </div>
+
+            <form [formGroup]="registroForm" (ngSubmit)="onSubmit()" *ngIf="!showSuccessMessage">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" formControlName="nombre" placeholder="Tu nombre">
+                        <div class="error-message" *ngIf="isFieldInvalid('nombre')">
+                            <small *ngIf="hasError('nombre', 'required')">El nombre es obligatorio</small>
+                            <small *ngIf="hasError('nombre', 'minlength')">Mínimo 2 caracteres</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apellido">Apellido <span class="required">*</span></label>
+                        <input type="text" id="apellido" formControlName="apellido" placeholder="Tu apellido">
+                        <div class="error-message" *ngIf="isFieldInvalid('apellido')">
+                            <small *ngIf="hasError('apellido', 'required')">El apellido es obligatorio</small>
+                            <small *ngIf="hasError('apellido', 'minlength')">Mínimo 2 caracteres</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input type="email" id="email" formControlName="email" placeholder="tu@email.com">
+                    <div class="error-message" *ngIf="isFieldInvalid('email')">
+                        <small *ngIf="hasError('email', 'required')">El email es obligatorio</small>
+                        <small *ngIf="hasError('email', 'email')">Ingresá un email válido</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña <span class="required">*</span></label>
+                    <div class="password-container">
+                        <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" placeholder="Mínimo 8 caracteres">
+                        <button type="button" class="password-toggle" (click)="togglePassword()">
+                            {{ showPassword ? '🙈' : '👁️' }}
+                        </button>
+                    </div>
+                    <div class="error-message" *ngIf="isFieldInvalid('password')">
+                        <small *ngIf="hasError('password', 'required')">La contraseña es obligatoria</small>
+                        <small *ngIf="hasError('password', 'minlength')">Mínimo 8 caracteres</small>
+                        <small *ngIf="hasError('password', 'passwordStrength')">
+                            Debe contener: mayúsculas, minúsculas, números y caracteres especiales
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" formControlName="telefono" placeholder="+54 11 1234-5678" (input)="formatTelefono($event)">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="direccion">Dirección <span class="required">*</span></label>
+                        <input type="text" id="direccion" formControlName="direccion" placeholder="Av. Corrientes 1234">
+                        <div class="error-message" *ngIf="isFieldInvalid('direccion')">
+                            <small *ngIf="hasError('direccion', 'required')">La dirección es obligatoria</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label for="codigoPostal">Código Postal <span class="required">*</span></label>
+                        <input type="text" id="codigoPostal" formControlName="codigoPostal" placeholder="1043">
+                        <div class="error-message" *ngIf="isFieldInvalid('codigoPostal')">
+                            <small *ngIf="hasError('codigoPostal', 'required')">El código postal es obligatorio</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ciudad">Ciudad <span class="required">*</span></label>
+                    <input type="text" id="ciudad" formControlName="ciudad" placeholder="Buenos Aires">
+                    <div class="error-message" *ngIf="isFieldInvalid('ciudad')">
+                        <small *ngIf="hasError('ciudad', 'required')">La ciudad es obligatoria</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" [disabled]="!isFormValid() || isSubmitting">
+                    {{ isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta' }}
+                </button>
+            </form>
+
+            <div class="form-footer">
+                ¿Ya tenés una cuenta? <a routerLink="/auth/login">Iniciá sesión acá</a>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div class="right-section">
-    <div class="form-container">
-      <div class="form-header">
-        <h2 class="form-title">Crear Cuenta</h2>
-        <p class="form-subtitle">Ingresá tus datos para registrarte</p>
-      </div>
-
-      <div class="success-message" id="successMessage">
-        ¡Registro exitoso! Bienvenido a StockifAI.
-      </div>
-
-      <form [formGroup]="registroForm" (ngSubmit)="onSubmit()" novalidate>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="nombre">Nombre <span class="required">*</span></label>
-            <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre" minlength="2">
-          </div>
-          <div class="form-group">
-            <label for="apellido">Apellido <span class="required">*</span></label>
-            <input type="text" id="apellido" name="apellido" required placeholder="Tu apellido" minlength="2">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="email">Email <span class="required">*</span></label>
-          <input type="email" id="email" name="email" required placeholder="tu@email.com">
-        </div>
-
-        <div class="form-group">
-          <label for="password">Contraseña <span class="required">*</span></label>
-          <div class="password-container">
-            <input type="password" id="password" name="password" required placeholder="Mínimo 6 caracteres" minlength="6">
-            <button type="button" class="password-toggle" (click)="togglePassword()">👁️</button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="telefono">Teléfono</label>
-          <input type="tel" id="telefono" name="telefono" placeholder="+54 11 1234-5678">
-        </div>
-
-        <div class="form-group">
-          <label for="direccion">Dirección <span class="required">*</span></label>
-          <input type="text" id="direccion" name="direccion" required placeholder="Calle, número, ciudad" minlength="10">
-        </div>
-
-        <button type="submit" class="btn-primary" [disabled]="!formValid">
-          Crear Cuenta
-        </button>
-
-      </form>
-
-      <div class="form-footer">
-        ¿Ya tenés una cuenta? <a href="#login">Iniciá sesión acá</a>
-      </div>
-    </div>
-  </div>
 </div>

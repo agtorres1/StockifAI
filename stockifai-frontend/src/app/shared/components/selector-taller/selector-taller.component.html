@@ -1,0 +1,21 @@
+<div *ngIf="loading" class="placeholder-glow">
+    <span class="placeholder col-6"></span>
+</div>
+
+<div *ngIf="!loading" class="dropdown">
+    <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-inline-flex align-items-center" type="button"
+        data-bs-toggle="dropdown" aria-expanded="false" [disabled]="disabled" aria-label="Seleccionar taller">
+        <i class="fa-solid fa-car-tunnel me-2" aria-hidden="true"></i>
+        <span class="text-truncate" style="max-width: 16ch;">{{ selectedNombre }}</span>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li *ngFor="let taller of talleres">
+            <button class="dropdown-item d-flex align-items-center justify-content-between"
+                (click)="seleccionarTaller(taller)" [disabled]="selected?.id === taller.id">
+                <span class="text-truncate">{{ taller.nombre }}</span>
+                <i *ngIf="selected?.id === taller.id" class="fa-solid fa-check ms-3"></i>
+            </button>
+        </li>
+    </ul>
+</div>

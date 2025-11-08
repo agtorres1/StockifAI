@@ -98,11 +98,11 @@
                         <span class="kpi-value" *ngIf="!repuesto.mos_en_semanas">N/A</span>
                         <span class="kpi-value fw-bold" *ngIf="repuesto.mos_en_semanas">
                             {{ repuesto.mos_en_semanas | number:'1.1-2' }}
-                            <span *ngIf="repuesto.mos_en_semanas < 1"
+                            <span *ngIf="repuesto.mos_en_semanas < 0.25"
                                 class="badge rounded-pill bg-red label-mos-tag">Crítico</span>
-                            <span *ngIf="repuesto.mos_en_semanas > 1 && repuesto.mos_en_semanas < 2"
+                            <span *ngIf="repuesto.mos_en_semanas > 0.25 && repuesto.mos_en_semanas < 0.5"
                                 class="badge rounded-pill bg-orange label-mos-tag">Bajo</span>
-                            <span *ngIf="repuesto.mos_en_semanas > 4"
+                            <span *ngIf="repuesto.mos_en_semanas > 1"
                                 class="badge rounded-pill bg-blue label-mos-tag">Alto</span>
                         </span>
                     </ng-container>
@@ -209,11 +209,11 @@
                             <span class="fw-bold" *ngIf="item.mos_en_semanas">
                                 {{ item.mos_en_semanas | number:'1.1-2' }}
                                 <br>
-                                <span *ngIf="item.mos_en_semanas < 1"
+                                <span *ngIf="item.mos_en_semanas < 0.25"
                                     class="badge rounded-pill bg-red mos-tag">Critico</span>
-                                <span *ngIf="item.mos_en_semanas > 1 && item.mos_en_semanas < 2"
+                                <span *ngIf="item.mos_en_semanas > 0.25 && item.mos_en_semanas < 0.5"
                                     class="badge rounded-pill bg-orange mos-tag">Bajo</span>
-                                <span *ngIf="item.mos_en_semanas > 4"
+                                <span *ngIf="item.mos_en_semanas > 1"
                                     class="badge rounded-pill bg-blue mos-tag">Alto</span>
                             </span>
                         </td>
@@ -249,7 +249,7 @@
                         </td>
                     </tr>
                     <tr *ngIf="forecast.length === 0">
-                        <td colspan="9" class="text-center text-muted py-3">No hay resultados para mostrar.</td>
+                        <td colspan="10" class="text-center text-muted py-3">No hay resultados para mostrar.</td>
                     </tr>
                 </tbody>
             </table>

@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List
 from AI.historicos import ejecutar_preproceso
 from AI.model_training import ejecutar_pipeline_entrenamiento
 from AI.inferencia import ejecutar_inferencia
-from user.models import Taller
+from user.api.models.models import Taller
 
 
 def ejecutar_forecast_pipeline_por_taller(taller_id: int, fecha_lunes: datetime) -> Dict[str, Any]:

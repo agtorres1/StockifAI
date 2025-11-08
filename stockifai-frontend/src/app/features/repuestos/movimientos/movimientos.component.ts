@@ -1,20 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
 import { Taller } from '../../../core/models/taller';
+import { AlertasService } from '../../../core/services/alertas.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
+
+declare var bootstrap: any;
 
 @Component({
     selector: 'app-movimientos',
     templateUrl: './movimientos.component.html',
     styleUrl: './movimientos.component.scss',
 })
-export class MovimientosComponent implements OnInit {
+export class MovimientosComponent implements OnInit, OnDestroy {
     tallerId: number = 1;
+    grupoId?: number;
     filtro = { idDeposito: '', searchText: '', desde: '', hasta: '' };
 
     depositos: Deposito[] = [];
@@ -35,16 +40,22 @@ export class MovimientosComponent implements OnInit {
     successMsg = '';
     loadingArchivo = false;
     erroresImport: any[] = [];
+    initialized = false;
 
     private search$ = new Subject<string>();
 
-    stockInicialCargado: boolean = true;
+    private subAuth?: Subscription;
+    private subSearch?: Subscription;
 
+    stockInicialCargado: boolean = true;
+    
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
         private talleresService: TalleresService,
         private route: ActivatedRoute,
+        private authService: AuthService,
+        private alertasService: AlertasService,
         private router: Router
     ) {
         this.titleService.setTitle('Movimientos');
@@ -52,7 +63,32 @@ export class MovimientosComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.getQueryParams();
+        if (this.initialized) return;
+        this.initialized = true;
+
+        this.subAuth = this.authService.activeTaller$.subscribe((t) => {
+            if (!t) {
+                this.loading = false;
+                return;
+            }
+
+            this.tallerId = t.id!;
+
+            this.getQueryParams();
+            this.loadData();
+        });
+
+        // 🔎 buscador
+        this.subSearch = this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
+            this.page = 1;
+            this.filtro.searchText = text;
+            this.cargarPagina(this.page);
+        });
+    }
+
+    loadData() {
+        if (!this.tallerId) return;
+
         this.loading = true;
 
         forkJoin({
@@ -62,10 +98,13 @@ export class MovimientosComponent implements OnInit {
         }).subscribe({
             next: ({ taller, depositos, movimientos }) => {
                 this.taller = taller;
-                this.stockInicialCargado = taller.stock_inicial_cargado;
-                this.depositos = depositos;
+                this.depositos = Array.isArray((depositos as any)?.depositos)
+                    ? (depositos as any).depositos
+                    : (depositos as any); // por si tu API a veces envía { depositos: [] }
+
                 this.movimientos = movimientos.results;
                 this.totalPages = movimientos.total_pages;
+
                 this.loading = false;
                 this.errorMessage = '';
             },
@@ -73,12 +112,6 @@ export class MovimientosComponent implements OnInit {
                 this.errorMessage = error?.message ?? 'Error al cargar';
                 this.loading = false;
             },
-        });
-
-        this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
-            this.page = 1;
-            this.filtro.searchText = text;
-            this.cargarPagina(this.page);
         });
     }
 
@@ -97,17 +130,12 @@ export class MovimientosComponent implements OnInit {
     }
 
     private cargarPagina(p: number) {
+        if (!this.tallerId) return;
         if (p < 1 || p > this.totalPages) return;
 
         this.page = p;
-
-        this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: this.buildQueryParams(),
-            replaceUrl: true,
-        });
-
         this.loading = true;
+
         this.stockService.getMovimientos(this.tallerId, p, this.pageSize, this.filtro).subscribe({
             next: (resp) => {
                 this.movimientos = resp.results;
@@ -188,11 +216,17 @@ export class MovimientosComponent implements OnInit {
         if (!Number.isNaN(ps) && ps > 0) this.pageSize = ps;
     }
 
+    ngOnDestroy(): void {
+        this.subAuth?.unsubscribe();
+        this.subSearch?.unsubscribe();
+    }
+
     // IMPORT MOVIMIENTOS MODAL
     openImportarModal() {
         this.loadingArchivo = false;
         this.erroresImport = [];
         this.successMsg = '';
+        this.mostrarDialog = true;
     }
 
     public onFileChange(event: Event): void {
@@ -217,9 +251,11 @@ export class MovimientosComponent implements OnInit {
                 if (res.errores && res.errores.length > 0) {
                     this.erroresImport = res.errores;
                 }
-                if (res.insertados > 0) {
-                    this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
+                if (res.insertados > 0 || res.ignorados > 0) {
+                    this.successMsg = `Se importaron ${res.insertados + res.ignorados} movimientos correctamente`;
                 }
+                this.alertasService.triggerResumenRefresh(this.tallerId);
+                this.closeImportModal(true);
             } else {
                 const res = await firstValueFrom(this.stockService.importarStockInicial(this.tallerId, this.archivo));
                 if (res.errores && res.errores.length > 0) {
@@ -228,6 +264,8 @@ export class MovimientosComponent implements OnInit {
                 if (res.procesados > 0) {
                     this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
                 }
+                this.alertasService.triggerResumenRefresh(this.tallerId);
+                this.closeImportModal(true);
             }
 
             this.loadingArchivo = false;
@@ -240,7 +278,14 @@ export class MovimientosComponent implements OnInit {
     closeImportModal(refresh: boolean = true) {
         this.loadingArchivo = false;
         this.erroresImport = [];
-        this.successMsg = '';
+        this.mostrarDialog = false;
+
+        const el = document.getElementById('importarMovimientosModal');
+        if (el) {
+            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+            modal.hide();
+        }
+
         if (refresh) {
             this.cargarPagina(1);
 

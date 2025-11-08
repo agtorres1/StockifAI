@@ -15,8 +15,8 @@
                         <span class="flex-grow-1 text-start">{{ item.title }}</span>
                         <i class="fas fa-chevron-down ms-auto"></i>
                     </button>
-                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)" 
-                        #collapseDiv [class.show]="isSubItemActive(collapseDiv, item.subItems)">
+                    <div class="collapse" [id]="getCollapseId(item.title).slice(1)" #collapseDiv
+                        [class.show]="isSubItemActive(collapseDiv, item.subItems)">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li *ngFor="let sub of item.subItems" class="">
                                 <a [routerLink]="sub.route" routerLinkActive="active" [state]="{fromMenu: true}"
@@ -46,6 +46,9 @@
             </div>
 
             <div class="header-icons d-flex align-items-center gap-4">
+                <app-selector-taller class="me-1"></app-selector-taller>
+                <div class="vr divider"></div>
+
                 <app-semaforo-alertas class="me-1"></app-semaforo-alertas>
 
                 <div class="vr divider"></div>
@@ -57,7 +60,16 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li>
-                            <a class="dropdown-item pointer" (click)="logout()">Logout</a>
+                            <a class="dropdown-item pointer" (click)="logout()" [class.disabled]="loggingOut">
+                                <span *ngIf="!loggingOut">
+                                    <i class="fas fa-right-from-bracket me-2"></i>
+                                    Cerrar sesión
+                                </span>
+                                <span *ngIf="loggingOut">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Cerrando...
+                                </span>
+                            </a>
                         </li>
                     </ul>
                 </div>

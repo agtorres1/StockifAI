@@ -19,7 +19,7 @@ from catalogo.models import Repuesto
 from d_externo.repositories.dataexterna import obtener_registroentrenamiento_intermitente, \
     obtener_registroentrenamiento_frecuencia_alta
 from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
-from user.models import Taller
+from user.api.models.models import Taller
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=UserWarning)

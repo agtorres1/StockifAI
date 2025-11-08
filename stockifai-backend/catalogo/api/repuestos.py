@@ -6,20 +6,24 @@ from rest_framework.views import APIView
 
 from catalogo.models import Repuesto
 from inventario.api.serializers import RepuestoSerializer
+from user.permissions import PermissionChecker  # ← IMPORTAR
 
 
 class RepuestosListView(APIView):
     """"
     GET /repuestos
-    Devuelve todos los repuestos
-    Query params:
-     - page: int (default 1)
-     - page_size: int (default 10, máx 200)
-     - search_text: str  (numero_pieza | descripcion)
-     - marca_id: int
-     - categoria_id: int
+    Devuelve repuestos según permisos del usuario
     """
+
     def get(self, request):
+        # ===== AGREGAR FILTRO DE PERMISOS =====
+        user = PermissionChecker.get_user_from_session(request)
+
+        queryset = Repuesto.objects.select_related("marca", "categoria")
+        queryset = PermissionChecker.filter_repuestos_queryset(queryset, user)
+        # ===== FIN FILTRO =====
+
+        # Parámetros de paginación
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 10))
 
@@ -27,8 +31,7 @@ class RepuestosListView(APIView):
         marca_id = request.query_params.get("marca_id")
         categoria_id = request.query_params.get("categoria_id")
 
-        queryset = Repuesto.objects.select_related("marca", "categoria")
-
+        # Filtros adicionales
         if marca_id:
             queryset = queryset.filter(marca__id=marca_id)
 
@@ -43,6 +46,7 @@ class RepuestosListView(APIView):
 
         queryset = queryset.order_by("descripcion")
 
+        # Paginación
         paginator = Paginator(queryset, page_size)
         try:
             page_obj = paginator.page(page)

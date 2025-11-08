@@ -1,10 +1,27 @@
+
 @import "leaflet/dist/leaflet.css";
+
 :root {
     --sidebar-bg: #f4f8fa;
     --color-accent: #1ba7b0;
     --color-accent-light: #29d2dc;
     --text-primary: #212529;
 }
+
+/* AGREGAR ESTO PARA QUE FUNCIONE CON ANGULAR ROUTER */
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+app-root {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+/* FIN DE LO AGREGADO */
 
 body {
     min-height: 100vh;
@@ -86,6 +103,34 @@ tbody tr:hover {
     padding-left: 4rem !important;
 }
 
+
+/* ===== ESTILOS PARA AUTH LAYOUT - REGISTRO/LOGIN ===== */
+app-auth-layout {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: block !important;
+    z-index: 1000 !important;
+}
+
+app-register,
+app-login {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: block !important;
+}
+/* ===== FIN ESTILOS AUTH ===== */
+
+
 .icon-success {
     color: var(--bs-green);
 }
@@ -137,3 +182,4 @@ tbody tr:hover {
 .uppercase {
     text-transform: uppercase;
 }
+

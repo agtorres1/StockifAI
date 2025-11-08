@@ -9,7 +9,9 @@ import environ
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
+#DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
+DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
+
 ALLOWED_HOSTS = ["*"] if DEBUG else os.getenv("DJANGO_ALLOWED_HOSTS","").split(",")
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -34,6 +36,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware","django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+   # 'user.middleware.Auth0Middleware',
     #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
@@ -109,6 +112,7 @@ local_database_config = {
     'CONN_HEALTH_CHECKS': _env_bool(os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL')) if os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL') is not None else None,
 }
 
+
 local_options = {
     'connect_timeout': _optional_int(os.getenv('DB_CONNECT_TIMEOUT_LOCAL')),
     'read_timeout': _optional_int(os.getenv('DB_READ_TIMEOUT_LOCAL')),
@@ -135,6 +139,7 @@ if any(value is not None for value in local_pool_options.values()):
 
 DATABASES = {
     'default': _remove_none(aws_database_config if db_target == 'aws' else local_database_config),
+
 }
 
 
@@ -146,8 +151,17 @@ PERMITIR_STOCK_NEGATIVO=os.getenv("PERMITIR_STOCK_NEGATIVO","False").lower() in 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
+    "http://localhost:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+
+SESSION_COOKIE_HTTPONLY = True   # Seguridad: no accesible desde JavaScript
+
+SESSION_COOKIE_AGE = 86400       # 24 horas
+SESSION_SAVE_EVERY_REQUEST = True  # Renueva la sesión en cada petición
+SESSION_COOKIE_SAMESITE = None  # ← Alternativa
+SESSION_COOKIE_SECURE = False
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
@@ -158,11 +172,19 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [],  # desactiva auth temporalmente
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'user.authentication.SessionAuthentication',  # ← AGREGAR ESTO
+    ],
+
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
 }
+
+
+
 
 
 #REST_FRAMEWORK = {
@@ -180,7 +202,6 @@ REST_FRAMEWORK = {
 #        'rest_framework.permissions.AllowAny',
 #    ),
 #}
-
 LOGGING = {
     'version': 1,
     'handlers': {
@@ -189,13 +210,26 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': 'import_debug.log',
         },
+        'console': {
+            'level': 'DEBUG',  # ← CAMBIAR de ERROR a DEBUG
+            'class': 'logging.StreamHandler',
+        },
     },
     'loggers': {
         'django.db.backends': {
             'handlers': ['file'],
             'level': 'DEBUG',
         },
-    }
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',  # ← CAMBIAR de ERROR a DEBUG
+            'propagate': False,
+        },
+    },
+    'root': {  # ← AGREGAR ESTO para capturar todos los prints
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
 }
 
 ##########codigo del auth0
@@ -229,6 +263,5 @@ CRONJOBS = [
 ]
 
 CRONTAB_COMMAND_SUFFIX = '>> /Users/gonzalo/Documents/StockifAI/stockifai-backend/logs/forecast_cron.log 2>&1'
-
 
 

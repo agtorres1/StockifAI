@@ -11,17 +11,18 @@ import {
     shareReplay,
     Subject,
     switchMap,
+    throwError,
     timer,
 } from 'rxjs';
 import { Alerta, NivelAlerta } from '../models/alerta';
 import { AlertasResumen } from '../models/alertas-resumen';
 import { PagedResponse } from '../models/paged-response';
-import { RestService } from './rest.service';
 import { TotalesPorCategoria } from '../models/salud-inventario';
+import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
 export class AlertasService {
-    INTERVAL_TIMING_MS = 60000;
+    INTERVAL_TIMING_MS = 30000;
 
     private resumenRefresh$ = new Subject<number>();
 
@@ -38,6 +39,21 @@ export class AlertasService {
         );
     }
 
+    getKPIsResumen(): Observable<any> {
+        return this.restService.get<any>('kpis/resumen/').pipe(
+            catchError((error) => {
+                if (error.status === 403) {
+                    return of({
+                        tasa_rotacion: { valor: 0, objetivo: 0 },
+                        dias_en_mano: { valor: 0, objetivo: 0 },
+                        dead_stock: { porcentaje: 0, objetivo: 0 },
+                    });
+                }
+                return throwError(() => error);
+            })
+        );
+    }
+
     getAlertas(
         tallerId: number,
         niveles: NivelAlerta[],
@@ -45,7 +61,25 @@ export class AlertasService {
         pageSize: number = 50
     ): Observable<PagedResponse<Alerta>> {
         const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
-        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/alertas/`, params);
+
+        return this.restService.get<PagedResponse<Alerta>>(`talleres/${tallerId}/alertas/`, params).pipe(
+            catchError((error) => {
+                if (error.status === 403) {
+                    // Usuario sin acceso al taller - retorna respuesta vacía
+                    return of({
+                        count: 0,
+                        next: null,
+                        previous: null,
+                        results: [],
+                        page: page, // ← AGREGADO
+                        page_size: pageSize, // ← AGREGADO
+                        total_pages: 0, // ← AGREGADO
+                    } as PagedResponse<Alerta>);
+                }
+                // Re-lanza otros errores para que el componente los maneje
+                return throwError(() => error);
+            })
+        );
     }
 
     getAlertasPorRepuesto(
@@ -57,10 +91,24 @@ export class AlertasService {
     ): Observable<PagedResponse<Alerta>> {
         const params = new HttpParams().set('niveles', niveles.join(',')).set('page', page).set('page_size', pageSize);
 
-        return this.restService.get<PagedResponse<Alerta>>(
-            `talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`,
-            params
-        );
+        return this.restService
+            .get<PagedResponse<Alerta>>(`talleres/${tallerId}/repuestos/${repuestoTallerId}/alertas/`, params)
+            .pipe(
+                catchError((error) => {
+                    if (error.status === 403) {
+                        return of({
+                            count: 0,
+                            next: null,
+                            previous: null,
+                            results: [],
+                            page: page, // ← AGREGADO
+                            page_size: pageSize, // ← AGREGADO
+                            total_pages: 0, // ← AGREGADO
+                        } as PagedResponse<Alerta>);
+                    }
+                    return throwError(() => error);
+                })
+            );
     }
 
     dismissAlerta(alertaId: number) {
@@ -80,7 +128,14 @@ export class AlertasService {
     }
 
     getSaludInventario(tallerId: number): Observable<TotalesPorCategoria[]> {
-        return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`);
+        return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`).pipe(
+            catchError((error) => {
+                if (error.status === 403) {
+                    return of([] as TotalesPorCategoria[]);
+                }
+                return throwError(() => error);
+            })
+        );
     }
 
     private getResumenAlertas(tallerId: number): Observable<AlertasResumen> {
@@ -95,7 +150,16 @@ export class AlertasService {
                 informativo: res?.INFORMATIVO ?? 0,
                 totalUrgente: res?.TOTAL_URGENTE ?? 0,
             })),
-            catchError(() => of({ critico: 0, medio: 0, advertencia: 0, informativo: 0, totalUrgente: 0 }))
+            catchError((error) => {
+                // Para 403 o cualquier error, retorna resumen vacío
+                return of({
+                    critico: 0,
+                    medio: 0,
+                    advertencia: 0,
+                    informativo: 0,
+                    totalUrgente: 0,
+                });
+            })
         );
     }
 }

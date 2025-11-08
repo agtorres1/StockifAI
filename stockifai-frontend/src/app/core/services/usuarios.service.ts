@@ -15,6 +15,9 @@ export class UsuariosService {
     crearUsuario(usuario: Usuario): Observable<Usuario> {
         return this.restService.post<Usuario>(`usuarios/`, usuario);
     }
+    getUsuario(id: number): Observable<Usuario> {
+        return this.restService.get<Usuario>(`usuarios/${id}/`);
+    }
 
     editarUsuario(usuarioId: number, usuario: Usuario): Observable<Usuario> {
         return this.restService.put<Usuario>(`usuarios/${usuarioId}/`, usuario);

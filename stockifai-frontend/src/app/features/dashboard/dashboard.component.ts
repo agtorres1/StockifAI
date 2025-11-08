@@ -1,22 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChartOptions } from 'chart.js';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { Alerta } from '../../core/models/alerta';
 import { RepuestoTaller } from '../../core/models/repuesto-taller';
 import { SaludInventarioChartData, TotalesPorCategoria } from '../../core/models/salud-inventario';
 import { AlertasService } from '../../core/services/alertas.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
     tallerId: number = 1;
 
     loadingUrgentes: boolean = false;
     errorUrgentes: string = '';
+    sinAccesoTaller: boolean = false; // ← NUEVO
 
     page: number = 1;
     pageSize: number = 5;
@@ -26,12 +28,12 @@ export class DashboardComponent implements OnInit {
     exportando: boolean = false;
 
     // KPIS
-    kpiRotacion = 6.4;
-    objRotacion = 8;
-    kpiDiasEnMano = 43;
-    objDiasEnMano = 35;
-    kpiDeadStock = 0.12;
-    objDeadStock = 0.05;
+    kpiRotacion = 0;
+    objRotacion = 0;
+    kpiDiasEnMano = 0;
+    objDiasEnMano = 0;
+    kpiDeadStock = 0;
+    objDeadStock = 0;
     loadingKpis: boolean = false;
 
     // Salud de Inventario
@@ -61,11 +63,19 @@ export class DashboardComponent implements OnInit {
 
     intermediaRotacionPercentage: number = 0;
 
-    constructor(private alertasService: AlertasService, private router: Router) {}
+    sub: Subscription | undefined;
+
+    constructor(private alertasService: AlertasService, private authService: AuthService, private router: Router) {}
 
     ngOnInit(): void {
-        this.cargarPagina(this.page);
-        this.cargarSaludInventario();
+        this.sub = this.authService.activeTallerId$.subscribe((tallerId) => {
+            if (tallerId) {
+                this.tallerId = tallerId;
+                this.cargarKPIs();
+                this.cargarPagina(this.page);
+                this.cargarSaludInventario();
+            }
+        });
     }
 
     viewForecast(repuestoStock: RepuestoTaller) {
@@ -76,7 +86,33 @@ export class DashboardComponent implements OnInit {
             },
         });
     }
+    cargarKPIs() {
+        this.loadingKpis = true;
+        this.alertasService.getKPIsResumen().subscribe({
+            next: (data) => {
+                // Mapear los datos del backend a las variables del componente
+                this.kpiRotacion = data.tasa_rotacion?.valor ?? 0;
+                this.objRotacion = data.tasa_rotacion?.objetivo ?? 0;
 
+                this.kpiDiasEnMano = data.dias_en_mano?.valor ?? 0;
+                this.objDiasEnMano = data.dias_en_mano?.objetivo ?? 0;
+
+                this.kpiDeadStock = data.dead_stock?.porcentaje ? data.dead_stock.porcentaje / 100 : 0;
+                this.objDeadStock = data.dead_stock?.objetivo ? data.dead_stock.objetivo / 100 : 0;
+
+                this.loadingKpis = false;
+            },
+            error: (err) => {
+                console.error('Error al cargar KPIs:', err);
+                if (err?.status === 403) {
+                    this.sinAccesoTaller = true;
+                }
+                this.loadingKpis = false;
+            },
+        });
+    }
+
+    // ← MÉTODO ACTUALIZADO
     private cargarPagina(p: number) {
         if (p < 1 || (this.totalPages > 0 && p > this.totalPages)) return;
 
@@ -89,14 +125,23 @@ export class DashboardComponent implements OnInit {
                 this.totalPages = Math.ceil(res.count / this.pageSize);
                 this.loadingUrgentes = false;
                 this.errorUrgentes = '';
+                this.sinAccesoTaller = false; // Reset en caso de éxito
             },
             error: (err) => {
-                this.errorUrgentes = err?.message ?? 'Error al cargar';
                 this.loadingUrgentes = false;
+
+                // Manejo específico del 403
+                if (err?.status === 403) {
+                    this.sinAccesoTaller = true;
+                    this.errorUrgentes = 'No tienes acceso a este taller. Contacta al administrador.';
+                } else {
+                    this.errorUrgentes = err?.message ?? 'Error al cargar las alertas urgentes';
+                }
             },
         });
     }
 
+    // ← MÉTODO ACTUALIZADO
     async cargarSaludInventario() {
         try {
             this.loadingSaludInventario = true;
@@ -127,8 +172,18 @@ export class DashboardComponent implements OnInit {
             this.actualizarSaludInventarioResumen();
 
             this.loadingSaludInventario = false;
-        } catch (error) {
-            this.saludInventarioError = true;
+            this.saludInventarioError = false; // Reset en caso de éxito
+        } catch (error: any) {
+            this.loadingSaludInventario = false;
+
+            // Manejo específico del 403
+            if (error?.status === 403) {
+                this.sinAccesoTaller = true;
+                console.warn('Usuario sin acceso al taller para salud de inventario');
+            } else {
+                this.saludInventarioError = true;
+                console.error('Error al cargar salud de inventario:', error);
+            }
         }
     }
 
@@ -142,9 +197,15 @@ export class DashboardComponent implements OnInit {
                 this.saveBlob(blob, filename);
                 this.exportando = false;
             },
-            error: () => {
+            error: (err) => {
                 this.exportando = false;
-                this.errorUrgentes = 'No se pudo exportar el Excel.';
+
+                // Manejo específico del 403
+                if (err?.status === 403) {
+                    this.errorUrgentes = 'No tienes permisos para exportar este reporte.';
+                } else {
+                    this.errorUrgentes = 'No se pudo exportar el Excel.';
+                }
             },
         });
     }
@@ -246,6 +307,10 @@ export class DashboardComponent implements OnInit {
         items.push(total);
 
         return items;
+    }
+
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe();
     }
 
     // Resumen de Salud de inventario
