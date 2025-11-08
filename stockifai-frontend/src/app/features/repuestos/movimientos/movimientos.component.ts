@@ -4,6 +4,7 @@ import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject, 
 import { Deposito } from '../../../core/models/deposito';
 import { Movimiento } from '../../../core/models/movimiento';
 import { Taller } from '../../../core/models/taller';
+import { AlertasService } from '../../../core/services/alertas.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TalleresService } from '../../../core/services/talleres.service';
@@ -52,6 +53,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
         private talleresService: TalleresService,
         private route: ActivatedRoute,
         private authService: AuthService,
+        private alertasService: AlertasService,
         private router: Router
     ) {
         this.titleService.setTitle('Movimientos');
@@ -246,9 +248,10 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                 if (res.errores && res.errores.length > 0) {
                     this.erroresImport = res.errores;
                 }
-                if (res.insertados > 0) {
-                    this.successMsg = `Se importaron ${res.insertados} movimientos correctamente`;
+                if (res.insertados > 0 || res.ignorados > 0) {
+                    this.successMsg = `Se importaron ${res.insertados+res.ignorados} movimientos correctamente`;
                 }
+                this.alertasService.triggerResumenRefresh(this.tallerId);
             } else {
                 const res = await firstValueFrom(this.stockService.importarStockInicial(this.tallerId, this.archivo));
                 if (res.errores && res.errores.length > 0) {
@@ -257,6 +260,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                 if (res.procesados > 0) {
                     this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
                 }
+                this.alertasService.triggerResumenRefresh(this.tallerId);
             }
 
             this.loadingArchivo = false;
