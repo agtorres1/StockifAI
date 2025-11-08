@@ -546,7 +546,7 @@ class KPIsViewSet(viewsets.ViewSet):
         return None
 
     def _calcular_tasa_rotacion(self, user):
-        """Calcular tasa de rotación de los ÚLTIMOS 3 MESES"""
+        """Calcular tasa de rotación de los ÚLTIMOS 3 MESES - OPTIMIZADO"""
         hoy = timezone.now()
         fecha_inicio = hoy - timedelta(days=90)
         fecha_fin = hoy
@@ -565,30 +565,33 @@ class KPIsViewSet(viewsets.ViewSet):
         else:
             return None
 
+        # ✅ OPTIMIZACIÓN: select_related para evitar queries adicionales
         movimientos_egreso = Movimiento.objects.filter(
             movimiento_filter,
             tipo='EGRESO',
             fecha__gte=fecha_inicio,
             fecha__lte=fecha_fin
-        ).select_related('stock_por_deposito__repuesto_taller')
+        ).select_related('stock_por_deposito__repuesto_taller')  # ← AGREGADO
 
-        ventas_totales = Decimal('0')
+        # ✅ OPTIMIZACIÓN: Calcular en la base de datos con annotate
+        ventas_totales = movimientos_egreso.aggregate(
+            total=Sum(
+                F('cantidad') * F('stock_por_deposito__repuesto_taller__precio'),
+                output_field=DecimalField()
+            )
+        )['total'] or Decimal('0')
 
-        for mov in movimientos_egreso:
-            precio = mov.stock_por_deposito.repuesto_taller.precio
-            if precio:
-                ventas_totales += mov.cantidad * precio
-
+        # ✅ OPTIMIZACIÓN: select_related y calcular en la BD
         stocks = StockPorDeposito.objects.filter(
             stock_filter
-        ).select_related('repuesto_taller')
+        ).select_related('repuesto_taller')  # ← AGREGADO
 
-        stock_valor = Decimal('0')
-
-        for stock in stocks:
-            precio = stock.repuesto_taller.precio
-            if precio:
-                stock_valor += stock.cantidad * precio
+        stock_valor = stocks.aggregate(
+            total=Sum(
+                F('cantidad') * F('repuesto_taller__precio'),
+                output_field=DecimalField()
+            )
+        )['total'] or Decimal('0')
 
         stock_promedio = stock_valor
         tasa_rotacion = float(ventas_totales) / float(stock_promedio) if stock_promedio > 0 else 0
@@ -596,7 +599,7 @@ class KPIsViewSet(viewsets.ViewSet):
         return {'tasa_rotacion': round(tasa_rotacion, 2)}
 
     def _calcular_dias_en_mano(self, user):
-        """Calcular días en mano de los ÚLTIMOS 3 MESES"""
+        """Calcular días en mano de los ÚLTIMOS 3 MESES - OPTIMIZADO"""
         hoy = timezone.now()
         fecha_inicio = hoy - timedelta(days=90)
         fecha_fin = hoy
@@ -616,30 +619,30 @@ class KPIsViewSet(viewsets.ViewSet):
         else:
             return None
 
+        # ✅ OPTIMIZACIÓN: Calcular ventas_totales en una sola query
         movimientos_egreso = Movimiento.objects.filter(
             movimiento_filter,
             tipo='EGRESO',
             fecha__gte=fecha_inicio,
             fecha__lte=fecha_fin
-        ).select_related('stock_por_deposito__repuesto_taller')
+        )
 
-        ventas_totales = Decimal('0')
+        ventas_totales = movimientos_egreso.aggregate(
+            total=Sum(
+                F('cantidad') * F('stock_por_deposito__repuesto_taller__precio'),
+                output_field=DecimalField()
+            )
+        )['total'] or Decimal('0')
 
-        for mov in movimientos_egreso:
-            precio = mov.stock_por_deposito.repuesto_taller.precio
-            if precio:
-                ventas_totales += mov.cantidad * precio
-
-        stocks = StockPorDeposito.objects.filter(
+        # ✅ OPTIMIZACIÓN: Calcular stock_valor en una sola query
+        stock_valor = StockPorDeposito.objects.filter(
             stock_filter
-        ).select_related('repuesto_taller')
-
-        stock_valor = Decimal('0')
-
-        for stock in stocks:
-            precio = stock.repuesto_taller.precio
-            if precio:
-                stock_valor += stock.cantidad * precio
+        ).aggregate(
+            total=Sum(
+                F('cantidad') * F('repuesto_taller__precio'),
+                output_field=DecimalField()
+            )
+        )['total'] or Decimal('0')
 
         stock_promedio = stock_valor
         ventas_diarias = float(ventas_totales) / dias_periodo if dias_periodo > 0 else 0
@@ -648,7 +651,7 @@ class KPIsViewSet(viewsets.ViewSet):
         return {'dias_en_mano': round(dias_en_mano, 1)}
 
     def _calcular_dead_stock(self, user, objetivo_kpi):
-        """Calcular porcentaje de stock muerto"""
+        """Calcular porcentaje de stock muerto - OPTIMIZADO"""
         fecha_limite = timezone.now() - timedelta(days=objetivo_kpi.dias_dead_stock)
 
         if user.taller:
@@ -663,31 +666,27 @@ class KPIsViewSet(viewsets.ViewSet):
         else:
             return None
 
-        total_items = StockPorDeposito.objects.filter(
-            stock_filter,
-            cantidad__gt=0
-        ).count()
-
+        # ✅ OPTIMIZACIÓN: Prefetch de movimientos para evitar N+1
         stocks = StockPorDeposito.objects.filter(
             stock_filter,
             cantidad__gt=0
-        ).select_related('repuesto_taller__repuesto')
+        ).select_related('repuesto_taller__repuesto').prefetch_related(
+            Prefetch(
+                'movimiento_set',
+                queryset=Movimiento.objects.filter(tipo='EGRESO').order_by('-fecha'),
+                to_attr='egresos_prefetched'
+            )
+        )
 
+        total_items = stocks.count()
         items_muertos = 0
 
         for stock in stocks:
-            tiene_ventas = Movimiento.objects.filter(
-                stock_por_deposito=stock,
-                tipo='EGRESO'
-            ).exists()
+            egresos = getattr(stock, 'egresos_prefetched', [])
 
-            if tiene_ventas:
-                ultimo_egreso = Movimiento.objects.filter(
-                    stock_por_deposito=stock,
-                    tipo='EGRESO'
-                ).order_by('-fecha').first()
-
-                if ultimo_egreso and ultimo_egreso.fecha < fecha_limite:
+            if egresos:
+                ultimo_egreso = egresos[0]  # Ya están ordenados por -fecha
+                if ultimo_egreso.fecha < fecha_limite:
                     items_muertos += 1
 
         porcentaje = round((items_muertos / total_items * 100), 1) if total_items > 0 else 0
