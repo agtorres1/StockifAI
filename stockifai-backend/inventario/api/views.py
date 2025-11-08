@@ -918,10 +918,10 @@ class DetalleForecastingView(APIView):
         ]
 
         # Extrapolación simple para las semanas 5 y 6
-        forecast_base_data = predicciones_db + [
+        """forecast_base_data = predicciones_db + [
             predicciones_db[-1] + 5 if predicciones_db else 5,
             predicciones_db[-1] + 2 if predicciones_db else 2
-        ]
+        ]"""
 
         # Calculamos los días de stock restantes (MOS * 7)
         mos_decimal = calcular_mos(Decimal(stock_actual), [Decimal(p) for p in predicciones_db])
@@ -1422,7 +1422,21 @@ class ExportarUrgentesView(APIView):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
         response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
-        df.to_excel(response, index=False)
+
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            sheet_name = 'Repuestos_Urgentes'
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            workbook = writer.book
+            worksheet = writer.sheets[sheet_name]
+            for col in worksheet.columns:
+                max_length = 0
+                column_letter = col[0].column_letter
+                # Calcular el ancho máximo del contenido
+                for cell in col:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                worksheet.column_dimensions[column_letter].width = max_length + 4
+
         return response
 
 

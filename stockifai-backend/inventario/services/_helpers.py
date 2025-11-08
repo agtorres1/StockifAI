@@ -21,10 +21,28 @@ except ImportError:
 
 def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
     """
+       Devuelve la suma de las primeras 4 semanas de la lista 'weeks'.
+       Si hay menos de 4 semanas, suma todas las disponibles.
+       """
+    if not weeks:
+        return Decimal(0)
+
+    primeras_4 = weeks[:4]
+    predicciones_4 = Decimal(sum(Decimal(w or 0) for w in primeras_4))
+    if predicciones_4 == Decimal(0):
+        return None
+    else  :
+        return Decimal(stock/sum(Decimal(w or 0) for w in primeras_4))
+
+
+
+
+    """
     Calcula el MOS (semanas de cobertura):
     - Consume stock semana a semana.
     - Si la demanda de una semana es 0, se usa el promedio.
     - Si todas las predicciones son 0/None, devuelve None.
+    """
     """
     stock = Decimal(stock or 0)
 
@@ -51,7 +69,8 @@ def calcular_mos(stock: Decimal, weeks: list[Decimal]) -> Decimal:
     if restante > 0:
         semanas += restante / tail_rate
 
-    return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return semanas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)"""
+
 
 def compute_trend_line(series: List[Union[float, int, None]]) -> List[float]:
     """

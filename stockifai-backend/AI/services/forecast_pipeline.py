@@ -43,9 +43,17 @@ def ejecutar_forecast_talleres(fecha_lunes: datetime) -> Dict[str, Any]:
     return {"fecha_lunes": fecha_lunes, "talleres": ids, "ok": outputs, "errores": errores}
 
 
+def _normalize_fecha_lunes(fecha_lunes: [datetime, str]) -> str:
+    # 1. Asegurar que la entrada sea un objeto datetime (o date)
+    if isinstance(fecha_lunes, str):
+        # Asume el formato "YYYY-MM-DD" del request POST
+        fecha_lunes = datetime.strptime(fecha_lunes, "%Y-%m-%d").date()
 
-def _normalize_fecha_lunes(fecha_lunes: datetime) -> str:
     # Mover al lunes anterior si no es lunes
+    # weekday() devuelve 0 para lunes, 1 para martes, ..., 6 para domingo.
     if fecha_lunes.weekday() != 0:
+        # Resta el número de días transcurridos desde el lunes.
         fecha_lunes -= timedelta(days=fecha_lunes.weekday())
+
+    # Devuelve la fecha normalizada como string
     return fecha_lunes.strftime("%Y-%m-%d")
