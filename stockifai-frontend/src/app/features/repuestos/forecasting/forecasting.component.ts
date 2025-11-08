@@ -1,9 +1,10 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Params, Router } from '@angular/router';
 import { ChartData, ChartDataset, ChartOptions } from 'chart.js';
-import { debounceTime, distinctUntilChanged, filter, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, firstValueFrom, Subject, Subscription } from 'rxjs';
 import { ForecastResponse, GraficoCobertura, GraficoDemanda } from '../../../core/models/forecast-response';
 import { RepuestoStock } from '../../../core/models/repuesto-stock';
+import { AuthService } from '../../../core/services/auth.service';
 import { RepuestosService } from '../../../core/services/repuestos.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
@@ -42,10 +43,14 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     repuesto?: RepuestoStock;
     forecastRepuesto?: ForecastResponse;
 
+    private searchSub?: Subscription;
+    private authSub?: Subscription;
+
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
         private repuestosService: RepuestosService,
+        private authService: AuthService,
         private route: ActivatedRoute,
         private router: Router
     ) {
@@ -53,29 +58,23 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.loading = true;
         this.getQueryParams();
 
-        forkJoin({
-            forecast: this.stockService.getForecastingList(this.tallerId, this.page, this.pageSize, this.filtro),
-        }).subscribe({
-            next: ({ forecast }) => {
-                this.forecast = forecast.results.map((i) => this.stockService.procesarRepuestoStock(i));
-                this.totalPages = Math.ceil(forecast.count / this.pageSize);
+        this.authSub = this.authService.activeTallerId$.subscribe((id) => {
+            if (!id) {
+                this.forecast = [];
+                this.totalPages = 0;
                 this.loading = false;
-                this.errorMessage = '';
-
-                if (this.loadWithDetails && this.forecast.length === 1) {
-                    this.viewDetail(this.forecast[0]);
-                }
-            },
-            error: (error) => {
-                this.errorMessage = error?.message ?? 'Error al cargar';
-                this.loading = false;
-            },
+                return;
+            }
+            this.tallerId = id;
+            this.errorMessage = '';
+            
+            this.cargarPagina(this.page || 1);
+            this.closeDetail();
         });
 
-        this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
+        this.searchSub = this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
             this.page = 1;
             this.filtro.searchText = text;
             this.cargarPagina(this.page);
@@ -95,8 +94,8 @@ export class ForecastingComponent implements OnInit, OnDestroy {
                         this.navFromMenu = false;
                         this.filtro = { searchText: '' };
                         this.page = 1;
-                        this.cargarPagina(1);
                         this.repuesto = undefined;
+                        this.cargarPagina(1);
                     }
                 }
             });
@@ -111,6 +110,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     }
 
     private cargarPagina(p: number) {
+        if (!this.tallerId) return;
         if (p < 1 || (this.totalPages > 0 && p > this.totalPages)) return;
 
         this.page = p;
@@ -122,13 +122,19 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         });
 
         this.loading = true;
+
         this.stockService.getForecastingList(this.tallerId, p, this.pageSize, this.filtro).subscribe({
             next: (resp) => {
-                this.forecast = resp.results.map((i) => this.stockService.procesarRepuestoStock(i));
-                this.totalPages = Math.ceil(resp.count / this.pageSize);
+                this.forecast = (resp.results || []).map((i) => this.stockService.procesarRepuestoStock(i));
+                const count = resp.count ?? this.forecast.length;
+                this.totalPages = Math.max(1, Math.ceil(count / this.pageSize));
                 this.page = p;
                 this.loading = false;
                 this.errorMessage = '';
+
+                if (this.loadWithDetails && this.forecast.length === 1) {
+                    this.viewDetail(this.forecast[0]);
+                }
             },
             error: (err) => {
                 this.errorMessage = err?.message ?? 'Error al cargar';
@@ -185,10 +191,6 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         this.repuesto = undefined;
     }
 
-    ngOnDestroy(): void {
-        this.navigationSub?.unsubscribe();
-    }
-
     goPreviousPage() {
         this.cargarPagina(this.page - 1);
     }
@@ -225,6 +227,12 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         items.push(total);
 
         return items;
+    }
+
+    ngOnDestroy(): void {
+        this.navigationSub?.unsubscribe();
+        this.searchSub?.unsubscribe();
+        this.authSub?.unsubscribe();
     }
 
     // GRAFICO DE COBERTURA

@@ -8,6 +8,7 @@ import { RepuestoTaller } from '../../../core/models/repuesto-taller';
 import { RepuestosService } from '../../../core/services/repuestos.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TitleService } from '../../../core/services/title.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-stock',
@@ -36,11 +37,13 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     navFromMenu: boolean = false;
 
     private search$ = new Subject<string>();
-
+    private authSub?: Subscription;
+    
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
         private repuestosService: RepuestosService,
+        private authService: AuthService,
         private router: Router,
         private route: ActivatedRoute
     ) {
@@ -48,25 +51,39 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        console.log('stock component');
         this.loading = true;
         this.getQueryParams();
 
-        forkJoin({
-            stock: this.stockService.getStock(this.tallerId, this.page, this.pageSize, this.filtro),
-            categorias: this.repuestosService.getCategorias(),
-        }).subscribe({
-            next: ({ stock, categorias }) => {
-                this.stock = stock.results.map((i) => this.stockService.procesarRepuestoStock(i));
-                this.totalPages = Math.ceil(stock.count / this.pageSize);
-                this.categorias = categorias;
+        this.authSub = this.authService.activeTallerId$.subscribe((id) => {
+            if (!id) {
+                this.stock = [];
+                this.categorias = [];
+                this.totalPages = 0;
                 this.loading = false;
-                this.errorMessage = '';
-            },
-            error: (error) => {
-                this.errorMessage = error?.message ?? 'Error al cargar';
-                this.loading = false;
-            },
+                return;
+            }
+
+            this.tallerId = id;
+            this.errorMessage = '';
+            this.loading = true;
+
+            forkJoin({
+                stock: this.stockService.getStock(this.tallerId, this.page || 1, this.pageSize, this.filtro),
+                categorias: this.repuestosService.getCategorias(),
+            }).subscribe({
+                next: ({ stock, categorias }) => {
+                    this.stock = (stock.results || []).map((i) => this.stockService.procesarRepuestoStock(i));
+                    const count = stock.count ?? this.stock.length;
+                    this.totalPages = Math.max(1, Math.ceil(count / this.pageSize));
+                    this.categorias = categorias;
+                    this.loading = false;
+                    this.errorMessage = '';
+                },
+                error: (error) => {
+                    this.errorMessage = error?.message ?? 'Error al cargar';
+                    this.loading = false;
+                },
+            });
         });
 
         this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
@@ -131,7 +148,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
     goToLocalizador(repuestoStock: RepuestoTaller) {
         this.router.navigate(['/repuestos/localizador'], {
             queryParams: {
-                search: repuestoStock.repuesto.numero_pieza
+                search: repuestoStock.repuesto.numero_pieza,
             },
         });
     }
@@ -202,6 +219,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.navigationSub?.unsubscribe();
+        this.authSub?.unsubscribe();
     }
 
     get paginationItems(): Array<number | '…'> {

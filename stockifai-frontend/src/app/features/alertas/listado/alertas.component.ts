@@ -1,9 +1,19 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { firstValueFrom, of, Subject, Subscription } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    startWith,
+    switchMap,
+    tap,
+    withLatestFrom,
+} from 'rxjs/operators';
 import { Alerta, NivelAlerta } from '../../../core/models/alerta';
 import { AlertasService } from '../../../core/services/alertas.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { TitleService } from '../../../core/services/title.service';
 
 @Component({
@@ -34,6 +44,8 @@ export class AlertasComponent implements OnInit, OnDestroy {
     repuestoNumero?: string | null;
     repuestoDescripcion?: string | null;
 
+    private authSub?: Subscription;
+
     private NIVEL_VALUES: NivelAlerta[] = ['CRITICO', 'ADVERTENCIA', 'INFORMATIVO'];
 
     niveles: Array<{ key: NivelAlerta; label: string; class: string }> = [
@@ -42,7 +54,13 @@ export class AlertasComponent implements OnInit, OnDestroy {
         { key: 'INFORMATIVO', label: 'Informativo', class: 'informativo' },
     ];
 
-    constructor(private alertasService: AlertasService, private route: ActivatedRoute, private router: Router, private titleService: TitleService) {
+    constructor(
+        private alertasService: AlertasService,
+        private route: ActivatedRoute,
+        private router: Router,
+        private titleService: TitleService,
+        private authService: AuthService
+    ) {
         this.titleService.setTitle('Alertas');
     }
 
@@ -60,11 +78,16 @@ export class AlertasComponent implements OnInit, OnDestroy {
 
         this.dataSub = this.cambiosFiltros$
             .pipe(
+                withLatestFrom(
+                    this.authService.activeTallerId$.pipe(startWith(this.authService.getActiveTallerId() ?? null))
+                ),
+                map(([set, tallerId]) => ({ set, tallerId })),
+
                 debounceTime(600),
 
-                distinctUntilChanged((a, b) => this.setKey(a) === this.setKey(b)),
+                distinctUntilChanged((a, b) => this.setKey(a.set) === this.setKey(b.set) && a.tallerId === b.tallerId),
 
-                tap((set) => this.writeToUrlFrom(set)),
+                tap(({ set }) => this.writeToUrlFrom(set)),
                 tap(() => {
                     this.loading = true;
                     this.errorMessage = '';
@@ -74,19 +97,23 @@ export class AlertasComponent implements OnInit, OnDestroy {
                     this.loadedIds.clear();
                 }),
 
-                switchMap((set) => {
+                switchMap(({ set, tallerId }) => {
                     const niveles = Array.from(set);
                     const seq = ++this.reqSeq;
 
+                    if (!tallerId) {
+                        return of({ kind: 'err' as const, err: new Error('Taller no seleccionado'), seq });
+                    }
+
                     const request$ = this.repuestoTallerId
                         ? this.alertasService.getAlertasPorRepuesto(
-                              this.tallerId,
-                              this.repuestoTallerId,
+                              tallerId,
+                              this.repuestoTallerId!,
                               niveles,
                               this.page,
                               this.pageSize
                           )
-                        : this.alertasService.getAlertas(this.tallerId, niveles, this.page, this.pageSize);
+                        : this.alertasService.getAlertas(tallerId, niveles, this.page, this.pageSize);
 
                     return request$.pipe(
                         map((res) => ({ kind: 'ok' as const, res, seq })),
@@ -104,7 +131,7 @@ export class AlertasComponent implements OnInit, OnDestroy {
                 }
 
                 const res = msg.res;
-                const nuevos = (res?.results ?? []).filter((a) => {
+                const nuevos = (res?.results ?? []).filter((a: Alerta) => {
                     if (this.loadedIds.has(a.id)) return false;
                     this.loadedIds.add(a.id);
                     return true;
@@ -116,7 +143,28 @@ export class AlertasComponent implements OnInit, OnDestroy {
                 this.loading = false;
             });
 
-        this.cambiosFiltros$.next(new Set(this.nivelesSeleccionados));
+        this.authSub = this.authService.activeTallerId$.subscribe((id) => {
+            if (!id) {
+                this.alertas = [];
+                this.loadedIds.clear();
+                this.page = 1;
+                this.hasMore = false;
+                this.loading = false;
+                this.errorMessage = '';
+                return;
+            }
+
+            this.tallerId = id;
+            this.errorMessage = '';
+
+            this.page = 1;
+            this.hasMore = true;
+            this.loadedIds.clear();
+
+            this.reqSeq++;
+
+            this.cambiosFiltros$.next(new Set(this.nivelesSeleccionados));
+        });
     }
 
     toggleNivel(nivel: NivelAlerta) {
@@ -228,5 +276,6 @@ export class AlertasComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.dataSub?.unsubscribe();
+        this.authSub?.unsubscribe();
     }
 }
