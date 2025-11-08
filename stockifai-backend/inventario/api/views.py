@@ -464,10 +464,10 @@ class DetalleForecastingView(APIView):
         ]
 
         # Extrapolación simple para las semanas 5 y 6
-        forecast_base_data = predicciones_db + [
+        """forecast_base_data = predicciones_db + [
             predicciones_db[-1] + 5 if predicciones_db else 5,
             predicciones_db[-1] + 2 if predicciones_db else 2
-        ]
+        ]"""
 
         # Calculamos los días de stock restantes (MOS * 7)
         mos_decimal = calcular_mos(Decimal(stock_actual), [Decimal(p) for p in predicciones_db])
