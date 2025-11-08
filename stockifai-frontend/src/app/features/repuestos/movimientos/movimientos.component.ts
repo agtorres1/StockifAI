@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
@@ -9,6 +9,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { StockService } from '../../../core/services/stock.service';
 import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
+
+declare var bootstrap: any;
 
 @Component({
     selector: 'app-movimientos',
@@ -46,7 +48,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
     private subSearch?: Subscription;
 
     stockInicialCargado: boolean = true;
-
+    
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
@@ -224,6 +226,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
         this.loadingArchivo = false;
         this.erroresImport = [];
         this.successMsg = '';
+        this.mostrarDialog = true;
     }
 
     public onFileChange(event: Event): void {
@@ -249,9 +252,10 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                     this.erroresImport = res.errores;
                 }
                 if (res.insertados > 0 || res.ignorados > 0) {
-                    this.successMsg = `Se importaron ${res.insertados+res.ignorados} movimientos correctamente`;
+                    this.successMsg = `Se importaron ${res.insertados + res.ignorados} movimientos correctamente`;
                 }
                 this.alertasService.triggerResumenRefresh(this.tallerId);
+                this.closeImportModal(true);
             } else {
                 const res = await firstValueFrom(this.stockService.importarStockInicial(this.tallerId, this.archivo));
                 if (res.errores && res.errores.length > 0) {
@@ -261,6 +265,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                     this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
                 }
                 this.alertasService.triggerResumenRefresh(this.tallerId);
+                this.closeImportModal(true);
             }
 
             this.loadingArchivo = false;
@@ -273,7 +278,14 @@ export class MovimientosComponent implements OnInit, OnDestroy {
     closeImportModal(refresh: boolean = true) {
         this.loadingArchivo = false;
         this.erroresImport = [];
-        this.successMsg = '';
+        this.mostrarDialog = false;
+
+        const el = document.getElementById('importarMovimientosModal');
+        if (el) {
+            const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+            modal.hide();
+        }
+
         if (refresh) {
             this.cargarPagina(1);
 
