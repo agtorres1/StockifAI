@@ -149,12 +149,14 @@
                 </button>
             </div>
 
-            <div *ngIf="loadingUrgentes" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
+            <div *ngIf="loadingUrgentes"
+                class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
                 <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
                 <span>Cargando…</span>
             </div>
 
-            <div *ngIf="errorUrgentes && !loadingUrgentes" class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            <div *ngIf="errorUrgentes && !loadingUrgentes"
+                class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
                 <span class="text-sm">{{ errorUrgentes }}</span>
             </div>
 
@@ -183,7 +185,8 @@
                                 <div class="d-flex flex-column">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="fw-bold">{{ alerta.repuesto_taller.repuesto.numero_pieza }}</span>
-                                        <span class="text-muted">{{ alerta.repuesto_taller.repuesto.descripcion }}</span>
+                                        <span class="text-muted">{{ alerta.repuesto_taller.repuesto.descripcion
+                                            }}</span>
                                         <span class="badge rounded-pill"
                                             [ngClass]="(alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.css">
                                             {{ (alerta.repuesto_taller.frecuencia! | frecuenciaRotacion)?.label ||
@@ -258,6 +261,29 @@
 
 
     <div class="card p-3">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="fa-solid fa-gauge me-2"></i>
+                Salud de Inventario
+            </h5>
+
+            <button class="btn btn-sm btn-outline-success" [disabled]="exportando"
+                (click)="exportarSaludInventario()">
+                <span *ngIf="!exportandoSaludInventario">
+                    <i class="fa-solid fa-file-excel me-1"></i> Exportar
+                </span>
+                <span *ngIf="exportandoSaludInventario">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Generando…
+                </span>
+            </button>
+        </div>
+
+        <div *ngIf="errorSaludInventario && !loadingSaludInventario"
+            class="alert alert-danger alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            <span class="text-sm">{{ errorSaludInventario }}</span>
+        </div>
+
         <div class="row g-3 text-center">
             <div class="col-12 col-md-6 col-lg-3">
                 <app-gauge-chart [label]="'Stock muerto'" [porcentaje]="deadStockPercentage" [total]="deadStockTotal"
@@ -266,8 +292,9 @@
             </div>
 
             <div class="col-12 col-md-6 col-lg-3">
-                <app-gauge-chart [label]="'Alta Rotación'" [porcentaje]="altaRotacionPercentage" [total]="altaRotacionTotal"
-                    [loading]="loadingSaludInventario" [color]="altaRotacionColor" [iconClass]="altaRotacionIcon">
+                <app-gauge-chart [label]="'Alta Rotación'" [porcentaje]="altaRotacionPercentage"
+                    [total]="altaRotacionTotal" [loading]="loadingSaludInventario" [color]="altaRotacionColor"
+                    [iconClass]="altaRotacionIcon">
                 </app-gauge-chart>
             </div>
 
@@ -303,12 +330,14 @@
                     </ng-template>
                 </div>
 
-                <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end me-4" *ngIf="!loadingSaludInventario">
+                <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end me-4"
+                    *ngIf="!loadingSaludInventario">
                     <div
                         class="sfa-health__score d-flex align-items-center gap-4 w-100 justify-content-between justify-content-lg-end">
                         <div class="text-end me-2">
                             <div class="sfa-health__pct fw-bold mb-0">{{ saludGeneral | number:'1.0-0' }}%</div>
-                            <div class="fw-semibold sfa-health__label" [style.color]="saludColorText">{{ saludLabel }}</div>
+                            <div class="fw-semibold sfa-health__label" [style.color]="saludColorText">{{ saludLabel }}
+                            </div>
                         </div>
                         <i [class]="saludIcon" [style.color]="saludColor" class="sfa-health__icon"></i>
                     </div>

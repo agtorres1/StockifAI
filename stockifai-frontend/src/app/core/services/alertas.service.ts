@@ -127,6 +127,10 @@ export class AlertasService {
         return this.restService.getBlobResponse(`talleres/${tallerId}/exportar-urgentes/`);
     }
 
+    exportarReporteSaludInventario(tallerId: number): Observable<HttpResponse<Blob>> {
+        return this.restService.getBlobResponse(`talleres/${tallerId}/salud-inventario/exportar/`);
+    }
+
     getSaludInventario(tallerId: number): Observable<TotalesPorCategoria[]> {
         return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`).pipe(
             catchError((error) => {

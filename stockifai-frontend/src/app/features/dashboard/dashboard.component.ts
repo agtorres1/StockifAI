@@ -18,6 +18,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     loadingUrgentes: boolean = false;
     errorUrgentes: string = '';
+    errorSaludInventario: string = '';
     sinAccesoTaller: boolean = false; // ← NUEVO
 
     page: number = 1;
@@ -26,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     listaUrgeComprar: Alerta[] = [];
     exportando: boolean = false;
+    exportandoSaludInventario: boolean = false;
 
     // KPIS
     kpiRotacion = 0;
@@ -210,6 +212,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
 
+    exportarSaludInventario() {
+        this.exportandoSaludInventario = true;
+        this.alertasService.exportarReporteSaludInventario(this.tallerId).subscribe({
+            next: (res) => {
+                const blob = res.body!;
+                const cd = res.headers.get('Content-Disposition');
+                const filename = this.getFilenameFromDisposition(cd) || this.defaultSaludInventarioExcelFilename();
+                this.saveBlob(blob, filename);
+                this.exportandoSaludInventario = false;
+            },
+            error: (err) => {
+                this.exportandoSaludInventario = false;
+                this.errorSaludInventario = 'No se pudo exportar el Excel.';
+            },
+        });
+    }
+
     private saveBlob(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -239,6 +258,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const pad = (n: number) => String(n).padStart(2, '0');
         const d = new Date();
         return `reporte_urge_comprar_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(
+            d.getHours()
+        )}${pad(d.getMinutes())}.xlsx`;
+    }
+
+    private defaultSaludInventarioExcelFilename(): string {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const d = new Date();
+        return `reporte_salud_inventario_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(
             d.getHours()
         )}${pad(d.getMinutes())}.xlsx`;
     }
