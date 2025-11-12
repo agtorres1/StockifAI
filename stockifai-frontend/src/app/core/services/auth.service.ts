@@ -1,92 +1,149 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { distinctUntilChanged, map, shareReplay, tap } from 'rxjs/operators';
+import { Taller } from '../models/taller';
 
 interface User {
-  id: number;
-  username: string;
-  email: string;
-  taller?: any;
-  grupo?: any;
-  rol_en_grupo?: string;
-  is_superuser?: boolean; // ← AGREGAR
-  is_staff?: boolean;
+    id: number;
+    username: string;
+    email: string;
+    taller?: any;
+    grupo?: any;
+    rol_en_grupo?: string;
+    is_superuser?: boolean; // ← AGREGAR
+    is_staff?: boolean;
 }
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root',
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+    private currentUserSubject = new BehaviorSubject<User | null>(null);
+    public currentUser$ = this.currentUserSubject.asObservable();
 
-  private readonly API_URL = 'http://localhost:8000/api';
+    private activeTallerSubject = new BehaviorSubject<Taller | null>(null);
+    public activeTaller$ = this.activeTallerSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {
-    this.checkSession();
-  }
-
-  // Redirigir a Auth0 para login
-  login(email: string, password: string): Observable<any> {
-  return this.http.post(`${this.API_URL}/login-credentials/`, {
-    email,
-    password
-  }, {
-    withCredentials: true
-  }).pipe(
-    tap((response: any) => {
-      console.log('✅ Response del backend:', response);  // ← DEBUG
-      this.currentUserSubject.next(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      console.log('✅ Usuario guardado en localStorage');  // ← DEBUG
-    })
-  );
-}
-  // Verificar si hay sesión activa
-  checkSession(): Observable<any> {
-    return this.http.get(`${this.API_URL}/check-session/`, {
-      withCredentials: true
-    }).pipe(
-      tap((response: any) => {
-        if (response.authenticated) {
-          this.currentUserSubject.next(response);
-          localStorage.setItem('user', JSON.stringify(response));
-        }
-      })
+    public activeTallerId$ = this.activeTaller$.pipe(
+        map((taller) => taller?.id ?? null),
+        distinctUntilChanged(),
+        shareReplay(1)
     );
-  }
 
-  logout(): void {
-    this.http.post(`${this.API_URL}/logout/`, {}, {
-        withCredentials: true
-    }).subscribe({
-        next: (response: any) => {
-            console.log('🔍 URL de logout:', response.logout_url);  // ← AGREGAR ESTO
-            console.log('🔍 Respuesta completa:', response);        // ← Y ESTO
+    private readonly API_URL = 'http://localhost:8000/api';
 
-            this.currentUserSubject.next(null);
-            localStorage.removeItem('user');
+    private static readonly STORAGE_USER = 'user';
+    private static readonly STORAGE_TALLER = 'activeTaller';
 
-            // Redirigir a logout de Auth0
-            window.location.href = response.logout_url;
-        },
-        error: (err) => {
-            console.error('Error al cerrar sesión:', err);
-            this.currentUserSubject.next(null);
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+    constructor(private http: HttpClient, private router: Router) {
+        const tallerRaw = localStorage.getItem(AuthService.STORAGE_TALLER);
+        if (tallerRaw) {
+            try {
+                this.activeTallerSubject.next(JSON.parse(tallerRaw));
+            } catch {}
         }
-    });
-}
 
-  isLoggedIn(): boolean {
-    return this.currentUserSubject.value !== null;
-  }
+        this.checkSession();
+    }
+
+    // Redirigir a Auth0 para login
+    login(email: string, password: string): Observable<any> {
+        return this.http
+            .post(
+                `${this.API_URL}/login-credentials/`,
+                {
+                    email,
+                    password,
+                },
+                {
+                    withCredentials: true,
+                }
+            )
+            .pipe(
+                tap((response: any) => {
+                    console.log('✅ Response del backend:', response); // ← DEBUG
+                    this.currentUserSubject.next(response.user);
+                    localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(response.user));
+
+                    const defaultTaller = response?.taller ?? null;
+                    if (defaultTaller) {
+                        this.setActiveTaller(defaultTaller);
+                    }
+                })
+            );
+    }
+    // Verificar si hay sesión activa
+    checkSession(): Observable<any> {
+        return this.http
+            .get(`${this.API_URL}/check-session/`, {
+                withCredentials: true,
+            })
+            .pipe(
+                tap((response: any) => {
+                    if (response.authenticated) {
+                        this.currentUserSubject.next(response);
+                        localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(response));
+
+                        const defaultTaller = response?.taller ?? null;
+                        if (defaultTaller) {
+                            this.setActiveTaller(defaultTaller);
+                        }
+                    }
+                })
+            );
+    }
+
+    logout(): void {
+        this.http
+            .post(
+                `${this.API_URL}/logout/`,
+                {},
+                {
+                    withCredentials: true,
+                }
+            )
+            .subscribe({
+                next: (response: any) => {
+                    this.currentUserSubject.next(null);
+                    localStorage.removeItem(AuthService.STORAGE_USER);
+
+                    this.setActiveTaller(null);
+
+                    // Redirigir a logout de Auth0
+                    window.location.href = response.logout_url;
+                },
+                error: (err) => {
+                    console.error('Error al cerrar sesión:', err);
+                    this.currentUserSubject.next(null);
+                    localStorage.removeItem(AuthService.STORAGE_USER);
+                    this.setActiveTaller(null);
+                    window.location.href = '/login';
+                },
+            });
+    }
+
+    isLoggedIn(): boolean {
+        return this.currentUserSubject.value !== null;
+    }
+
+    getCurrentUser(): User | null {
+        return this.currentUserSubject.value;
+    }
+
+    setActiveTaller(taller: Taller | null): void {
+        this.activeTallerSubject.next(taller);
+        if (taller) {
+            localStorage.setItem(AuthService.STORAGE_TALLER, JSON.stringify(taller));
+        } else {
+            localStorage.removeItem(AuthService.STORAGE_TALLER);
+        }
+    }
+
+    getActiveTaller(): Taller | null {
+        return this.activeTallerSubject.value;
+    }
 
   getCurrentUser(): User | null {
     // Si ya está en el BehaviorSubject, usarlo
@@ -104,4 +161,7 @@ export class AuthService {
 
     return null;
 }
+    public getActiveTallerId(): number | null {
+        return this.activeTallerSubject.value?.id ?? null;
+    }
 }

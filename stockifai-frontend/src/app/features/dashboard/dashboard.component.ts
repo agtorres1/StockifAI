@@ -1,22 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChartOptions } from 'chart.js';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { Alerta } from '../../core/models/alerta';
 import { RepuestoTaller } from '../../core/models/repuesto-taller';
 import { SaludInventarioChartData, TotalesPorCategoria } from '../../core/models/salud-inventario';
 import { AlertasService } from '../../core/services/alertas.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-dashboard',
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
     tallerId: number = 1;
 
     loadingUrgentes: boolean = false;
     errorUrgentes: string = '';
+    errorSaludInventario: string = '';
     sinAccesoTaller: boolean = false; // ← NUEVO
 
     page: number = 1;
@@ -25,6 +27,7 @@ export class DashboardComponent implements OnInit {
 
     listaUrgeComprar: Alerta[] = [];
     exportando: boolean = false;
+    exportandoSaludInventario: boolean = false;
 
     // KPIS
     kpiRotacion = 0;
@@ -62,12 +65,19 @@ export class DashboardComponent implements OnInit {
 
     intermediaRotacionPercentage: number = 0;
 
-    constructor(private alertasService: AlertasService, private router: Router) {}
+    sub: Subscription | undefined;
+
+    constructor(private alertasService: AlertasService, private authService: AuthService, private router: Router) {}
 
     ngOnInit(): void {
-        this.cargarKPIs();
-        this.cargarPagina(this.page);
-        this.cargarSaludInventario();
+        this.sub = this.authService.activeTallerId$.subscribe((tallerId) => {
+            if (tallerId) {
+                this.tallerId = tallerId;
+                this.cargarKPIs();
+                this.cargarPagina(this.page);
+                this.cargarSaludInventario();
+            }
+        });
     }
 
     viewForecast(repuestoStock: RepuestoTaller) {
@@ -79,32 +89,30 @@ export class DashboardComponent implements OnInit {
         });
     }
     cargarKPIs() {
-    this.loadingKpis = true;
-    this.alertasService.getKPIsResumen().subscribe({
-        next: (data) => {
-            // Mapear los datos del backend a las variables del componente
-            this.kpiRotacion = data.tasa_rotacion?.valor ?? 0;
-            this.objRotacion = data.tasa_rotacion?.objetivo ?? 0;
+        this.loadingKpis = true;
+        this.alertasService.getKPIsResumen().subscribe({
+            next: (data) => {
+                // Mapear los datos del backend a las variables del componente
+                this.kpiRotacion = data.tasa_rotacion?.valor ?? 0;
+                this.objRotacion = data.tasa_rotacion?.objetivo ?? 0;
 
-            this.kpiDiasEnMano = data.dias_en_mano?.valor ?? 0;
-            this.objDiasEnMano = data.dias_en_mano?.objetivo ?? 0;
+                this.kpiDiasEnMano = data.dias_en_mano?.valor ?? 0;
+                this.objDiasEnMano = data.dias_en_mano?.objetivo ?? 0;
 
+                this.kpiDeadStock = data.dead_stock?.porcentaje ? data.dead_stock.porcentaje / 100 : 0;
+                this.objDeadStock = data.dead_stock?.objetivo ? data.dead_stock.objetivo / 100 : 0;
 
-            this.kpiDeadStock = data.dead_stock?.porcentaje ? data.dead_stock.porcentaje / 100 : 0;
-            this.objDeadStock = data.dead_stock?.objetivo ? data.dead_stock.objetivo / 100 : 0;
-
-
-            this.loadingKpis = false;
-        },
-        error: (err) => {
-            console.error('Error al cargar KPIs:', err);
-            if (err?.status === 403) {
-                this.sinAccesoTaller = true;
-            }
-            this.loadingKpis = false;
-        }
-    });
-}
+                this.loadingKpis = false;
+            },
+            error: (err) => {
+                console.error('Error al cargar KPIs:', err);
+                if (err?.status === 403) {
+                    this.sinAccesoTaller = true;
+                }
+                this.loadingKpis = false;
+            },
+        });
+    }
 
     // ← MÉTODO ACTUALIZADO
     private cargarPagina(p: number) {
@@ -204,6 +212,23 @@ export class DashboardComponent implements OnInit {
         });
     }
 
+    exportarSaludInventario() {
+        this.exportandoSaludInventario = true;
+        this.alertasService.exportarReporteSaludInventario(this.tallerId).subscribe({
+            next: (res) => {
+                const blob = res.body!;
+                const cd = res.headers.get('Content-Disposition');
+                const filename = this.getFilenameFromDisposition(cd) || this.defaultSaludInventarioExcelFilename();
+                this.saveBlob(blob, filename);
+                this.exportandoSaludInventario = false;
+            },
+            error: (err) => {
+                this.exportandoSaludInventario = false;
+                this.errorSaludInventario = 'No se pudo exportar el Excel.';
+            },
+        });
+    }
+
     private saveBlob(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -233,6 +258,14 @@ export class DashboardComponent implements OnInit {
         const pad = (n: number) => String(n).padStart(2, '0');
         const d = new Date();
         return `reporte_urge_comprar_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(
+            d.getHours()
+        )}${pad(d.getMinutes())}.xlsx`;
+    }
+
+    private defaultSaludInventarioExcelFilename(): string {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const d = new Date();
+        return `reporte_salud_inventario_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(
             d.getHours()
         )}${pad(d.getMinutes())}.xlsx`;
     }
@@ -301,6 +334,10 @@ export class DashboardComponent implements OnInit {
         items.push(total);
 
         return items;
+    }
+
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe();
     }
 
     // Resumen de Salud de inventario

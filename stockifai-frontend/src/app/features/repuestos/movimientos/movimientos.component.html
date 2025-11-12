@@ -47,6 +47,10 @@
             </div>
         </form>
 
+        <div *ngIf="successMsg" class="alert alert-success alert-dismissible fade show mt-2 mb-2 p-2" role="alert">
+            {{ successMsg }}
+        </div>
+
         <div *ngIf="loading" class="alert alert-info d-flex justify-content-center align-items-center mb-2 p-2">
             <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
             <span>Cargando…</span>
@@ -59,7 +63,8 @@
         <div *ngIf="!stockInicialCargado && !loading" class="alert alert-warning fade show mt-4 mb-4" role="alert">
             <span class="text-sm">
                 Por favor, cargue el stock inicial de sus repuestos.
-                <a class="alert-link" role="button" data-bs-toggle="modal" data-bs-target="#importarMovimientosModal" (click)="openImportarModal()">
+                <a class="alert-link" role="button" data-bs-toggle="modal" data-bs-target="#importarMovimientosModal"
+                    (click)="openImportarModal()">
                     Importar ahora
                 </a>
             </span>
@@ -151,7 +156,6 @@
                 </div>
 
                 <div *ngIf="errorMsg" class="alert alert-danger mt-3">{{ errorMsg }}</div>
-                <div *ngIf="successMsg" class="alert alert-success mt-3">{{ successMsg }}</div>
                 <div *ngIf="erroresImport && erroresImport.length > 0" class="alert alert-danger mt-3">
                     <h6 class="mb-2">Movimientos rechazados ({{erroresImport.length}})</h6>
                     <ul class="mb-0 ps-3 small">

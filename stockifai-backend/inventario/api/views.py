@@ -813,7 +813,8 @@ class KPIsViewSet(viewsets.ViewSet):
 
         tasa_rot = self._calcular_tasa_rotacion(user)
         dias_mano = self._calcular_dias_en_mano(user)
-        dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
+        #dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
+        dead_porcentaje = 0
 
         if not tasa_rot or not dias_mano or dead_porcentaje is None:
             return Response({"error": "No se pudieron calcular los KPIs"}, status=400)
@@ -916,10 +917,10 @@ class DetalleForecastingView(APIView):
         ]
 
         # Extrapolación simple para las semanas 5 y 6
-        forecast_base_data = predicciones_db + [
+        """forecast_base_data = predicciones_db + [
             predicciones_db[-1] + 5 if predicciones_db else 5,
             predicciones_db[-1] + 2 if predicciones_db else 2
-        ]
+        ]"""
 
         # Calculamos los días de stock restantes (MOS * 7)
         mos_decimal = calcular_mos(Decimal(stock_actual), [Decimal(p) for p in predicciones_db])
@@ -933,20 +934,16 @@ class DetalleForecastingView(APIView):
         historico_labels: List[str] = historico_result["labels"]  # NUEVAS ETIQUETAS HISTÓRICAS
 
         # 3. Construir la Serie Completa (Histórico + Proyección)
-        full_series: List[Union[float, None]] = historico_data + forecast_base_data
+        full_series: List[Union[float, None]] = historico_data
         tendencia_data: List[float] = compute_trend_line(full_series)
 
         # 4. Formatear las series para Chart.js
         historico_chart_data: List[Union[float, None]] = historico_data + [None] * self.NUM_FORECAST_GRAFICO
-        forecast_media_chart_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + forecast_base_data
+        forecast_media_chart_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
 
         # Banda de Confianza (4% de margen)
-        forecast_lower_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + [
-            round(v * (1 - self.CONFIDENCE_PCT)) for v in forecast_base_data
-        ]
-        forecast_upper_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + [
-            round(v * (1 + self.CONFIDENCE_PCT)) for v in forecast_base_data
-        ]
+        forecast_lower_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
+        forecast_upper_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
 
         # Generar etiquetas de forecast basadas en fechas reales futuras
         forecast_labels = []
@@ -1420,7 +1417,21 @@ class ExportarUrgentesView(APIView):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
         response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
-        df.to_excel(response, index=False)
+
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            sheet_name = 'Repuestos_Urgentes'
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            workbook = writer.book
+            worksheet = writer.sheets[sheet_name]
+            for col in worksheet.columns:
+                max_length = 0
+                column_letter = col[0].column_letter
+                # Calcular el ancho máximo del contenido
+                for cell in col:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                worksheet.column_dimensions[column_letter].width = max_length + 4
+
         return response
 
 
@@ -1527,3 +1538,156 @@ class SaludInventarioPorCategoriaView(APIView):
 
         return Response(response_data)
 
+class ExportarSaludInventarioView(APIView):
+    """
+    GET /talleres/<taller_id>/salud-inventario/exportar/
+
+    Genera un archivo Excel con el resumen de la salud del inventario.
+    La hoja de detalle está ordenada por Frecuencia y luego por Ponderación.
+    """
+
+    def get(self, request, taller_id: int):
+
+        rt_qs = RepuestoTaller.objects.filter(
+            taller_id=taller_id
+        ).annotate(
+            stock_total=Sum(
+                "stocks__cantidad",
+                filter=Q(stocks__deposito__taller_id=taller_id),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            )
+        ).select_related('repuesto__categoria')
+
+        valor_por_frecuencia = defaultdict(Decimal)
+        datos_crudos_excel = []
+
+        NIVEL_TO_SALUD = {
+            "CRÍTICO": "critico",
+            "ADVERTENCIA": "advertencia",
+            "INFORMATIVO": "sobrestock",
+        }
+
+        for rt in rt_qs:
+            stock = Decimal(rt.stock_total or 0)
+            costo = Decimal(getattr(rt, 'costo', 0) or 0)
+            valor_stock = stock * costo
+            pred_1 = Decimal(getattr(rt, 'pred_1', 0) or 0)
+            frecuencia_str = getattr(rt, 'frecuencia', None) or "DESCONOCIDA"
+            categoria_nombre = "Sin Categoría"
+            if rt.repuesto and rt.repuesto.categoria:
+                categoria_nombre = rt.repuesto.categoria.nombre
+
+            forecast_semanas = [
+                pred_1,
+                Decimal(getattr(rt, 'pred_2', 0) or 0),
+                Decimal(getattr(rt, 'pred_3', 0) or 0),
+                Decimal(getattr(rt, 'pred_4', 0) or 0),
+            ]
+            mos = calcular_mos(stock, forecast_semanas)
+            alertas_potenciales = generar_alertas_inventario(
+                stock_total=stock, pred_1=pred_1, mos_en_semanas=mos,
+                frecuencia_rotacion=frecuencia_str
+            )
+            if not alertas_potenciales:
+                status = "saludable"
+            else:
+                primer_nivel_alerta = alertas_potenciales[0]['nivel']
+                status = NIVEL_TO_SALUD.get(primer_nivel_alerta, "saludable")
+
+            valor_por_frecuencia[frecuencia_str] += valor_stock
+
+            datos_crudos_excel.append({
+                "Numero Pieza": rt.repuesto.numero_pieza,
+                "Descripcion": rt.repuesto.descripcion,
+                "Categoria": categoria_nombre,
+                "Frecuencia": frecuencia_str,
+                "Estado de Salud": status.upper(),
+                "Stock Actual (U)": float(stock),
+                "Costo Unitario ($)": float(costo),
+                "Valor Stock ($)": float(valor_stock),
+            })
+
+        total_valor_inventario = sum(valor_por_frecuencia.values())
+
+        for row in datos_crudos_excel:
+            frecuencia_sku = row['Frecuencia']
+            valor_sku = row['Valor Stock ($)']
+            total_valor_grupo = valor_por_frecuencia.get(frecuencia_sku, Decimal(0))
+
+            if total_valor_grupo > 0:
+                ponderacion = (Decimal(valor_sku) / total_valor_grupo)
+            else:
+                ponderacion = Decimal(0)
+
+            row['Ponderacion Frecuencia (%)'] = float(ponderacion)
+
+        frecuencia_order = {
+            "MUERTO": 0,
+            "OBSOLETO": 1,
+            "LENTO": 2,
+            "INTERMEDIO": 3,
+            "ALTA_ROTACION": 4,
+            "DESCONOCIDA": 5
+        }
+
+        datos_crudos_excel.sort(key=lambda row: (
+            frecuencia_order.get(row['Frecuencia'], 99),  # Clave 1: Prioridad de Frecuencia (asc)
+            -row['Ponderacion Frecuencia (%)']  # Clave 2: Ponderación (desc)
+        ))
+
+        # Hoja 1: Resumen por Frecuencia
+        data_resumen_frecuencia = []
+        for freq, valor in valor_por_frecuencia.items():
+            porcentaje_decimal = (valor / total_valor_inventario) if total_valor_inventario > 0 else 0
+            data_resumen_frecuencia.append({
+                "Frecuencia": freq,
+                "Valor Total ($)": float(valor),
+                "Porcentaje (%)": float(porcentaje_decimal)
+            })
+        df_resumen_frecuencia = pd.DataFrame(data_resumen_frecuencia)
+        df_resumen_frecuencia['sort_key'] = df_resumen_frecuencia['Frecuencia'].map(frecuencia_order)
+        df_resumen_frecuencia = df_resumen_frecuencia.sort_values(by='sort_key').drop(columns='sort_key')
+
+        # Hoja 2: Detalle
+        df_detalle = pd.DataFrame(datos_crudos_excel)
+
+        fecha_actual = datetime.now().strftime("%Y%m%d_%H%M")
+        nombre_archivo = f"reporte_salud_inventario_{taller_id}_{fecha_actual}.xlsx"
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            df_resumen_frecuencia.to_excel(writer, sheet_name='Resumen_por_Frecuencia', index=False)
+            df_detalle.to_excel(writer, sheet_name='Detalle_Inventario', index=False)
+
+            workbook = writer.book
+            ws_resumen = workbook['Resumen_por_Frecuencia']
+            for cell in ws_resumen['B'][1:]:  # Columna "Valor Total ($)"
+                cell.number_format = '$ #,##0.00'
+            for cell in ws_resumen['C'][1:]:  # Columna "Porcentaje (%)"
+                cell.number_format = '0.00%'
+
+            ws_detalle = workbook['Detalle_Inventario']
+            for cell in ws_detalle['F'][1:]:  # Columna "Stock Actual (U)"
+                cell.number_format = '#,##0'
+            for cell in ws_detalle['G'][1:]:  # Columna "Costo Unitario ($)"
+                cell.number_format = '$ #,##0.00'
+            for cell in ws_detalle['H'][1:]:  # Columna "Valor Stock ($)"
+                cell.number_format = '$ #,##0.00'
+            for cell in ws_detalle['I'][1:]:  # Columna "Ponderacion Frecuencia (%)"
+                cell.number_format = '0.00%'
+
+            for sheet_name in workbook.sheetnames:
+                worksheet = workbook[sheet_name]
+                for col in worksheet.columns:
+                    max_length = 0
+                    column_letter = col[0].column_letter
+                    for cell in col:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    worksheet.column_dimensions[column_letter].width = max_length + 4
+
+        return response

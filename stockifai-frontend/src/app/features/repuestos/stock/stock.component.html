@@ -107,11 +107,11 @@
                             <span class="fw-bold" *ngIf="item.mos_en_semanas">
                                 {{ item.mos_en_semanas | number:'1.1-2' }}
                                 <br>
-                                <span *ngIf="item.mos_en_semanas < 1"
+                                <span *ngIf="item.mos_en_semanas < 0.25"
                                     class="badge rounded-pill bg-red mos-tag">Critico</span>
-                                <span *ngIf="item.mos_en_semanas > 1 && item.mos_en_semanas < 2"
+                                <span *ngIf="item.mos_en_semanas > 0.25 && item.mos_en_semanas < 0.5"
                                     class="badge rounded-pill bg-orange mos-tag">Bajo</span>
-                                <span *ngIf="item.mos_en_semanas > 4"
+                                <span *ngIf="item.mos_en_semanas > 1"
                                     class="badge rounded-pill bg-blue mos-tag">Alto</span>
                             </span>
                         </td>

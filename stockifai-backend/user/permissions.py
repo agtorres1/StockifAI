@@ -1,6 +1,5 @@
 from rest_framework.exceptions import PermissionDenied
 
-
 class PermissionChecker:
 
     @staticmethod
@@ -25,6 +24,7 @@ class PermissionChecker:
             return True
 
         for grupo in taller.grupos.all():
+            from user.roles import MiembroGrupo
             miembro = MiembroGrupo.objects.filter(
                 usuario=user,
                 grupo=grupo
@@ -45,6 +45,7 @@ class PermissionChecker:
             return True
 
         for grupo in taller.grupos.all():
+            from user.roles import MiembroGrupo
             miembro = MiembroGrupo.objects.filter(
                 usuario=user,
                 grupo=grupo
@@ -61,6 +62,7 @@ class PermissionChecker:
         if user.is_staff or user.is_superuser:
             return True
 
+        from user.roles import MiembroGrupo
         miembro = MiembroGrupo.objects.filter(
             usuario=user,
             grupo=grupo
@@ -74,6 +76,7 @@ class PermissionChecker:
         if user.is_staff or user.is_superuser:
             return True
 
+        from user.roles import MiembroGrupo
         miembro = MiembroGrupo.objects.filter(
             usuario=user,
             grupo=grupo
@@ -110,7 +113,7 @@ class PermissionChecker:
 
         # Con taller: solo repuestos de su taller
         if user.taller:
-            from inventario.models import RepuestoTaller
+            from catalogo.models import RepuestoTaller
             repuestos_ids = RepuestoTaller.objects.filter(
                 taller=user.taller
             ).values_list('repuesto_id', flat=True)

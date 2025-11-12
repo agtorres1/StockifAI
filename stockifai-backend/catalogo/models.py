@@ -30,6 +30,10 @@ class Repuesto(models.Model): ####
     marca=models.ForeignKey(Marca, on_delete=models.PROTECT, null=True, blank=True)
     categoria=models.ForeignKey(Categoria, on_delete=models.PROTECT, null=True, blank=True)
     estado=models.CharField(max_length=50, default='activo')
+    #lead_time = models.IntegerField(null=True, blank=True)
+
+
+
     def __str__(self): return f"{self.numero_pieza} - {self.descripcion or ''}"
 
 

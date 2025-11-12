@@ -3,18 +3,19 @@ import { ActivatedRoute } from '@angular/router';
 import * as L from 'leaflet';
 import { Subscription } from 'rxjs';
 import { LocalizadorRespuesta, LocalizadorTaller } from '../../../core/models/localizador';
+import { AuthService } from '../../../core/services/auth.service';
 import { LocalizadorService } from '../../../core/services/localizador.service';
 
 // Fix para que salgan los iconos en el mapa
 const defaultIcon = L.icon({
-  iconUrl:       '/assets/leaflet/images/marker-icon.png',
-  iconRetinaUrl: '/assets/leaflet/images/marker-icon-2x.png',
-  shadowUrl:     '/assets/leaflet/images/marker-shadow.png',
-  iconSize:      [25, 41],
-  iconAnchor:    [12, 41],
-  popupAnchor:   [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize:    [41, 41],
+    iconUrl: '/assets/leaflet/images/marker-icon.png',
+    iconRetinaUrl: '/assets/leaflet/images/marker-icon-2x.png',
+    shadowUrl: '/assets/leaflet/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    tooltipAnchor: [16, -28],
+    shadowSize: [41, 41],
 });
 (L.Marker.prototype as any).options.icon = defaultIcon;
 
@@ -37,16 +38,44 @@ export class LocalizadorComponent implements OnInit, OnDestroy {
     private markers: L.Marker[] = [];
     private origenMarker?: L.Marker;
     private busquedaSub?: Subscription;
+    private authSub?: Subscription;
 
-    constructor(private localizadorService: LocalizadorService, private route: ActivatedRoute) {}
+    constructor(
+        private localizadorService: LocalizadorService,
+        private authService: AuthService,
+        private route: ActivatedRoute
+    ) {}
 
     ngOnInit(): void {
         setTimeout(() => this.initMap(), 0);
 
-        const queryParam = this.route.snapshot.queryParamMap;
-        this.query = queryParam.get('search') ?? '';
+        // tomar query param inicial
+        const qp = this.route.snapshot.queryParamMap;
+        this.query = qp.get('search') ?? '';
 
-        if (this.query && this.query != '') {
+        // suscribirse al taller activo
+        this.authSub = this.authService.activeTallerId$.subscribe((id) => {
+            if (!id) {
+                this.limpiar();
+                this.cargando = false;
+                return;
+            }
+
+            const cambioTaller = this.tallerId && this.tallerId !== id;
+            this.tallerId = id;
+            this.mensajeError = '';
+
+            // Si hay query, buscamos; en cambio de taller también conviene refrescar
+            if (this.query && this.query.trim() !== '') {
+                this.buscar();
+            } else if (cambioTaller) {
+                // si cambió el taller y no hay query, solo limpiamos resultados
+                this.limpiar();
+            }
+        });
+
+        // si ya había query y (por timing) aún no llegó el id, `buscar()` se ejecutará cuando emita auth.
+        if (this.query && this.query.trim() !== '' && this.tallerId) {
             this.buscar();
         }
     }

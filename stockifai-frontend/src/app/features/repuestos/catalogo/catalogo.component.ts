@@ -12,7 +12,6 @@ import { TitleService } from '../../../core/services/title.service';
     styleUrl: './catalogo.component.scss',
 })
 export class CatalogoComponent implements OnInit {
-    tallerId: number = 1;
     filtro = { searchText: '', idMarca: '', idCategoria: '' };
 
     marcas: Marca[] = [];

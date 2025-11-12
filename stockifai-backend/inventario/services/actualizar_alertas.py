@@ -32,24 +32,24 @@ def generar_alertas_inventario(
 
     # 2. ALERTA MEDIA: Bajo MOS
     # Se añade la condición de que no sea ya una alerta crítica para evitar duplicados.
-    if mos_en_semanas is not None and Decimal('1') < mos_en_semanas <= Decimal('2.5') and not (stock_total < pred_1):
+    if mos_en_semanas is not None and Decimal('0.5') < mos_en_semanas <= Decimal('1') and not (stock_total < pred_1):
         alertas_activas.append({
             "nivel": "ADVERTENCIA",
             "codigo": "MOS_BAJO_REORDENAR",
-            "mensaje": f"Bajo MOS. La cobertura es de {mos_en_semanas:.2f} semanas."
+            "mensaje": f"Bajo MOS. La cobertura es de {4* mos_en_semanas:.2f} semanas."
         })
 
     # 3. ALERTA INFORMATIVA: Sobre-Abastecimiento o Riesgo de Lento
     if mos_en_semanas is not None:
         es_lento_o_intermedio = frecuencia_rotacion in ["LENTO", "INTERMEDIO", "OBSOLETO", "MUERTO"]
-        sobre_stock_general = mos_en_semanas >= Decimal('12')
-        sobre_stock_riesgoso = mos_en_semanas >= Decimal('4') and es_lento_o_intermedio
+        sobre_stock_general = mos_en_semanas >= Decimal('3')
+        sobre_stock_riesgoso = mos_en_semanas >= Decimal('1') and es_lento_o_intermedio
 
         if sobre_stock_general or sobre_stock_riesgoso:
             alertas_activas.append({
                 "nivel": "INFORMATIVO",
                 "codigo": "SOBRE_STOCK_RIESGO",
-                "mensaje": f"Capital Inmovilizado. Cobertura de {mos_en_semanas:.2f} semanas ({frecuencia_rotacion})."
+                "mensaje": f"Capital Inmovilizado. MOS de {mos_en_semanas:.2f} con frecuencia tipo: {frecuencia_rotacion}."
             })
 
     return alertas_activas

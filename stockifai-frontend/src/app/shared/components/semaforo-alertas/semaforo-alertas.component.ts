@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, switchMap } from 'rxjs';
 import { NivelAlerta } from '../../../core/models/alerta';
 import { AlertasResumen } from '../../../core/models/alertas-resumen';
 import { AlertasService } from '../../../core/services/alertas.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-semaforo-alertas',
@@ -17,12 +18,20 @@ export class SemaforoAlertasComponent implements OnInit, OnDestroy {
 
     subscription?: Subscription;
 
-    constructor(private alertasService: AlertasService, private router: Router) {}
+    constructor(private alertasService: AlertasService, private authService: AuthService, private router: Router) {}
 
     ngOnInit(): void {
-        this.subscription = this.alertasService.summary$(this.tallerId).subscribe((res) => {
-            this.alertas = res;
-        });
+        this.subscription = this.authService.activeTallerId$
+            .pipe(
+                switchMap((tallerId) => {
+                    if (!tallerId) return [];
+                    this.tallerId = tallerId;
+                    return this.alertasService.summary$(tallerId);
+                })
+            )
+            .subscribe((res) => {
+                if (res) this.alertas = res;
+            });
     }
 
     ngOnDestroy(): void {
