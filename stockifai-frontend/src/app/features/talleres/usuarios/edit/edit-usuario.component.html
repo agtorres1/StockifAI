@@ -91,32 +91,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6" *ngIf="!isSuperUser && scopeType === 'taller'">
-    <label class="form-label">Rol en el Taller <span class="text-danger">*</span></label>
-    <select class="form-select" name="rol_en_taller_admin" [(ngModel)]="usuario.rol_en_taller"
-        [ngClass]="{'is-invalid': userForm.submitted && !usuario.rol_en_taller}">
-        <option [ngValue]="null" disabled>Seleccioná un rol</option>
-        <option value="owner">Dueño del Taller</option>
-        <option value="member">Miembro</option>
-    </select>
-    <div class="invalid-feedback d-block" *ngIf="userForm.submitted && !usuario.rol_en_taller">
-        Seleccioná un rol para el taller.
-    </div>
-</div>
 
-<div class="col-md-6" *ngIf="!isSuperUser && scopeType === 'grupo'">
-    <label class="form-label">Rol en el Grupo <span class="text-danger">*</span></label>
-    <select class="form-select" name="rol_en_grupo_admin" [(ngModel)]="usuario.rol_en_grupo"
-        [ngClass]="{'is-invalid': userForm.submitted && !usuario.rol_en_grupo}">
-        <option [ngValue]="null" disabled>Seleccioná un rol</option>
-        <option value="admin">Administrador del Grupo</option>
-        <option value="member">Miembro</option>
-        <option value="viewer">Observador</option>
-    </select>
-    <div class="invalid-feedback d-block" *ngIf="userForm.submitted && !usuario.rol_en_grupo">
-        Seleccioná un rol para el grupo.
-    </div>
-</div>
 
                     <div class="col-md-3">
                         <label class="form-label">Ciudad</label>
@@ -152,7 +127,9 @@
                     </div>
 
                     <!-- MODIFICADO: Solo visible para superusers -->
-                    <ng-container *ngIf="isSuperUser">
+
+
+<ng-container *ngIf="puedeAsignarUsuarios">
                         <hr>
 
                         <div class="col-12 mt-0">
@@ -216,19 +193,22 @@
                         </div>
 
                         <!-- NUEVO: Selector de Rol para Taller -->
-                        <div class="col-md-6" *ngIf="scopeType === 'taller' && !loadingTalleres">
-                            <label class="form-label">Rol en el Taller <span class="text-danger">*</span></label>
-                            <select class="form-select" name="rol_en_taller" [(ngModel)]="usuario.rol_en_taller"
-                                [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller}">
-                                <option [ngValue]="null" disabled>Seleccioná un rol</option>
-                                <option value="owner">Dueño del Taller</option>
-                                <option value="member">Miembro</option>
-                            </select>
-                            <div class="invalid-feedback d-block"
-                                *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller">
-                                Seleccioná un rol para el taller.
-                            </div>
-                        </div>
+                        <div class="col-md-6" *ngIf="scopeType === 'taller'">
+    <label class="form-label">Rol en el Taller <span class="text-danger">*</span></label>
+    <select class="form-select" name="rol_en_taller" [(ngModel)]="usuario.rol_en_taller"
+        [ngClass]="{'is-invalid': userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller}">
+        <option [ngValue]="null" disabled>Seleccioná un rol</option>
+        <option value="owner">Dueño del Taller</option>
+        <option value="member">Miembro</option>
+    </select>
+    <div class="invalid-feedback d-block"
+        *ngIf="userForm.submitted && scopeType === 'taller' && !usuario.rol_en_taller">
+        Seleccioná un rol para el taller.
+    </div>
+</div>
+
+
+
                     </ng-container>
 
                 </div>

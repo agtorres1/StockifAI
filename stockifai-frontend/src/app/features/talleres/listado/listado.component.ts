@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { Taller } from '../../../core/models/taller';
 import { TalleresService } from '../../../core/services/talleres.service';
 import { TitleService } from '../../../core/services/title.service';
+import { AuthService } from '../../../core/services/auth.service';
 declare const bootstrap: any;
 
 @Component({
@@ -11,10 +12,15 @@ declare const bootstrap: any;
     templateUrl: './listado.component.html',
     styleUrl: './listado.component.scss',
 })
+
 export class TalleresListadoComponent implements OnInit {
     talleres: Taller[] = [];
     loading: boolean = false;
     errorMessage: string = '';
+    isSuperUser = false;
+    puedeEditarTalleres = false;
+    puedeCrearTalleres = false;
+
 
     private crearModalRef: any | null = null;
     isEditMode: boolean = false;
@@ -35,13 +41,31 @@ export class TalleresListadoComponent implements OnInit {
     deleting = false;
     deleteErrorMessage = '';
 
-    constructor(private titleService: TitleService, private talleresService: TalleresService) {
+    constructor(
+      private titleService: TitleService,
+      private talleresService: TalleresService,
+      private authService: AuthService
+      ) {
         this.titleService.setTitle('Talleres');
+
     }
 
     ngOnInit() {
-        this.loadTalleres();
-    }
+    const currentUser = this.authService.getCurrentUser();
+    this.isSuperUser = (currentUser as any)?.is_superuser || false;
+
+    this.puedeCrearTalleres = this.isSuperUser ||
+        ((currentUser as any)?.grupo?.rol === 'admin');
+
+    // Puede editar: superuser, admin de grupo, o owner de su taller
+    this.puedeEditarTalleres = this.isSuperUser ||
+        ((currentUser as any)?.grupo?.rol === 'admin') ||
+        ((currentUser as any)?.taller?.rol === 'owner');
+
+    this.loadTalleres();
+}
+
+
 
     async loadTalleres() {
         this.loading = true;

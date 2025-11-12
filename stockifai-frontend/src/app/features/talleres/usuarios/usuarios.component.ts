@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , ChangeDetectorRef} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Usuario } from '../../../core/models/usuario';
 import { TitleService } from '../../../core/services/title.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 declare const bootstrap: any;
 import { AuthService } from '../../../core/services/auth.service';
+
 
 @Component({
     selector: 'app-usuarios',
@@ -16,6 +17,7 @@ export class TalleresUsuariosComponent implements OnInit {
     loading: boolean = false;
     errorMessage: string = '';
     isSuperUser = false;
+    puedeCrearUsuarios=false;
 
     private modalRef: any | null = null;
     selectedUser: any | null = null;
@@ -28,7 +30,8 @@ export class TalleresUsuariosComponent implements OnInit {
     constructor(
     private titleService: TitleService,
     private usuariosService: UsuariosService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
     ) {
     this.titleService.setTitle('Usuarios');
     }
@@ -39,9 +42,18 @@ export class TalleresUsuariosComponent implements OnInit {
     }
 
     checkIfSuperUser() {
-    const currentUser = this.authService.getCurrentUser();
-    console.log('👤 Usuario actual:', currentUser); // Para debug
+        const currentUser = this.authService.getCurrentUser();
+
+
     this.isSuperUser = (currentUser as any)?.is_superuser || false;
+
+
+    this.puedeCrearUsuarios = this.isSuperUser ||
+        ((currentUser as any)?.grupo?.rol === 'admin') ||
+        ((currentUser as any)?.taller?.rol === 'owner');
+
+        this.cdr.detectChanges();
+
 }
 
 
@@ -50,11 +62,36 @@ export class TalleresUsuariosComponent implements OnInit {
     console.log('🔍 Cargando usuarios...');
 
     try {
-        const res = await firstValueFrom(this.usuariosService.getUsuarios());
-        console.log('✅ Usuarios recibidos:', res);
-        console.log('📊 Primer usuario completo:', res[0]); // <-- AGREGAR ESTO
+        const currentUser = this.authService.getCurrentUser();
+        const allUsuarios = await firstValueFrom(this.usuariosService.getUsuarios());
 
-        this.usuarios = res;
+        // Filtrar según rol
+        if (this.isSuperUser) {
+            // Superuser ve TODOS
+            this.usuarios = allUsuarios;
+        } else if ((currentUser as any)?.grupo?.rol === 'admin') {
+            // Admin de grupo ve usuarios de su grupo
+            const miGrupoId = (currentUser as any).grupo.id;
+            this.usuarios = allUsuarios.filter(u =>
+                u.grupo?.id_grupo === miGrupoId
+            );
+        } else if ((currentUser as any)?.taller?.rol === 'owner') {
+    // Owner de taller ve usuarios de su taller
+    const miTallerId = (currentUser as any).taller.id;
+    console.log('🔍 Mi taller ID:', miTallerId);
+    console.log('🔍 Todos los usuarios:', allUsuarios);
+
+    this.usuarios = allUsuarios.filter(u => {
+        console.log('Usuario:', u.username, '- Taller ID:', u.taller?.id);
+        return u.taller?.id === miTallerId;
+    });
+
+    console.log('🔍 Usuarios filtrados:', this.usuarios);
+        } else {
+            // Member solo se ve a sí mismo
+            this.usuarios = allUsuarios.filter(u => u.id === (currentUser as any)?.user_id);
+        }
+
         this.loading = false;
         this.errorMessage = '';
     } catch (error: any) {

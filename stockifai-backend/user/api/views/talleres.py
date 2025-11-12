@@ -51,15 +51,26 @@ class TallerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = User.objects.get(id=self.request.session['user_id'])
 
-        if user.grupo:
-            raise ValidationError("Ya perteneces a un grupo")
-
-        if user.taller:
-            raise ValidationError("Ya tienes un taller")
-
+        # Crear el taller
         taller = serializer.save()
-        user.taller = taller
-        user.save()
+
+        # Si el usuario pertenece a un grupo, crear la relación en GrupoTaller
+        if user.grupo:
+            GrupoTaller.objects.create(
+                id_grupo=user.grupo,
+                id_taller=taller
+            )
+            print(f"✅ Taller '{taller.nombre}' asignado al grupo '{user.grupo.nombre}'")
+
+        # Si el usuario NO tiene grupo NI taller, asignárselo directamente
+        elif not user.taller:
+            user.taller = taller
+            user.save()
+            print(f"✅ Taller '{taller.nombre}' asignado al usuario '{user.username}'")
+
+        # Si ya tiene taller pero no grupo, error
+        else:
+            raise ValidationError("Ya tienes un taller asignado")
 
     def retrieve(self, request, *args, **kwargs):
         """Ver un taller"""

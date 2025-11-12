@@ -3,11 +3,14 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Usuarios</h5>
-            <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1"
-                (click)="openCrearUsuarioDialog()">
-                <i class="fa fa-circle-plus me-1"></i>
-                Nuevo usuario
-            </button>
+            <button
+    *ngIf="puedeCrearUsuarios"
+    type="button"
+    class="btn btn-primary ms-auto d-flex align-items-center gap-1"
+    (click)="openCrearUsuarioDialog()">
+    <i class="fa fa-circle-plus me-1"></i>
+    Nuevo usuario
+</button>
         </div>
         <hr>
 
@@ -24,7 +27,6 @@
     <table class="table table-bordered table-hover align-middle mb-0">
         <thead class="table-light">
             <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Apellido</th>
                 <th>Usuario</th>
@@ -38,7 +40,7 @@
         </thead>
         <tbody>
             <tr *ngFor="let usuario of usuarios">
-                <td>{{ usuario.id }}</td>
+
                 <td>{{ usuario.first_name }}</td>
                 <td>{{ usuario.last_name }}</td>
                 <td>{{ usuario.username }}</td>
@@ -71,7 +73,7 @@
 </div>
     </div>
 </div>
-
+console.log('🏗️ Constructor ejecutado');
 
 <div class="modal fade" id="userModal" tabindex="-1">
     <app-edit-usuarios [isEdit]="isEditMode" [usuario]="selectedUser" (onSubmit)="onUsuarioUpdated()"

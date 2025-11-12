@@ -30,33 +30,70 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
     loadingTalleres: boolean = false;
 
     isSuperUser: boolean = false;
+    puedeAsignarUsuarios: boolean = false;
     passwordField: string = '';
 
     constructor(
         private usuariosService: UsuariosService,
         private talleresService: TalleresService,
         private authService: AuthService
+
     ) {}
 
     ngOnInit(): void {
+       console.log('🚀 ngOnInit ejecutado');
     const currentUser = this.authService.getCurrentUser();
-    console.log('🔍 DEBUG - Usuario actual:', currentUser);
-    console.log('🔍 DEBUG - Es superuser?:', (currentUser as any)?.is_superuser);
-    console.log('🔍 DEBUG - Taller:', (currentUser as any)?.taller);
-    console.log('🔍 DEBUG - Grupo:', (currentUser as any)?.grupo);
-    console.log('🔍 DEBUG - Grupo.id:', (currentUser as any)?.grupo?.id);
-    console.log('🔍 DEBUG - isEdit?:', this.isEdit);
+
+    console.log('🔍 DEBUG - currentUser completo:', currentUser);
+    console.log('🔍 DEBUG - currentUser.grupo:', (currentUser as any)?.grupo);
+    console.log('🔍 DEBUG - currentUser.rol_en_grupo:', (currentUser as any)?.rol_en_grupo);
 
     this.isSuperUser = (currentUser as any)?.is_superuser || false;
+    this.puedeAsignarUsuarios = this.isSuperUser ||
+    ((currentUser as any)?.grupo?.rol === 'admin');
+
+    console.log('🔍 DEBUG - isSuperUser:', this.isSuperUser);
+    console.log('🔍 DEBUG - puedeAsignarUsuarios:', this.puedeAsignarUsuarios);
+
 
     this.loadingTalleres = true;
-    forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
-        ([grupos, talleres]) => {
+
+    // Si es superuser, carga TODO
+    if (this.isSuperUser) {
+        forkJoin([
+            this.usuariosService.getGrupos(),
+            this.talleresService.getTalleres()
+        ]).subscribe(([grupos, talleres]) => {
             this.grupos = grupos;
             this.talleres = talleres;
             this.loadingTalleres = false;
-        }
-    );
+        });
+    }
+    // Si es admin de grupo, solo carga su grupo y talleres de su grupo
+    else if ((currentUser as any)?.grupo) {
+        const grupoId = (currentUser as any).grupo.id_grupo;
+
+        forkJoin([
+            this.usuariosService.getGrupos(),
+            this.talleresService.getTalleres()
+        ]).subscribe(([grupos, allTalleres]) => {
+            // Solo su grupo
+            this.grupos = grupos.filter(g => g.id_grupo === grupoId);
+
+            // Solo talleres de su grupo
+            const miGrupo: any = grupos.find(g => g.id_grupo === grupoId);
+            if (miGrupo && miGrupo.talleres) {
+                const talleresIds = miGrupo.talleres.map((t: any) => t.id);
+                this.talleres = allTalleres.filter(t => talleresIds.includes(t.id));
+            } else {
+                this.talleres = [];
+            }
+
+            this.loadingTalleres = false;
+        });
+    } else {
+        this.loadingTalleres = false;
+    }
 
     if (this.isEdit && this.usuario?.id) {
         this.loadUsuarioCompleto(this.usuario.id);
@@ -75,9 +112,9 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
             this.usuario.rol_en_taller = 'member';
             console.log('✅ DESPUÉS - usuario.id_taller:', this.usuario.id_taller);
         } else if ((currentUser as any).grupo) {
-            console.log('✅ Asignando grupo ID:', (currentUser as any).grupo.id);
+            console.log('✅ Asignando grupo ID:', (currentUser as any).grupo.id_grupo);
             this.scopeType = 'grupo';
-            this.usuario.id_grupo = (currentUser as any).grupo.id;
+            this.usuario.id_grupo = (currentUser as any).grupo.id_grupo;
             this.usuario.rol_en_grupo = 'member';
             console.log('✅ DESPUÉS - usuario.id_grupo:', this.usuario.id_grupo);
         } else {
@@ -96,8 +133,50 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
 }
 
     ngOnChanges(changes: SimpleChanges): void {
+    const currentUser = this.authService.getCurrentUser();
+
+    this.isSuperUser = (currentUser as any)?.is_superuser || false;
+    this.puedeAsignarUsuarios = this.isSuperUser ||
+        ((currentUser as any)?.grupo?.rol === 'admin');
+
+    // ✅ CARGAR TALLERES Y GRUPOS
+    if (!this.loadingTalleres) {
+        this.loadingTalleres = true;
+
+        if (this.isSuperUser) {
+            forkJoin([
+                this.usuariosService.getGrupos(),
+                this.talleresService.getTalleres()
+            ]).subscribe(([grupos, talleres]) => {
+                this.grupos = grupos;
+                this.talleres = talleres;
+                this.loadingTalleres = false;
+            });
+        } else if ((currentUser as any)?.grupo) {
+            const grupoId = (currentUser as any).grupo.id;
+
+            forkJoin([
+                this.usuariosService.getGrupos(),
+                this.talleresService.getTalleres()
+            ]).subscribe(([grupos, allTalleres]) => {
+                this.grupos = grupos.filter(g => g.id_grupo === grupoId);
+
+                const miGrupo: any = grupos.find(g => g.id_grupo === grupoId);
+                if (miGrupo && miGrupo.talleres) {
+                    const talleresIds = miGrupo.talleres.map((t: any) => t.id);
+                    this.talleres = allTalleres.filter(t => talleresIds.includes(t.id));
+                } else {
+                    this.talleres = [];
+                }
+
+                this.loadingTalleres = false;
+            });
+        } else {
+            this.loadingTalleres = false;
+        }
+    }
+
     if (!this.isEdit) {
-        // Inicializamos el objeto vacío
         this.usuario = {
             username: '',
             email: '',
@@ -107,16 +186,12 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
         };
     }
 
-    // Siempre tener dirección inicial
     this.usuario.direccion = { pais: 'Argentina' };
 
-    // Si estamos editando, cargamos los datos completos
     if (changes['usuario'] && this.isEdit && this.usuario?.id) {
         this.loadUsuarioCompleto(this.usuario.id);
     }
 
-    // 🚀 Asignación automática del grupo/taller
-    const currentUser = this.authService.getCurrentUser();
     if (!this.isEdit && currentUser && !this.isSuperUser) {
         if (currentUser.taller) {
             this.scopeType = 'taller';
@@ -125,15 +200,14 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
             console.log('✅ Asignado taller ID:', currentUser.taller.id);
         } else if (currentUser.grupo) {
             this.scopeType = 'grupo';
-            this.usuario.id_grupo = currentUser.grupo.id;
+            this.usuario.id_grupo = currentUser.grupo.id_grupo;
             this.usuario.rol_en_grupo = 'member';
-            console.log('✅ Asignado grupo ID:', currentUser.grupo.id);
+            console.log('✅ Asignado grupo ID:', currentUser.grupo.id_grupo);
         } else {
             console.log('⚠️ El usuario actual no tiene ni taller ni grupo');
         }
     }
 
-    // Mantenemos la detección del scope actual
     if (this.usuario?.taller) this.scopeType = 'taller';
     if (this.usuario?.grupo) this.scopeType = 'grupo';
 
