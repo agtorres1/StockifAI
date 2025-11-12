@@ -218,11 +218,11 @@ LOGGING = {
     'loggers': {
         'django.db.backends': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
         },
         'django.request': {
             'handlers': ['console'],
-            'level': 'DEBUG',  # ← CAMBIAR de ERROR a DEBUG
+            'level': 'WARNING', 
             'propagate': False,
         },
     },

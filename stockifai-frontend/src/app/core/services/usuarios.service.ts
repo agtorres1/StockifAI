@@ -13,7 +13,7 @@ export class UsuariosService {
     }
 
     crearUsuario(usuario: Usuario): Observable<Usuario> {
-        return this.restService.post<Usuario>(`usuarios/`, usuario);
+        return this.restService.post<Usuario>(`register/`, usuario);
     }
     getUsuario(id: number): Observable<Usuario> {
         return this.restService.get<Usuario>(`usuarios/${id}/`);

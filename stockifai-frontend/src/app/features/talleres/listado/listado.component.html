@@ -3,11 +3,13 @@
 
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Talleres</h5>
-            <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1" data-bs-toggle="modal"
-                data-bs-target="#crearTallerModal" (click)="openCrearTallerDialog()">
-                <i class="fa fa-circle-plus me-1"></i>
-                Nuevo taller
-            </button>
+            <button
+    *ngIf="puedeCrearTalleres"
+    class="btn btn-primary"
+    (click)="openCrearTallerDialog()">
+    <i class="fas fa-plus-circle me-2"></i>
+    Nuevo Taller
+</button>
         </div>
         <hr>
 
@@ -24,7 +26,7 @@
             <table class="table table-bordered table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>ID</th>
+
                         <th>Nombre</th>
                         <th>Dirección</th>
                         <th>Teléfono</th>
@@ -35,7 +37,7 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let taller of talleres">
-                        <td>{{ taller.id }}</td>
+
                         <td>{{ taller.nombre }}</td>
                         <td>{{ taller.direccion }}</td>
                         <td>{{ taller.telefono }}</td>
@@ -43,14 +45,25 @@
                         <td>{{ taller.fecha_creacion | date }}</td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-1">
-                                <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                    title="Editar" (click)="onEditTallerClick(taller)">
-                                    <i class="fa fa-pen"></i>
-                                </button>
-                                <button class="btn btn-sm" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                    title="Eliminar" (click)="onDeleteTallerClick(taller)">
-                                    <i class="fa fa-trash"></i>
-                                </button>
+                                <button
+  *ngIf="puedeEditarTalleres"
+  class="btn btn-sm"
+  data-bs-toggle="tooltip"
+  data-bs-placement="bottom"
+  title="Editar"
+  (click)="onEditTallerClick(taller)">
+  <i class="fa fa-pen"></i>
+</button>
+
+<button
+    *ngIf="puedeCrearTalleres"
+    class="btn btn-sm"
+    data-bs-toggle="tooltip"
+    data-bs-placement="bottom"
+    title="Eliminar"
+    (click)="onDeleteTallerClick(taller)">
+    <i class="fa fa-trash"></i>
+</button>
                             </div>
                         </td>
                     </tr>

@@ -672,7 +672,7 @@ class KPIsViewSet(viewsets.ViewSet):
             cantidad__gt=0
         ).select_related('repuesto_taller__repuesto').prefetch_related(
             Prefetch(
-                'movimiento_set',
+                'movimientos',
                 queryset=Movimiento.objects.filter(tipo='EGRESO').order_by('-fecha'),
                 to_attr='egresos_prefetched'
             )

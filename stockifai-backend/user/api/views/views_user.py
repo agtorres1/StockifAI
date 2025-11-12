@@ -98,6 +98,8 @@ def login_with_credentials(request):
         print(f"🏭 Taller: {local_user.taller}")
         print(f"📦 Grupo: {local_user.grupo}")
 
+        print(f"🔍 DEBUG - rol_en_taller: {local_user.rol_en_taller}")
+        print(f"🔍 DEBUG - taller objeto: {local_user.taller}")
         return JsonResponse({
             "authenticated": True,
             "user_id": local_user.id,
@@ -114,8 +116,10 @@ def login_with_credentials(request):
             } if local_user.grupo else None,
             "taller": {
                 "id": local_user.taller.id,
-                "nombre": local_user.taller.nombre
+                "nombre": local_user.taller.nombre,
+                "rol": local_user.rol_en_taller
             } if local_user.taller else None,
+
         })
 
     except Exception as e:
@@ -367,7 +371,8 @@ def check_session(request):
 
                 "taller": {
                     "id": user.taller.id,
-                    "nombre": user.taller.nombre
+                    "nombre": user.taller.nombre,
+                    "rol": user.rol_en_taller
                 } if user.taller else None
             })
         except User.DoesNotExist:
@@ -404,29 +409,35 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user_id:
             return User.objects.none()
 
-        user = User.objects.get(id=user_id)
+        user = User.objects.select_related('taller', 'grupo').get(id=user_id)
 
         # Admin del sistema ve TODOS
         if user.is_staff or user.is_superuser:
-            return User.objects.all()
+            return User.objects.select_related('taller', 'grupo', 'direccion').all()
 
         # Usuario con grupo
         if user.grupo:
             # Si es admin del grupo, puede ver:
             if user.rol_en_grupo == 'admin':
-                return User.objects.filter(
-                    Q(id=user.id) |  # A sí mismo
-                    Q(grupo=user.grupo) |  # Usuarios de su grupo
-                    Q(grupo__isnull=True, taller__isnull=True)  # ← Usuarios sin asignar
+                return User.objects.select_related('taller', 'grupo', 'direccion').filter(
+                    Q(id=user.id) |
+                    Q(grupo=user.grupo) |
+                    Q(grupo__isnull=True, taller__isnull=True)
                 )
             else:
                 # Member/viewer solo ve usuarios del grupo
-                return User.objects.filter(
+                return User.objects.select_related('taller', 'grupo', 'direccion').filter(
                     Q(id=user.id) | Q(grupo=user.grupo)
                 )
 
+        # Usuario con taller (owner)
+        if user.taller and user.rol_en_taller == 'owner':
+            return User.objects.select_related('taller', 'grupo', 'direccion').filter(
+                taller=user.taller
+            )
+
         # Usuario sin grupo solo se ve a sí mismo
-        return User.objects.filter(id=user.id)
+        return User.objects.select_related('taller', 'grupo', 'direccion').filter(id=user.id)
 
     @action(detail=True, methods=['post'])
     def quitar_taller(self, request, pk=None):
