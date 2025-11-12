@@ -128,9 +128,6 @@ export class AuthService {
         return this.currentUserSubject.value !== null;
     }
 
-    getCurrentUser(): User | null {
-        return this.currentUserSubject.value;
-    }
 
     setActiveTaller(taller: Taller | null): void {
         this.activeTallerSubject.next(taller);
