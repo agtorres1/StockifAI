@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TitleService } from '../core/services/title.service';
 import { AuthService } from '../core/services/auth.service';
+import { TitleService } from '../core/services/title.service';
 
 @Component({
     selector: 'app-layout',
     templateUrl: './layout.component.html',
     styleUrl: './layout.component.scss',
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
     isCollapsed = false;
     loggingOut = false;
 
@@ -34,7 +34,6 @@ export class LayoutComponent {
                 { title: 'Marcas', icon: 'fas fa-tags', route: '/repuestos/marcas' },
                 { title: 'Categorias', icon: 'fas fa-car', route: '/repuestos/categorias' },
                 { title: 'Localizador', icon: 'fas fa-search', route: '/repuestos/localizador' },
-
             ],
         },
         { title: 'Configuracion', icon: 'fas fa-gear', route: '/configuracion' },
@@ -45,11 +44,24 @@ export class LayoutComponent {
 
     menuExpanded: { [key: string]: boolean } = {};
 
-   constructor(
+    user: any;
+
+    constructor(
         public titleService: TitleService,
         private router: Router,
-        private authService: AuthService // ← AGREGAR
+        private authService: AuthService
     ) {}
+
+    ngOnInit(): void {
+        this.user = this.authService.getCurrentUser();
+
+        if (!this.user?.is_superuser) {
+            const talleres = this.menuItems.find((m) => m.title === 'Talleres');
+            if (talleres?.subItems) {
+                talleres.subItems = talleres.subItems.filter((sub) => sub.title !== 'Grupos');
+            }
+        }
+    }
 
     toggleSidebar() {
         this.isCollapsed = !this.isCollapsed;
@@ -88,7 +100,6 @@ export class LayoutComponent {
     logout() {
         this.loggingOut = true;
         this.authService.logout();
-
     }
 
     change(title: string) {
