@@ -526,7 +526,7 @@ class KPIsViewSet(viewsets.ViewSet):
             taller_id=taller_id,
             defaults={
                 'tasa_rotacion_objetivo': 1.5,
-                'dias_en_mano_objetivo': 60,
+                'dias_en_mano_objetivo': 30,
                 'dead_stock_objetivo': 10.0,
                 'dias_dead_stock': 730
             }
@@ -889,10 +889,7 @@ class DetalleForecastingView(APIView):
         ]
 
         # Extrapolación simple para las semanas 5 y 6
-        """forecast_base_data = predicciones_db + [
-            predicciones_db[-1] + 5 if predicciones_db else 5,
-            predicciones_db[-1] + 2 if predicciones_db else 2
-        ]"""
+        forecast_base_data = predicciones_db
 
         # Calculamos los días de stock restantes (MOS * 7)
         mos_decimal = calcular_mos(Decimal(stock_actual), [Decimal(p) for p in predicciones_db])
@@ -906,16 +903,20 @@ class DetalleForecastingView(APIView):
         historico_labels: List[str] = historico_result["labels"]  # NUEVAS ETIQUETAS HISTÓRICAS
 
         # 3. Construir la Serie Completa (Histórico + Proyección)
-        full_series: List[Union[float, None]] = historico_data
+        full_series: List[Union[float, None]] = historico_data + forecast_base_data
         tendencia_data: List[float] = compute_trend_line(full_series)
 
         # 4. Formatear las series para Chart.js
         historico_chart_data: List[Union[float, None]] = historico_data + [None] * self.NUM_FORECAST_GRAFICO
-        forecast_media_chart_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
+        forecast_media_chart_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + forecast_base_data
 
         # Banda de Confianza (4% de margen)
-        forecast_lower_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
-        forecast_upper_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO
+        forecast_lower_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + [
+            round(v * (1 - self.CONFIDENCE_PCT)) for v in forecast_base_data
+        ]
+        forecast_upper_data: List[Union[float, None]] = [None] * self.NUM_HISTORICO + [
+            round(v * (1 + self.CONFIDENCE_PCT)) for v in forecast_base_data
+        ]
 
         # Generar etiquetas de forecast basadas en fechas reales futuras
         forecast_labels = []
@@ -1110,21 +1111,25 @@ class AlertsListView(APIView):
             return Response({"error": "Taller no encontrado"}, status=404)
 
         summary_mode = request.query_params.get("summary") == "1"
-        
+
         if summary_mode:
-            active_alerts_qs = Alerta.objects.filter(
+            alertas_filtradas_qs = Alerta.objects.filter(
                 repuesto_taller__taller_id=taller_id,
                 estado__in=[Alerta.EstadoAlerta.NUEVA]
-            ).order_by('-fecha_creacion')
-            # CAMPANITA
-            counts = active_alerts_qs.values('nivel').annotate(total=Count('id'))
+            )
+            lista_de_niveles = list(alertas_filtradas_qs.values_list('nivel', flat=True))
             alert_counts = {
                 Alerta.NivelAlerta.CRITICO: 0,
-                Alerta.NivelAlerta.ADVERTENCIA: 0, Alerta.NivelAlerta.INFORMATIVO: 0
+                Alerta.NivelAlerta.ADVERTENCIA: 0,
+                Alerta.NivelAlerta.INFORMATIVO: 0
             }
-            for item in counts:
-                if item['nivel'] in alert_counts:
-                    alert_counts[item['nivel']] = item['total']
+            counts_en_python = defaultdict(int)
+            for nivel in lista_de_niveles:
+                counts_en_python[nivel] += 1
+            for nivel, total in counts_en_python.items():
+                if nivel in alert_counts:
+                    alert_counts[nivel] = total
+
             total_urgente = alert_counts[Alerta.NivelAlerta.CRITICO]
             alert_counts["TOTAL_URGENTE"] = total_urgente
             return Response(alert_counts)

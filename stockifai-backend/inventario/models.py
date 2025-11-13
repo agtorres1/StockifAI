@@ -95,7 +95,7 @@ class ObjetivoKPI(models.Model):
     )
 
     dias_en_mano_objetivo = models.IntegerField(
-        default=60,
+        default=30,
         help_text="Objetivo de días en mano"
     )
 

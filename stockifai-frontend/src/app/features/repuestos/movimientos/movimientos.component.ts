@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { Deposito } from '../../../core/models/deposito';
@@ -48,7 +48,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
     private subSearch?: Subscription;
 
     stockInicialCargado: boolean = true;
-    
+
     constructor(
         private titleService: TitleService,
         private stockService: StockService,
@@ -254,9 +254,9 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                 }
                 if (res.insertados > 0 || res.ignorados > 0) {
                     this.successMsg = `Se importaron ${res.insertados + res.ignorados} movimientos correctamente`;
+                    this.alertasService.triggerResumenRefresh(this.tallerId);
+                    this.closeImportModal(true);
                 }
-                this.alertasService.triggerResumenRefresh(this.tallerId);
-                this.closeImportModal(true);
             } else {
                 const res = await firstValueFrom(this.stockService.importarStockInicial(this.tallerId, this.archivo));
                 if (res.errores && res.errores.length > 0) {
@@ -264,9 +264,9 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                 }
                 if (res.procesados > 0) {
                     this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
+                    this.alertasService.triggerResumenRefresh(this.tallerId);
+                    this.closeImportModal(true);
                 }
-                this.alertasService.triggerResumenRefresh(this.tallerId);
-                this.closeImportModal(true);
             }
 
             this.loadingArchivo = false;

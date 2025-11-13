@@ -32,7 +32,7 @@ def generar_alertas_inventario(
 
     # 2. ALERTA MEDIA: Bajo MOS
     # Se añade la condición de que no sea ya una alerta crítica para evitar duplicados.
-    if mos_en_semanas is not None and Decimal('0.5') < mos_en_semanas <= Decimal('1') and not (stock_total < pred_1):
+    if mos_en_semanas is not None and Decimal('0.25') < mos_en_semanas <= Decimal('0.5') and not (stock_total < pred_1):
         alertas_activas.append({
             "nivel": "ADVERTENCIA",
             "codigo": "MOS_BAJO_REORDENAR",
