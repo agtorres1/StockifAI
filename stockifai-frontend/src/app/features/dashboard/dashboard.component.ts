@@ -89,8 +89,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
     cargarKPIs() {
+          console.log('🔍 tallerId para KPIs:', this.tallerId);
+
+    if (!this.tallerId) {
+        console.warn('⚠️ No hay tallerId, no se pueden cargar KPIs');
+        this.loadingKpis = false;
+        return;
+    }
         this.loadingKpis = true;
-        this.alertasService.getKPIsResumen().subscribe({
+        this.alertasService.getKPIsResumen(this.tallerId).subscribe({
             next: (data) => {
                 // Mapear los datos del backend a las variables del componente
                 this.kpiRotacion = data.tasa_rotacion?.valor ?? 0;

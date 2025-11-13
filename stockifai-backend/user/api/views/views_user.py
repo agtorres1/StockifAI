@@ -100,6 +100,27 @@ def login_with_credentials(request):
 
         print(f"🔍 DEBUG - rol_en_taller: {local_user.rol_en_taller}")
         print(f"🔍 DEBUG - taller objeto: {local_user.taller}")
+
+        grupo_data = None
+        if local_user.grupo:
+            from user.models import GrupoTaller
+            talleres_grupo = GrupoTaller.objects.filter(
+                id_grupo=local_user.grupo
+            ).select_related('id_taller')
+
+            grupo_data = {
+                "id_grupo": local_user.grupo.id_grupo,
+                "nombre": local_user.grupo.nombre,
+                "rol": local_user.rol_en_grupo,
+                "talleres": [
+                    {"id": gt.id_taller.id, "nombre": gt.id_taller.nombre}
+                    for gt in talleres_grupo
+                ]
+            }
+
+
+
+
         return JsonResponse({
             "authenticated": True,
             "user_id": local_user.id,
@@ -109,11 +130,7 @@ def login_with_credentials(request):
             "apellido": local_user.last_name,
             "is_staff": local_user.is_staff,
             "is_superuser": local_user.is_superuser,
-            "grupo": {
-                "id_grupo": local_user.grupo.id_grupo,
-                "nombre": local_user.grupo.nombre,
-                "rol": local_user.rol_en_grupo
-            } if local_user.grupo else None,
+            "grupo": grupo_data,
             "taller": {
                 "id": local_user.taller.id,
                 "nombre": local_user.taller.nombre,
@@ -351,7 +368,26 @@ def check_session(request):
     """Verificar si hay sesión activa"""
     if 'user_id' in request.session:
         try:
-            user = User.objects.get(id=request.session['user_id'])
+            user = User.objects.select_related('taller', 'grupo').get(id=request.session['user_id'])
+
+            # Obtener talleres del grupo
+            grupo_data = None
+            if user.grupo:
+                from user.models import GrupoTaller
+                talleres_grupo = GrupoTaller.objects.filter(
+                    id_grupo=user.grupo
+                ).select_related('id_taller')
+
+                grupo_data = {
+                    "id_grupo": user.grupo.id_grupo,
+                    "nombre": user.grupo.nombre,
+                    "rol": user.rol_en_grupo,
+                    "talleres": [
+                        {"id": gt.id_taller.id, "nombre": gt.id_taller.nombre}
+                        for gt in talleres_grupo
+                    ]
+                }
+
             return JsonResponse({
                 "authenticated": True,
                 "user_id": user.id,
@@ -361,14 +397,7 @@ def check_session(request):
                 "apellido": user.last_name,
                 "is_staff": user.is_staff,
                 "is_superuser": user.is_superuser,
-
-                # ← AGREGAR ESTO
-                "grupo": {
-                    "id": user.grupo.id_grupo,
-                    "nombre": user.grupo.nombre,
-                    "rol": user.rol_en_grupo
-                } if user.grupo else None,
-
+                "grupo": grupo_data,
                 "taller": {
                     "id": user.taller.id,
                     "nombre": user.taller.nombre,
@@ -419,10 +448,16 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.grupo:
             # Si es admin del grupo, puede ver:
             if user.rol_en_grupo == 'admin':
+                # Obtener talleres del grupo
+                from user.models import GrupoTaller
+                talleres_ids = GrupoTaller.objects.filter(
+                    id_grupo=user.grupo
+                ).values_list('id_taller', flat=True)
+
                 return User.objects.select_related('taller', 'grupo', 'direccion').filter(
-                    Q(id=user.id) |
-                    Q(grupo=user.grupo) |
-                    Q(grupo__isnull=True, taller__isnull=True)
+                    Q(id=user.id) |  # A sí mismo
+                    Q(grupo=user.grupo) |  # Usuarios del grupo
+                    Q(taller__id__in=talleres_ids)  # Usuarios de talleres del grupo
                 )
             else:
                 # Member/viewer solo ve usuarios del grupo

@@ -128,7 +128,6 @@ export class AuthService {
         return this.currentUserSubject.value !== null;
     }
 
-
     setActiveTaller(taller: Taller | null): void {
         this.activeTallerSubject.next(taller);
         if (taller) {
@@ -142,22 +141,22 @@ export class AuthService {
         return this.activeTallerSubject.value;
     }
 
-  getCurrentUser(): User | null {
-    // Si ya está en el BehaviorSubject, usarlo
-    if (this.currentUserSubject.value) {
-        return this.currentUserSubject.value;
+    getCurrentUser(): User | null {
+        // Si ya está en el BehaviorSubject, usarlo
+        if (this.currentUserSubject.value) {
+            return this.currentUserSubject.value;
+        }
+
+        // Si no, leerlo del localStorage
+        const userFromStorage = localStorage.getItem('user');
+        if (userFromStorage) {
+            const user = JSON.parse(userFromStorage);
+            this.currentUserSubject.next(user); // Actualizar el BehaviorSubject
+            return user;
+        }
+        return null;
     }
 
-    // Si no, leerlo del localStorage
-    const userFromStorage = localStorage.getItem('user');
-    if (userFromStorage) {
-        const user = JSON.parse(userFromStorage);
-        this.currentUserSubject.next(user);  // Actualizar el BehaviorSubject
-        return user;
-    }
-
-    return null;
-}
     public getActiveTallerId(): number | null {
         return this.activeTallerSubject.value?.id ?? null;
     }

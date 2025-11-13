@@ -1,4 +1,5 @@
 from rest_framework.exceptions import PermissionDenied
+from user.models import GrupoTaller
 
 class PermissionChecker:
 
@@ -35,26 +36,36 @@ class PermissionChecker:
 
         return False
 
+
     @staticmethod
     def puede_eliminar_taller(user, taller):
         """¿Puede ELIMINAR el taller?"""
         if user.is_staff or user.is_superuser:
             return True
 
-        if taller.propietario == user:
-            return True
+        # Importamos aquí para evitar dependencias circulares
+        from user.models import GrupoTaller
 
-        for grupo in taller.grupos.all():
-            from user.roles import MiembroGrupo
-            miembro = MiembroGrupo.objects.filter(
-                usuario=user,
-                grupo=grupo
-            ).first()
+        print(f"🧩 Entrando en puede_eliminar_taller")
+        print(f"Usuario: {user.username} | ID: {user.id}")
+        print(f"is_staff: {user.is_staff} | is_superuser: {user.is_superuser}")
+        print(f"Grupo del usuario: {getattr(user.grupo, 'nombre', None)}")
+        print(f"Rol del usuario en el grupo: {user.rol_en_grupo}")
+        print(f"Taller que intenta eliminar: {taller.id}")
 
-            if miembro and miembro.rol == 'admin':
-                return True
+        # Verificamos si el taller está vinculado al grupo del usuario
+        vinculo_existe = GrupoTaller.objects.filter(
+            id_grupo=user.grupo_id,
+            id_taller=taller.id
+        ).exists()
 
-        return False
+        print(f"¿Existe vínculo grupo-taller? {vinculo_existe}")
+
+        # ✅ Solo puede eliminar si es admin de ese grupo y el taller pertenece a su grupo
+        puede = vinculo_existe and user.rol_en_grupo == "admin"
+
+        print(f"¿Puede eliminar? {puede}")
+        return puede
 
     @staticmethod
     def puede_gestionar_miembros(user, grupo):

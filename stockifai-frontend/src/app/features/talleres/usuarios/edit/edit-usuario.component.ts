@@ -28,6 +28,7 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
     talleres: Taller[] = [];
     grupos: Grupo[] = [];
     loadingTalleres: boolean = false;
+    puedeEditarScope: boolean = false;
 
     isSuperUser: boolean = false;
     puedeAsignarUsuarios: boolean = false;
@@ -41,20 +42,17 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
     ) {}
 
     ngOnInit(): void {
-       console.log('🚀 ngOnInit ejecutado');
+
     const currentUser = this.authService.getCurrentUser();
 
-    console.log('🔍 DEBUG - currentUser completo:', currentUser);
-    console.log('🔍 DEBUG - currentUser.grupo:', (currentUser as any)?.grupo);
-    console.log('🔍 DEBUG - currentUser.rol_en_grupo:', (currentUser as any)?.rol_en_grupo);
 
     this.isSuperUser = (currentUser as any)?.is_superuser || false;
     this.puedeAsignarUsuarios = this.isSuperUser ||
-    ((currentUser as any)?.grupo?.rol === 'admin');
+    ((currentUser as any)?.grupo?.rol === 'admin') ||
+    ((currentUser as any)?.taller?.rol === 'owner');;
 
-    console.log('🔍 DEBUG - isSuperUser:', this.isSuperUser);
-    console.log('🔍 DEBUG - puedeAsignarUsuarios:', this.puedeAsignarUsuarios);
 
+    this.puedeEditarScope = this.isSuperUser;
 
     this.loadingTalleres = true;
 
@@ -91,7 +89,19 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
 
             this.loadingTalleres = false;
         });
-    } else {
+    }
+     else if ((currentUser as any)?.taller) {
+        this.talleresService.getTalleres().subscribe((allTalleres) => {
+            const tallerId = (currentUser as any).taller.id;
+            this.talleres = allTalleres.filter(t => t.id === tallerId);
+            this.grupos = [];
+
+            console.log('✅ Taller del owner cargado:', this.talleres);
+
+            this.loadingTalleres = false;
+        });
+    }
+  else {
         this.loadingTalleres = false;
     }
 
@@ -137,7 +147,8 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
 
     this.isSuperUser = (currentUser as any)?.is_superuser || false;
     this.puedeAsignarUsuarios = this.isSuperUser ||
-        ((currentUser as any)?.grupo?.rol === 'admin');
+        ((currentUser as any)?.grupo?.rol === 'admin') ||
+        ((currentUser as any)?.taller?.rol === 'owner');
 
     // ✅ CARGAR TALLERES Y GRUPOS
     if (!this.loadingTalleres) {
@@ -153,7 +164,7 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
                 this.loadingTalleres = false;
             });
         } else if ((currentUser as any)?.grupo) {
-            const grupoId = (currentUser as any).grupo.id;
+            const grupoId = (currentUser as any).grupo.id_grupo;  // ← CORREGIDO
 
             forkJoin([
                 this.usuariosService.getGrupos(),
@@ -169,9 +180,25 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
                     this.talleres = [];
                 }
 
+                console.log('✅ Grupos filtrados:', this.grupos);  // ← LOG
+                console.log('✅ Talleres filtrados:', this.talleres);  // ← LOG
+
                 this.loadingTalleres = false;
             });
-        } else {
+        }
+         else if ((currentUser as any)?.taller) {
+        this.talleresService.getTalleres().subscribe((allTalleres) => {
+            const tallerId = (currentUser as any).taller.id;
+            this.talleres = allTalleres.filter(t => t.id === tallerId);
+            this.grupos = [];
+
+            console.log('✅ Taller del owner cargado:', this.talleres);
+
+            this.loadingTalleres = false;
+        });
+    }
+
+        else {
             this.loadingTalleres = false;
         }
     }

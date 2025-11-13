@@ -517,53 +517,60 @@ class EjecutarForecastView(APIView):
 
 class KPIsViewSet(viewsets.ViewSet):
 
-    def _get_objetivo_kpi(self, user):
-        """Obtener u crear objetivos KPI para el usuario"""
-        if user.taller:
-            objetivo, created = ObjetivoKPI.objects.get_or_create(
-                taller=user.taller,
-                defaults={
-                    'tasa_rotacion_objetivo': 1.5,
-                    'dias_en_mano_objetivo': 60,
-                    'dead_stock_objetivo': 10.0,
-                    'dias_dead_stock': 730
-                }
-            )
-            return objetivo
+    def _get_objetivo_kpi(self, taller_id):
+        """Obtener u crear objetivos KPI para un taller específico"""
+        if not taller_id:
+            return None
 
-        if user.grupo:
-            objetivo, created = ObjetivoKPI.objects.get_or_create(
-                grupo=user.grupo,
-                defaults={
-                    'tasa_rotacion_objetivo': 1.5,
-                    'dias_en_mano_objetivo': 60,
-                    'dead_stock_objetivo': 10.0,
-                    'dias_dead_stock': 730
-                }
-            )
-            return objetivo
+        objetivo, created = ObjetivoKPI.objects.get_or_create(
+            taller_id=taller_id,
+            defaults={
+                'tasa_rotacion_objetivo': 1.5,
+                'dias_en_mano_objetivo': 60,
+                'dead_stock_objetivo': 10.0,
+                'dias_dead_stock': 730
+            }
+        )
+        return objetivo
 
-        return None
+    def _calcular_dead_stock_desde_salud(self, request, taller_id):
+        """Calcula dead stock usando SaludInventarioPorCategoriaView - POR VALOR"""
+        from inventario.api.views import SaludInventarioPorCategoriaView
 
-    def _calcular_tasa_rotacion(self, user):
-        """Calcular tasa de rotación de los ÚLTIMOS 3 MESES - OPTIMIZADO"""
+        salud_view = SaludInventarioPorCategoriaView()
+        salud_response = salud_view.get(request, taller_id=int(taller_id))
+        salud_data = salud_response.data
+
+        total_valor = 0
+        valor_sobrestock = 0
+
+        for categoria in salud_data:
+            for freq_key, freq_data in categoria.get("frecuencias", {}).items():
+                valor_freq = freq_data.get("total_valor_frecuencia", 0)
+                total_valor += valor_freq
+
+                # Si la frecuencia es MUERTO, todo su valor es dead stock
+                if freq_key == "MUERTO":
+                    valor_sobrestock += valor_freq
+
+        resultado = round((valor_sobrestock / total_valor * 100), 1) if total_valor > 0 else 0
+
+        print(f"🔍 DEAD STOCK POR VALOR: ${valor_sobrestock:.2f}/${total_valor:.2f} = {resultado}%")
+
+        return resultado
+
+    def _calcular_tasa_rotacion(self, taller_id):
+        """Calcular tasa de rotación de los ÚLTIMOS 3 MESES para un taller específico - OPTIMIZADO"""
+        if not taller_id:
+            return None
+
         hoy = timezone.now()
         fecha_inicio = hoy - timedelta(days=90)
         fecha_fin = hoy
 
-        if user.taller:
-            stock_filter = Q(deposito__taller=user.taller)
-            movimiento_filter = Q(stock_por_deposito__deposito__taller=user.taller)
-        elif user.grupo:
-            from user.api.models.models import GrupoTaller
-            talleres_del_grupo = GrupoTaller.objects.filter(
-                id_grupo=user.grupo
-            ).values_list('id_taller', flat=True)
-
-            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
-            movimiento_filter = Q(stock_por_deposito__deposito__taller__in=talleres_del_grupo)
-        else:
-            return None
+        # Filtros simples por taller_id
+        stock_filter = Q(deposito__taller_id=taller_id)
+        movimiento_filter = Q(stock_por_deposito__deposito__taller_id=taller_id)
 
         # ✅ OPTIMIZACIÓN: select_related para evitar queries adicionales
         movimientos_egreso = Movimiento.objects.filter(
@@ -571,7 +578,7 @@ class KPIsViewSet(viewsets.ViewSet):
             tipo='EGRESO',
             fecha__gte=fecha_inicio,
             fecha__lte=fecha_fin
-        ).select_related('stock_por_deposito__repuesto_taller')  # ← AGREGADO
+        ).select_related('stock_por_deposito__repuesto_taller')
 
         # ✅ OPTIMIZACIÓN: Calcular en la base de datos con annotate
         ventas_totales = movimientos_egreso.aggregate(
@@ -584,7 +591,7 @@ class KPIsViewSet(viewsets.ViewSet):
         # ✅ OPTIMIZACIÓN: select_related y calcular en la BD
         stocks = StockPorDeposito.objects.filter(
             stock_filter
-        ).select_related('repuesto_taller')  # ← AGREGADO
+        ).select_related('repuesto_taller')
 
         stock_valor = stocks.aggregate(
             total=Sum(
@@ -598,26 +605,19 @@ class KPIsViewSet(viewsets.ViewSet):
 
         return {'tasa_rotacion': round(tasa_rotacion, 2)}
 
-    def _calcular_dias_en_mano(self, user):
-        """Calcular días en mano de los ÚLTIMOS 3 MESES - OPTIMIZADO"""
+    def _calcular_dias_en_mano(self, taller_id):
+        """Calcular días en mano de los ÚLTIMOS 3 MESES para un taller específico - OPTIMIZADO"""
+        if not taller_id:
+            return None
+
         hoy = timezone.now()
         fecha_inicio = hoy - timedelta(days=90)
         fecha_fin = hoy
         dias_periodo = 90
 
-        if user.taller:
-            stock_filter = Q(deposito__taller=user.taller)
-            movimiento_filter = Q(stock_por_deposito__deposito__taller=user.taller)
-        elif user.grupo:
-            from user.api.models.models import GrupoTaller
-            talleres_del_grupo = GrupoTaller.objects.filter(
-                id_grupo=user.grupo
-            ).values_list('id_taller', flat=True)
-
-            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
-            movimiento_filter = Q(stock_por_deposito__deposito__taller__in=talleres_del_grupo)
-        else:
-            return None
+        # Filtros simples por taller_id
+        stock_filter = Q(deposito__taller_id=taller_id)
+        movimiento_filter = Q(stock_por_deposito__deposito__taller_id=taller_id)
 
         # ✅ OPTIMIZACIÓN: Calcular ventas_totales en una sola query
         movimientos_egreso = Movimiento.objects.filter(
@@ -650,61 +650,25 @@ class KPIsViewSet(viewsets.ViewSet):
 
         return {'dias_en_mano': round(dias_en_mano, 1)}
 
-    def _calcular_dead_stock(self, user, objetivo_kpi):
-        """Calcular porcentaje de stock muerto - OPTIMIZADO"""
-        fecha_limite = timezone.now() - timedelta(days=objetivo_kpi.dias_dead_stock)
-
-        if user.taller:
-            stock_filter = Q(deposito__taller=user.taller)
-        elif user.grupo:
-            from user.api.models.models import GrupoTaller
-            talleres_del_grupo = GrupoTaller.objects.filter(
-                id_grupo=user.grupo
-            ).values_list('id_taller', flat=True)
-
-            stock_filter = Q(deposito__taller__in=talleres_del_grupo)
-        else:
-            return None
-
-        # ✅ OPTIMIZACIÓN: Prefetch de movimientos para evitar N+1
-        stocks = StockPorDeposito.objects.filter(
-            stock_filter,
-            cantidad__gt=0
-        ).select_related('repuesto_taller__repuesto').prefetch_related(
-            Prefetch(
-                'movimientos',
-                queryset=Movimiento.objects.filter(tipo='EGRESO').order_by('-fecha'),
-                to_attr='egresos_prefetched'
-            )
-        )
-
-        total_items = stocks.count()
-        items_muertos = 0
-
-        for stock in stocks:
-            egresos = getattr(stock, 'egresos_prefetched', [])
-
-            if egresos:
-                ultimo_egreso = egresos[0]  # Ya están ordenados por -fecha
-                if ultimo_egreso.fecha < fecha_limite:
-                    items_muertos += 1
-
-        porcentaje = round((items_muertos / total_items * 100), 1) if total_items > 0 else 0
-
-        return porcentaje
 
     @action(detail=False, methods=['get'])
     def tasa_rotacion(self, request):
-        """GET /api/kpis/tasa_rotacion/"""
-        from inventario.utils import get_user_from_request
-        user = get_user_from_request(request)
-        ##############################user = User.objects.get(id=request.session['user_id'])
-        objetivo_kpi = self._get_objetivo_kpi(user)
+        """GET /api/kpis/tasa_rotacion/?taller_id=123"""
+
+        # Obtener taller_id del query param
+        taller_id = request.GET.get('taller_id')
+
+        if not taller_id:
+            return Response({"error": "taller_id es requerido"}, status=400)
+
+        # Obtener objetivo KPI para ese taller
+        objetivo_kpi = self._get_objetivo_kpi(taller_id)
 
         if not objetivo_kpi:
-            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+            return Response({"error": "No se encontró configuración de objetivos para este taller"}, status=400)
 
-        resultado = self._calcular_tasa_rotacion(user)
+        # Calcular tasa de rotación para ese taller
+        resultado = self._calcular_tasa_rotacion(taller_id)
 
         if not resultado:
             return Response({"error": "No se pudieron calcular los KPIs"}, status=400)
@@ -732,16 +696,22 @@ class KPIsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def dias_en_mano(self, request):
-        """GET /api/kpis/dias_en_mano/"""
-        from inventario.utils import get_user_from_request
-        user = get_user_from_request(request)
-        ##################################user = User.objects.get(id=request.session['user_id'])
-        objetivo_kpi = self._get_objetivo_kpi(user)
+        """GET /api/kpis/dias_en_mano/?taller_id=123"""
+
+        # Obtener taller_id del query param
+        taller_id = request.GET.get('taller_id')
+
+        if not taller_id:
+            return Response({"error": "taller_id es requerido"}, status=400)
+
+        # Obtener objetivo KPI para ese taller
+        objetivo_kpi = self._get_objetivo_kpi(taller_id)
 
         if not objetivo_kpi:
-            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+            return Response({"error": "No se encontró configuración de objetivos para este taller"}, status=400)
 
-        resultado = self._calcular_dias_en_mano(user)
+        # Calcular días en mano para ese taller
+        resultado = self._calcular_dias_en_mano(taller_id)
 
         if not resultado:
             return Response({"error": "No se pudieron calcular los días en mano"}, status=400)
@@ -767,21 +737,19 @@ class KPIsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def dead_stock(self, request):
-        """GET /api/kpis/dead_stock/"""
-        from inventario.utils import get_user_from_request
-        user = get_user_from_request(request)
-        ###############################user = User.objects.get(id=request.session['user_id'])
-        objetivo_kpi = self._get_objetivo_kpi(user)
+        """GET /api/kpis/dead_stock/?taller_id=123"""
 
-        if not objetivo_kpi:
-            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+        taller_id = request.GET.get('taller_id')
 
-        valor = self._calcular_dead_stock(user, objetivo_kpi)
+        if not taller_id:
+            return Response({"error": "taller_id es requerido"}, status=400)
 
-        if valor is None:
-            return Response({"error": "No se pudo calcular el dead stock"}, status=400)
+        # ✅ Usar el método helper
+        valor = self._calcular_dead_stock_desde_salud(request, taller_id)
 
-        objetivo = float(objetivo_kpi.dead_stock_objetivo)
+        # Obtener objetivo
+        objetivo_kpi = self._get_objetivo_kpi(taller_id)
+        objetivo = float(objetivo_kpi.dead_stock_objetivo) if objetivo_kpi else 10.0
 
         diferencia = round(valor - objetivo, 1)
 
@@ -801,20 +769,24 @@ class KPIsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
-        """GET /api/kpis/resumen/"""
+        """GET /api/kpis/resumen/?taller_id=123"""
 
-        from inventario.utils import get_user_from_request
-        user = get_user_from_request(request)
-       ####################################### user = User.objects.get(id=request.session['user_id'])
-        objetivo_kpi = self._get_objetivo_kpi(user)
+        # Obtener taller_id del query param
+        taller_id = request.GET.get('taller_id')
+
+        if not taller_id:
+            return Response({"error": "taller_id es requerido"}, status=400)
+
+        # Obtener objetivo KPI para ese taller
+        objetivo_kpi = self._get_objetivo_kpi(taller_id)
 
         if not objetivo_kpi:
-            return Response({"error": "Usuario sin taller ni grupo asignado"}, status=400)
+            return Response({"error": "No se encontró configuración de objetivos para este taller"}, status=400)
 
-        tasa_rot = self._calcular_tasa_rotacion(user)
-        dias_mano = self._calcular_dias_en_mano(user)
-        #dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
-        dead_porcentaje = 0
+        # Calcular todos los KPIs para ese taller
+        tasa_rot = self._calcular_tasa_rotacion(taller_id)
+        dias_mano = self._calcular_dias_en_mano(taller_id)
+        dead_porcentaje = self._calcular_dead_stock_desde_salud(request, taller_id)  # ← CAMBIAR AQUÍ
 
         if not tasa_rot or not dias_mano or dead_porcentaje is None:
             return Response({"error": "No se pudieron calcular los KPIs"}, status=400)
@@ -1535,6 +1507,23 @@ class SaludInventarioPorCategoriaView(APIView):
                 response_data.append(categoria_obj)
 
         response_data.sort(key=lambda x: x['categoria'])
+
+        total_items_global = 0
+        total_sobrestock_global = 0
+
+        for categoria_data in response_data:
+            for freq_key, freq_data in categoria_data.get("frecuencias", {}).items():
+                total_items_global += freq_data.get("total_items_frecuencia", 0)
+                total_sobrestock_global += freq_data.get("sobrestock", 0)
+
+        porcentaje_global = round((total_sobrestock_global / total_items_global * 100),
+                                  1) if total_items_global > 0 else 0
+
+        print(f"🔍 SALUD INVENTARIO - Total items: {total_items_global}")
+        print(f"🔍 SALUD INVENTARIO - Total sobrestock: {total_sobrestock_global}")
+        print(f"🔍 SALUD INVENTARIO - Porcentaje: {porcentaje_global}%")
+
+        return Response(response_data)
 
         return Response(response_data)
 
