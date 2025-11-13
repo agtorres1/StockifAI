@@ -813,8 +813,7 @@ class KPIsViewSet(viewsets.ViewSet):
 
         tasa_rot = self._calcular_tasa_rotacion(user)
         dias_mano = self._calcular_dias_en_mano(user)
-        #dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
-        dead_porcentaje = 0
+        dead_porcentaje = self._calcular_dead_stock(user, objetivo_kpi)
 
         if not tasa_rot or not dias_mano or dead_porcentaje is None:
             return Response({"error": "No se pudieron calcular los KPIs"}, status=400)

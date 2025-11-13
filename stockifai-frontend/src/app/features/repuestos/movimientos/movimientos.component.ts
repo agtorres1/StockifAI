@@ -98,6 +98,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
         }).subscribe({
             next: ({ taller, depositos, movimientos }) => {
                 this.taller = taller;
+                this.stockInicialCargado = taller.stock_inicial_cargado;
                 this.depositos = Array.isArray((depositos as any)?.depositos)
                     ? (depositos as any).depositos
                     : (depositos as any); // por si tu API a veces envía { depositos: [] }

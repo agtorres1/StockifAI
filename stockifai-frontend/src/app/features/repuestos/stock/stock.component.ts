@@ -28,7 +28,7 @@ export class StockComponent implements OnInit, AfterViewInit, OnDestroy {
 
     stock: RepuestoStock[] = [];
     page: number = 1;
-    pageSize: number = 10;
+    pageSize: number = 20;
     totalPages: number = 0;
 
     @ViewChild('searchInput') searchInput!: ElementRef;

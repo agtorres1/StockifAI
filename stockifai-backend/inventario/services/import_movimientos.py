@@ -292,7 +292,12 @@ def _process_bulk_movimientos(processed_data, entities, permitir_stock_negativo)
             rep = entities['repuestos'][row['numero_pieza']]
             dep = entities['depositos'][row['deposito']]
             rt = entities['repuesto_taller'][rep.pk]
-            spd = entities['stock'][(rt.pk, dep.pk)]
+
+            # 🔁 Fallback defensivo para SPD sin pk
+            spd = entities['stock'].get((rt.pk, dep.pk))
+            if not getattr(spd, 'pk', None):
+                spd = StockPorDeposito.objects.get(repuesto_taller_id=rt.pk, deposito_id=dep.pk)
+                entities['stock'][(rt.pk, dep.pk)] = spd
 
             # Calcular delta de stock
             if row['tipo'] in ("EGRESO", "AJUSTE-"):
@@ -337,8 +342,9 @@ def _process_bulk_movimientos(processed_data, entities, permitir_stock_negativo)
                         batch_size=CHUNK_SIZE,
                         ignore_conflicts=False
                     )
-                except Exception:
+                except Exception as ex:
                     # Manejar duplicados individualmente
+                    print(type(ex).__name__, str(ex))
                     for mov in chunk:
                         try:
                             mov.save()

@@ -36,6 +36,7 @@ class MovimientosListView(APIView):
             # Verificar que el taller existe
             taller = Taller.objects.get(pk=taller_id)
 
+            """"
             # 🔧 CAMBIO: Usar id_taller en lugar de taller_id
             grupo_taller = GrupoTaller.objects.filter(id_taller=taller_id).first()
 
@@ -47,6 +48,9 @@ class MovimientosListView(APIView):
                 ).values_list('id_taller', flat=True))
             else:
                 talleres_ids = [taller_id]
+            """
+
+            talleres_ids = [int(taller_id)]
 
             # Validar depósito
             if deposito_id:

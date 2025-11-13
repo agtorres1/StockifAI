@@ -36,7 +36,7 @@ export class LayoutComponent implements OnInit {
                 { title: 'Localizador', icon: 'fas fa-search', route: '/repuestos/localizador' },
             ],
         },
-        { title: 'Configuracion', icon: 'fas fa-gear', route: '/configuracion' },
+        //{ title: 'Configuracion', icon: 'fas fa-gear', route: '/configuracion' },
     ];
 
     openSubmenus = new Set<MenuItem>();

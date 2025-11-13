@@ -81,7 +81,7 @@ aws_database_config = {
     'PASSWORD': os.getenv('DB_PASSWORD_AWS', os.getenv('DB_PASSWORDAWS')),
     'HOST': os.getenv('DB_HOST_AWS', os.getenv('DB_HOSTAWS')),
     'PORT': os.getenv('DB_PORT_AWS', os.getenv('DB_PORTAWS')),
-    'CONN_MAX_AGE': _optional_int(os.getenv('DB_CONN_MAX_AGE_AWS')) or 1800,
+    'CONN_MAX_AGE': 0,
     'CONN_HEALTH_CHECKS': _env_bool(os.getenv('DB_CONN_HEALTH_CHECKS_AWS'), True),
     'OPTIONS': {
         'connect_timeout': _optional_int(os.getenv('DB_CONNECT_TIMEOUT_AWS')) or 10,
@@ -93,7 +93,7 @@ aws_database_config = {
         'isolation_level': os.getenv('DB_ISOLATION_LEVEL_AWS', 'READ COMMITTED'),
     },
     'POOL_OPTIONS': {
-        'POOL_SIZE': _optional_int(os.getenv('DB_POOL_SIZE_AWS')) or 10,
+        'POOL_SIZE': 5,
         'MAX_OVERFLOW': _optional_int(os.getenv('DB_POOL_MAX_OVERFLOW_AWS')) or 20,
         'PRE_PING': _env_bool(os.getenv('DB_POOL_PRE_PING_AWS'), True),
         'POOL_TIMEOUT': _optional_int(os.getenv('DB_POOL_TIMEOUT_AWS')) or 30,
@@ -108,7 +108,7 @@ local_database_config = {
     'PASSWORD': os.getenv('DB_PASSWORD_LOCAL', os.getenv('DB_PASSWORD')),
     'HOST': os.getenv('DB_HOST_LOCAL', os.getenv('DB_HOST', '127.0.0.1')),
     'PORT': os.getenv('DB_PORT_LOCAL', os.getenv('DB_PORT', '3306')),
-    'CONN_MAX_AGE': _optional_int(os.getenv('DB_CONN_MAX_AGE_LOCAL')),
+    'CONN_MAX_AGE': 60,
     'CONN_HEALTH_CHECKS': _env_bool(os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL')) if os.getenv('DB_CONN_HEALTH_CHECKS_LOCAL') is not None else None,
 }
 

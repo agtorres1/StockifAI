@@ -7,6 +7,7 @@ import { RepuestoTaller } from '../../core/models/repuesto-taller';
 import { SaludInventarioChartData, TotalesPorCategoria } from '../../core/models/salud-inventario';
 import { AlertasService } from '../../core/services/alertas.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TitleService } from '../../core/services/title.service';
 
 @Component({
     selector: 'app-dashboard',
@@ -67,9 +68,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     sub: Subscription | undefined;
 
-    constructor(private alertasService: AlertasService, private authService: AuthService, private router: Router) {}
+    constructor(private alertasService: AlertasService, private authService: AuthService, private titleService: TitleService, private router: Router) {}
 
     ngOnInit(): void {
+        this.titleService.setTitle('Dashboard');
         this.sub = this.authService.activeTallerId$.subscribe((tallerId) => {
             if (tallerId) {
                 this.tallerId = tallerId;
