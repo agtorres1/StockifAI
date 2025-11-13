@@ -65,33 +65,39 @@ export class TalleresUsuariosComponent implements OnInit {
         const currentUser = this.authService.getCurrentUser();
         const allUsuarios = await firstValueFrom(this.usuariosService.getUsuarios());
 
+        console.log('📋 Total usuarios del backend:', allUsuarios.length);
+        allUsuarios.forEach(u => {
+            console.log(`Usuario ${u.username}: grupo_id=${u.grupo?.id_grupo}, taller_id=${u.taller?.id}`);
+        });
+
         // Filtrar según rol
         if (this.isSuperUser) {
             // Superuser ve TODOS
             this.usuarios = allUsuarios;
         } else if ((currentUser as any)?.grupo?.rol === 'admin') {
-            // Admin de grupo ve usuarios de su grupo
-            const miGrupoId = (currentUser as any).grupo.id;
+            // Admin de grupo ve usuarios de su grupo Y de talleres del grupo
+            const miGrupoId = (currentUser as any).grupo.id_grupo;  // ← ARREGLADO
+
+            // Obtener IDs de talleres del grupo
+            const miGrupo = (currentUser as any).grupo;
+            const talleresDelGrupo = miGrupo.talleres?.map((t: any) => t.id) || [];
+
             this.usuarios = allUsuarios.filter(u =>
-                u.grupo?.id_grupo === miGrupoId
+                u.grupo?.id_grupo === miGrupoId ||  // Usuarios del grupo
+                (u.taller && talleresDelGrupo.includes(u.taller.id))  // Usuarios de talleres del grupo
             );
         } else if ((currentUser as any)?.taller?.rol === 'owner') {
-    // Owner de taller ve usuarios de su taller
-    const miTallerId = (currentUser as any).taller.id;
-    console.log('🔍 Mi taller ID:', miTallerId);
-    console.log('🔍 Todos los usuarios:', allUsuarios);
-
-    this.usuarios = allUsuarios.filter(u => {
-        console.log('Usuario:', u.username, '- Taller ID:', u.taller?.id);
-        return u.taller?.id === miTallerId;
-    });
-
-    console.log('🔍 Usuarios filtrados:', this.usuarios);
+            // Owner de taller ve usuarios de su taller
+            const miTallerId = (currentUser as any).taller.id;
+            this.usuarios = allUsuarios.filter(u =>
+                u.taller?.id === miTallerId
+            );
         } else {
             // Member solo se ve a sí mismo
             this.usuarios = allUsuarios.filter(u => u.id === (currentUser as any)?.user_id);
         }
 
+        console.log('🔍 Usuarios filtrados:', this.usuarios);
         this.loading = false;
         this.errorMessage = '';
     } catch (error: any) {
@@ -100,6 +106,7 @@ export class TalleresUsuariosComponent implements OnInit {
         this.loading = false;
     }
 }
+
 
     openCrearUsuarioDialog() {
         this.selectedUser = undefined as any;

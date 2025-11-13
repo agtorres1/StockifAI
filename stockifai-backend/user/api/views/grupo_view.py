@@ -60,17 +60,22 @@ class GrupoViewSet(viewsets.ModelViewSet):
         return Grupo.objects.none()
 
     def perform_create(self, serializer):
-        """Al crear grupo, el usuario es admin automáticamente"""
+        """Al crear grupo, el usuario es admin automáticamente (excepto superuser)"""
         user = User.objects.get(id=self.request.session['user_id'])
 
-        # ← AGREGAR ESTA VALIDACIÓN
+        # ✅ NO asignar al superuser automáticamente
+        if user.is_superuser or user.is_staff:
+            grupo = serializer.save()
+            print(f"✅ Superuser {user.username} creó el grupo {grupo.nombre} sin asignarse")
+            return
+
+        # ← Validaciones para usuarios normales
         if user.grupo:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({
                 "error": "Ya perteneces a un grupo. No puedes crear otro."
             })
 
-        # Validar que no tenga taller
         if user.taller:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({

@@ -94,13 +94,39 @@ class TallerViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """Eliminar un taller"""
-        taller = self.get_object()
-        user = User.objects.get(id=request.session['user_id'])
+        print("🔍 DEBUG - Entrando a destroy")
 
-        if not PermissionChecker.puede_eliminar_taller(user, taller):
+        try:
+            taller = self.get_object()
+            print(f"🔍 DEBUG - Taller obtenido: {taller.id}")
+        except Exception as e:
+            print(f"❌ ERROR al obtener taller: {e}")
+            raise
+
+        try:
+            user = User.objects.get(id=request.session['user_id'])
+            print(f"🔍 DEBUG - Usuario obtenido: {user.username}")
+        except Exception as e:
+            print(f"❌ ERROR al obtener usuario: {e}")
+            raise
+
+        try:
+            puede = PermissionChecker.puede_eliminar_taller(user, taller)
+            print(f"🔍 DEBUG - puede_eliminar_taller: {puede}")
+        except Exception as e:
+            print(f"❌ ERROR en puede_eliminar_taller: {e}")
+            raise
+
+        if not puede:
             raise PermissionDenied("No tienes permiso para eliminar este taller")
 
-        return super().destroy(request, *args, **kwargs)
+        print("🔍 DEBUG - Llamando a super().destroy()")
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except Exception as e:
+            print(f"❌ ERROR en super().destroy(): {e}")
+            raise
+
 
 class TallerView(APIView):
     """

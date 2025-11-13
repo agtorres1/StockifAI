@@ -1,4 +1,4 @@
-import { HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpParams, HttpResponse, HttpClient  } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
     catchError,
@@ -26,7 +26,9 @@ export class AlertasService {
 
     private resumenRefresh$ = new Subject<number>();
 
-    constructor(private restService: RestService) {}
+    constructor(private restService: RestService,
+                private http: HttpClient,
+                ) {}
 
     summary$(tallerId: number): Observable<AlertasResumen> {
         return merge(
@@ -39,20 +41,23 @@ export class AlertasService {
         );
     }
 
-    getKPIsResumen(): Observable<any> {
-        return this.restService.get<any>('kpis/resumen/').pipe(
-            catchError((error) => {
-                if (error.status === 403) {
-                    return of({
-                        tasa_rotacion: { valor: 0, objetivo: 0 },
-                        dias_en_mano: { valor: 0, objetivo: 0 },
-                        dead_stock: { porcentaje: 0, objetivo: 0 },
-                    });
-                }
-                return throwError(() => error);
-            })
-        );
-    }
+    getKPIsResumen(tallerId: number): Observable<any> {
+    const params = new HttpParams().set('taller_id', tallerId.toString());
+
+    return this.restService.get<any>('kpis/resumen/', params).pipe(
+        catchError((error) => {
+            if (error.status === 403) {
+                return of({
+                    tasa_rotacion: { valor: 0, objetivo: 0 },
+                    dias_en_mano: { valor: 0, objetivo: 0 },
+                    dead_stock: { porcentaje: 0, objetivo: 0 },
+                });
+            }
+            return throwError(() => error);
+        })
+    );
+}
+
 
     getAlertas(
         tallerId: number,
