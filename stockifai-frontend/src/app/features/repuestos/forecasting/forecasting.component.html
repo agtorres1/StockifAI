@@ -158,14 +158,14 @@
                     <tr>
                         <th rowspan="2" style="width: 30%;" class="text-start">Repuesto</th>
                         <th rowspan="2">Stock</th>
-                        <th rowspan="2">Dias de stock <br>
+                        <!-- <th rowspan="2">Dias de stock <br>
                             <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom"
                                 title="Dias restantes."></i>
-                        </th>
+                        </th> -->
                         <th rowspan="2" class="text-center">
                             MOS <br>
                             <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                title="Indica cuántas semanas de demanda futura se pueden cubrir con el stock actual."></i>
+                                title="Indica qué parte del mes siguiente puede ser cubierta con el stock actual."></i>
                         </th>
                         <th colspan="2">Cantidad vendida</th>
                         <th colspan="3">Forecast</th>
@@ -200,7 +200,7 @@
                         </td>
 
                         <td>{{item.stock_total}}</td>
-                        <td>{{item.dias_de_stock_restantes ?? 'N/A'}}</td>
+                        <!-- <td>{{item.dias_de_stock_restantes ?? 'N/A'}}</td> -->
 
                         <td class="text-center">
                             <!-- Mismo que stock.component.html -->

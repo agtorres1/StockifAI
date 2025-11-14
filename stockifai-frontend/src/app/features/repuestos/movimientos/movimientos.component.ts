@@ -253,7 +253,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                     this.erroresImport = res.errores;
                 }
                 if (res.insertados > 0 || res.ignorados > 0) {
-                    this.successMsg = `Se importaron ${res.insertados + res.ignorados} movimientos correctamente`;
+                    this.successMsg = `Se importaron los movimientos correctamente`;
                     this.alertasService.triggerResumenRefresh(this.tallerId);
                     this.closeImportModal(true);
                 }
@@ -263,7 +263,7 @@ export class MovimientosComponent implements OnInit, OnDestroy {
                     this.erroresImport = res.errores;
                 }
                 if (res.procesados > 0) {
-                    this.successMsg = `Se importaron ${res.procesados} ingresos correctamente`;
+                    this.successMsg = `Se importaron los ingresos correctamente`;
                     this.alertasService.triggerResumenRefresh(this.tallerId);
                     this.closeImportModal(true);
                 }

@@ -5,6 +5,9 @@ from typing import Dict, Any, Optional, List
 from AI.historicos import ejecutar_preproceso
 from AI.model_training import ejecutar_pipeline_entrenamiento
 from AI.inferencia import ejecutar_inferencia
+from catalogo.models import RepuestoTaller
+from inventario.repositories.repuesto_taller_repo import RepuestoTallerRepo
+from inventario.services.actualizar_alertas import actualizar_alertas_para_repuestos
 from user.api.models.models import Taller
 
 
@@ -36,6 +39,14 @@ def ejecutar_forecast_talleres(fecha_lunes: datetime) -> Dict[str, Any]:
         try:
             out = ejecutar_forecast_pipeline_por_taller(taller_id, fecha_lunes)
             outputs.append({"taller_id": taller_id})
+
+            # obtener todos los repuestos taller
+            repuestos_taller_ids = RepuestoTaller.objects.filter(taller_id=taller_id)
+
+            # llamar a generar actualizar alertas
+            actualizar_alertas_para_repuestos(repuestos_taller_ids)
+
+
         except Exception as e:
             # no frenamos toda la corrida por un taller
             errores.append({"taller_id": taller_id, "error": str(e)})
