@@ -63,7 +63,6 @@ export class GruposComponent implements OnInit {
             this.loading = false;
             this.errorMessage = '';
         } catch (error: any) {
-            console.error('❌ Error al cargar grupos:', error);
             this.errorMessage = error?.message ?? 'Error al cargar grupos';
             this.loading = false;
         }
@@ -72,9 +71,8 @@ export class GruposComponent implements OnInit {
     async cargarTalleres() {
         try {
             this.talleres = await firstValueFrom(this.talleresService.getTalleres());
-            console.log('✅ Talleres cargados:', this.talleres);
         } catch (error) {
-            console.error('❌ Error al cargar talleres:', error);
+            console.error('Error al cargar talleres:', error);
         }
     }
 

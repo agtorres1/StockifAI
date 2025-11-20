@@ -4,9 +4,9 @@ import { firstValueFrom, forkJoin } from 'rxjs';
 import { Grupo } from '../../../../core/models/grupo';
 import { Taller } from '../../../../core/models/taller';
 import { Usuario } from '../../../../core/models/usuario';
+import { AuthService } from '../../../../core/services/auth.service';
 import { TalleresService } from '../../../../core/services/talleres.service';
 import { UsuariosService } from '../../../../core/services/usuarios.service';
-import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
     selector: 'app-edit-usuarios',
@@ -38,210 +38,170 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
         private usuariosService: UsuariosService,
         private talleresService: TalleresService,
         private authService: AuthService
-
     ) {}
 
     ngOnInit(): void {
+        const currentUser = this.authService.getCurrentUser();
 
-    const currentUser = this.authService.getCurrentUser();
+        this.isSuperUser = (currentUser as any)?.is_superuser || false;
+        this.puedeAsignarUsuarios =
+            this.isSuperUser ||
+            (currentUser as any)?.grupo?.rol === 'admin' ||
+            (currentUser as any)?.taller?.rol === 'owner';
 
+        this.puedeEditarScope = this.isSuperUser;
 
-    this.isSuperUser = (currentUser as any)?.is_superuser || false;
-    this.puedeAsignarUsuarios = this.isSuperUser ||
-    ((currentUser as any)?.grupo?.rol === 'admin') ||
-    ((currentUser as any)?.taller?.rol === 'owner');;
-
-
-    this.puedeEditarScope = this.isSuperUser;
-
-    this.loadingTalleres = true;
-
-    // Si es superuser, carga TODO
-    if (this.isSuperUser) {
-        forkJoin([
-            this.usuariosService.getGrupos(),
-            this.talleresService.getTalleres()
-        ]).subscribe(([grupos, talleres]) => {
-            this.grupos = grupos;
-            this.talleres = talleres;
-            this.loadingTalleres = false;
-        });
-    }
-    // Si es admin de grupo, solo carga su grupo y talleres de su grupo
-    else if ((currentUser as any)?.grupo) {
-        const grupoId = (currentUser as any).grupo.id_grupo;
-
-        forkJoin([
-            this.usuariosService.getGrupos(),
-            this.talleresService.getTalleres()
-        ]).subscribe(([grupos, allTalleres]) => {
-            // Solo su grupo
-            this.grupos = grupos.filter(g => g.id_grupo === grupoId);
-
-            // Solo talleres de su grupo
-            const miGrupo: any = grupos.find(g => g.id_grupo === grupoId);
-            if (miGrupo && miGrupo.talleres) {
-                const talleresIds = miGrupo.talleres.map((t: any) => t.id);
-                this.talleres = allTalleres.filter(t => talleresIds.includes(t.id));
-            } else {
-                this.talleres = [];
-            }
-
-            this.loadingTalleres = false;
-        });
-    }
-     else if ((currentUser as any)?.taller) {
-        this.talleresService.getTalleres().subscribe((allTalleres) => {
-            const tallerId = (currentUser as any).taller.id;
-            this.talleres = allTalleres.filter(t => t.id === tallerId);
-            this.grupos = [];
-
-            console.log('✅ Taller del owner cargado:', this.talleres);
-
-            this.loadingTalleres = false;
-        });
-    }
-  else {
-        this.loadingTalleres = false;
-    }
-
-    if (this.isEdit && this.usuario?.id) {
-        this.loadUsuarioCompleto(this.usuario.id);
-    }
-
-    console.log('🔍 ANTES - usuario:', this.usuario);
-    console.log('🔍 ANTES - usuario.id_grupo:', this.usuario?.id_grupo);
-
-    if (!this.isEdit && !this.isSuperUser && currentUser) {
-        console.log('🎯 Intentando auto-asignar taller/grupo...');
-
-        if ((currentUser as any).taller) {
-            console.log('✅ Asignando taller ID:', (currentUser as any).taller.id);
-            this.scopeType = 'taller';
-            this.usuario.id_taller = (currentUser as any).taller.id;
-            this.usuario.rol_en_taller = 'member';
-            console.log('✅ DESPUÉS - usuario.id_taller:', this.usuario.id_taller);
-        } else if ((currentUser as any).grupo) {
-            console.log('✅ Asignando grupo ID:', (currentUser as any).grupo.id_grupo);
-            this.scopeType = 'grupo';
-            this.usuario.id_grupo = (currentUser as any).grupo.id_grupo;
-            this.usuario.rol_en_grupo = 'member';
-            console.log('✅ DESPUÉS - usuario.id_grupo:', this.usuario.id_grupo);
-        } else {
-            console.log('❌ Usuario no tiene ni taller ni grupo');
-        }
-    } else {
-        console.log('⚠️ No se auto-asigna porque:', {
-            isEdit: this.isEdit,
-            isSuperUser: this.isSuperUser,
-            hasCurrentUser: !!currentUser
-        });
-    }
-
-    console.log('🔍 FINAL - usuario.id_grupo:', this.usuario?.id_grupo);
-    console.log('🔍 FINAL - usuario completo:', this.usuario);
-}
-
-    ngOnChanges(changes: SimpleChanges): void {
-    const currentUser = this.authService.getCurrentUser();
-
-    this.isSuperUser = (currentUser as any)?.is_superuser || false;
-    this.puedeAsignarUsuarios = this.isSuperUser ||
-        ((currentUser as any)?.grupo?.rol === 'admin') ||
-        ((currentUser as any)?.taller?.rol === 'owner');
-
-    // ✅ CARGAR TALLERES Y GRUPOS
-    if (!this.loadingTalleres) {
         this.loadingTalleres = true;
 
+        // Si es superuser, carga TODO
         if (this.isSuperUser) {
-            forkJoin([
-                this.usuariosService.getGrupos(),
-                this.talleresService.getTalleres()
-            ]).subscribe(([grupos, talleres]) => {
-                this.grupos = grupos;
-                this.talleres = talleres;
-                this.loadingTalleres = false;
-            });
-        } else if ((currentUser as any)?.grupo) {
-            const grupoId = (currentUser as any).grupo.id_grupo;  // ← CORREGIDO
-
-            forkJoin([
-                this.usuariosService.getGrupos(),
-                this.talleresService.getTalleres()
-            ]).subscribe(([grupos, allTalleres]) => {
-                this.grupos = grupos.filter(g => g.id_grupo === grupoId);
-
-                const miGrupo: any = grupos.find(g => g.id_grupo === grupoId);
-                if (miGrupo && miGrupo.talleres) {
-                    const talleresIds = miGrupo.talleres.map((t: any) => t.id);
-                    this.talleres = allTalleres.filter(t => talleresIds.includes(t.id));
-                } else {
-                    this.talleres = [];
+            forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
+                ([grupos, talleres]) => {
+                    this.grupos = grupos;
+                    this.talleres = talleres;
+                    this.loadingTalleres = false;
                 }
+            );
+        }
+        // Si es admin de grupo, solo carga su grupo y talleres de su grupo
+        else if ((currentUser as any)?.grupo) {
+            const grupoId = (currentUser as any).grupo.id_grupo;
 
-                console.log('✅ Grupos filtrados:', this.grupos);  // ← LOG
-                console.log('✅ Talleres filtrados:', this.talleres);  // ← LOG
+            forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
+                ([grupos, allTalleres]) => {
+                    // Solo su grupo
+                    this.grupos = grupos.filter((g) => g.id_grupo === grupoId);
+
+                    // Solo talleres de su grupo
+                    const miGrupo: any = grupos.find((g) => g.id_grupo === grupoId);
+                    if (miGrupo && miGrupo.talleres) {
+                        const talleresIds = miGrupo.talleres.map((t: any) => t.id);
+                        this.talleres = allTalleres.filter((t) => talleresIds.includes(t.id));
+                    } else {
+                        this.talleres = [];
+                    }
+
+                    this.loadingTalleres = false;
+                }
+            );
+        } else if ((currentUser as any)?.taller) {
+            this.talleresService.getTalleres().subscribe((allTalleres) => {
+                const tallerId = (currentUser as any).taller.id;
+                this.talleres = allTalleres.filter((t) => t.id === tallerId);
+                this.grupos = [];
 
                 this.loadingTalleres = false;
             });
-        }
-         else if ((currentUser as any)?.taller) {
-        this.talleresService.getTalleres().subscribe((allTalleres) => {
-            const tallerId = (currentUser as any).taller.id;
-            this.talleres = allTalleres.filter(t => t.id === tallerId);
-            this.grupos = [];
-
-            console.log('✅ Taller del owner cargado:', this.talleres);
-
-            this.loadingTalleres = false;
-        });
-    }
-
-        else {
-            this.loadingTalleres = false;
-        }
-    }
-
-    if (!this.isEdit) {
-        this.usuario = {
-            username: '',
-            email: '',
-            first_name: '',
-            last_name: '',
-            telefono: '',
-        };
-    }
-
-    this.usuario.direccion = { pais: 'Argentina' };
-
-    if (changes['usuario'] && this.isEdit && this.usuario?.id) {
-        this.loadUsuarioCompleto(this.usuario.id);
-    }
-
-    if (!this.isEdit && currentUser && !this.isSuperUser) {
-        if (currentUser.taller) {
-            this.scopeType = 'taller';
-            this.usuario.id_taller = currentUser.taller.id;
-            this.usuario.rol_en_taller = 'member';
-            console.log('✅ Asignado taller ID:', currentUser.taller.id);
-        } else if (currentUser.grupo) {
-            this.scopeType = 'grupo';
-            this.usuario.id_grupo = currentUser.grupo.id_grupo;
-            this.usuario.rol_en_grupo = 'member';
-            console.log('✅ Asignado grupo ID:', currentUser.grupo.id_grupo);
         } else {
-            console.log('⚠️ El usuario actual no tiene ni taller ni grupo');
+            this.loadingTalleres = false;
+        }
+
+        if (this.isEdit && this.usuario?.id) {
+            this.loadUsuarioCompleto(this.usuario.id);
+        }
+
+        if (!this.isEdit && !this.isSuperUser && currentUser) {
+            if ((currentUser as any).taller) {
+                this.scopeType = 'taller';
+                this.usuario.id_taller = (currentUser as any).taller.id;
+                this.usuario.rol_en_taller = 'member';
+            } else if ((currentUser as any).grupo) {
+                this.scopeType = 'grupo';
+                this.usuario.id_grupo = (currentUser as any).grupo.id_grupo;
+                this.usuario.rol_en_grupo = 'member';
+            }
+        } else {
+            console.log('⚠️ No se auto-asigna porque:', {
+                isEdit: this.isEdit,
+                isSuperUser: this.isSuperUser,
+                hasCurrentUser: !!currentUser,
+            });
         }
     }
 
-    if (this.usuario?.taller) this.scopeType = 'taller';
-    if (this.usuario?.grupo) this.scopeType = 'grupo';
+    ngOnChanges(changes: SimpleChanges): void {
+        const currentUser = this.authService.getCurrentUser();
 
-    console.log('🔍 FINAL - usuario.id_grupo:', this.usuario?.id_grupo);
-    console.log('🔍 FINAL - usuario completo:', this.usuario);
-}
+        this.isSuperUser = (currentUser as any)?.is_superuser || false;
+        this.puedeAsignarUsuarios =
+            this.isSuperUser ||
+            (currentUser as any)?.grupo?.rol === 'admin' ||
+            (currentUser as any)?.taller?.rol === 'owner';
 
+        // ✅ CARGAR TALLERES Y GRUPOS
+        if (!this.loadingTalleres) {
+            this.loadingTalleres = true;
+
+            if (this.isSuperUser) {
+                forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
+                    ([grupos, talleres]) => {
+                        this.grupos = grupos;
+                        this.talleres = talleres;
+                        this.loadingTalleres = false;
+                    }
+                );
+            } else if ((currentUser as any)?.grupo) {
+                const grupoId = (currentUser as any).grupo.id_grupo; // ← CORREGIDO
+
+                forkJoin([this.usuariosService.getGrupos(), this.talleresService.getTalleres()]).subscribe(
+                    ([grupos, allTalleres]) => {
+                        this.grupos = grupos.filter((g) => g.id_grupo === grupoId);
+
+                        const miGrupo: any = grupos.find((g) => g.id_grupo === grupoId);
+                        if (miGrupo && miGrupo.talleres) {
+                            const talleresIds = miGrupo.talleres.map((t: any) => t.id);
+                            this.talleres = allTalleres.filter((t) => talleresIds.includes(t.id));
+                        } else {
+                            this.talleres = [];
+                        }
+
+                        this.loadingTalleres = false;
+                    }
+                );
+            } else if ((currentUser as any)?.taller) {
+                this.talleresService.getTalleres().subscribe((allTalleres) => {
+                    const tallerId = (currentUser as any).taller.id;
+                    this.talleres = allTalleres.filter((t) => t.id === tallerId);
+                    this.grupos = [];
+
+                    this.loadingTalleres = false;
+                });
+            } else {
+                this.loadingTalleres = false;
+            }
+        }
+
+        if (!this.isEdit) {
+            this.usuario = {
+                username: '',
+                email: '',
+                first_name: '',
+                last_name: '',
+                telefono: '',
+            };
+        }
+
+        this.usuario.direccion = { pais: 'Argentina' };
+
+        if (changes['usuario'] && this.isEdit && this.usuario?.id) {
+            this.loadUsuarioCompleto(this.usuario.id);
+        }
+
+        if (!this.isEdit && currentUser && !this.isSuperUser) {
+            if (currentUser.taller) {
+                this.scopeType = 'taller';
+                this.usuario.id_taller = currentUser.taller.id;
+                this.usuario.rol_en_taller = 'member';
+            } else if (currentUser.grupo) {
+                this.scopeType = 'grupo';
+                this.usuario.id_grupo = currentUser.grupo.id_grupo;
+                this.usuario.rol_en_grupo = 'member';
+            }
+        }
+
+        if (this.usuario?.taller) this.scopeType = 'taller';
+        if (this.usuario?.grupo) this.scopeType = 'grupo';
+    }
 
     loadUsuarioCompleto(userId: number) {
         this.loading = true;
@@ -259,7 +219,7 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
             error: (error: any) => {
                 this.errorMessage = 'Error al cargar los datos del usuario';
                 this.loading = false;
-            }
+            },
         });
     }
 
@@ -282,12 +242,8 @@ export class EditUsuarioComponent implements OnChanges, OnInit {
 
         const usuarioData = {
             ...this.usuario,
-            ...(this.passwordField && { password: this.passwordField })
+            ...(this.passwordField && { password: this.passwordField }),
         };
-
-        console.log('📤 Datos a enviar:', usuarioData);
-        console.log('📤 id_grupo:', usuarioData.id_grupo);  // ← Y ESTO
-        console.log('📤 rol_en_grupo:', usuarioData.rol_en_grupo);  // ← Y ESTO
 
         try {
             this.loading = true;

@@ -1,11 +1,10 @@
-import { Component, OnInit , ChangeDetectorRef} from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Usuario } from '../../../core/models/usuario';
+import { AuthService } from '../../../core/services/auth.service';
 import { TitleService } from '../../../core/services/title.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 declare const bootstrap: any;
-import { AuthService } from '../../../core/services/auth.service';
-
 
 @Component({
     selector: 'app-usuarios',
@@ -17,7 +16,7 @@ export class TalleresUsuariosComponent implements OnInit {
     loading: boolean = false;
     errorMessage: string = '';
     isSuperUser = false;
-    puedeCrearUsuarios=false;
+    puedeCrearUsuarios = false;
 
     private modalRef: any | null = null;
     selectedUser: any | null = null;
@@ -28,12 +27,12 @@ export class TalleresUsuariosComponent implements OnInit {
     deleteErrorMessage = '';
 
     constructor(
-    private titleService: TitleService,
-    private usuariosService: UsuariosService,
-    private authService: AuthService,
-    private cdr: ChangeDetectorRef
+        private titleService: TitleService,
+        private usuariosService: UsuariosService,
+        private authService: AuthService,
+        private cdr: ChangeDetectorRef
     ) {
-    this.titleService.setTitle('Usuarios');
+        this.titleService.setTitle('Usuarios');
     }
 
     ngOnInit() {
@@ -44,69 +43,56 @@ export class TalleresUsuariosComponent implements OnInit {
     checkIfSuperUser() {
         const currentUser = this.authService.getCurrentUser();
 
+        this.isSuperUser = (currentUser as any)?.is_superuser || false;
 
-    this.isSuperUser = (currentUser as any)?.is_superuser || false;
-
-
-    this.puedeCrearUsuarios = this.isSuperUser ||
-        ((currentUser as any)?.grupo?.rol === 'admin') ||
-        ((currentUser as any)?.taller?.rol === 'owner');
+        this.puedeCrearUsuarios =
+            this.isSuperUser ||
+            (currentUser as any)?.grupo?.rol === 'admin' ||
+            (currentUser as any)?.taller?.rol === 'owner';
 
         this.cdr.detectChanges();
-
-}
-
+    }
 
     async loadUsuarios() {
-    this.loading = true;
-    console.log('🔍 Cargando usuarios...');
+        this.loading = true;
 
-    try {
-        const currentUser = this.authService.getCurrentUser();
-        const allUsuarios = await firstValueFrom(this.usuariosService.getUsuarios());
+        try {
+            const currentUser = this.authService.getCurrentUser();
+            const allUsuarios = await firstValueFrom(this.usuariosService.getUsuarios());
 
-        console.log('📋 Total usuarios del backend:', allUsuarios.length);
-        allUsuarios.forEach(u => {
-            console.log(`Usuario ${u.username}: grupo_id=${u.grupo?.id_grupo}, taller_id=${u.taller?.id}`);
-        });
+            // Filtrar según rol
+            if (this.isSuperUser) {
+                // Superuser ve TODOS
+                this.usuarios = allUsuarios;
+            } else if ((currentUser as any)?.grupo?.rol === 'admin') {
+                // Admin de grupo ve usuarios de su grupo Y de talleres del grupo
+                const miGrupoId = (currentUser as any).grupo.id_grupo; // ← ARREGLADO
 
-        // Filtrar según rol
-        if (this.isSuperUser) {
-            // Superuser ve TODOS
-            this.usuarios = allUsuarios;
-        } else if ((currentUser as any)?.grupo?.rol === 'admin') {
-            // Admin de grupo ve usuarios de su grupo Y de talleres del grupo
-            const miGrupoId = (currentUser as any).grupo.id_grupo;  // ← ARREGLADO
+                // Obtener IDs de talleres del grupo
+                const miGrupo = (currentUser as any).grupo;
+                const talleresDelGrupo = miGrupo.talleres?.map((t: any) => t.id) || [];
 
-            // Obtener IDs de talleres del grupo
-            const miGrupo = (currentUser as any).grupo;
-            const talleresDelGrupo = miGrupo.talleres?.map((t: any) => t.id) || [];
+                this.usuarios = allUsuarios.filter(
+                    (u) =>
+                        u.grupo?.id_grupo === miGrupoId || // Usuarios del grupo
+                        (u.taller && talleresDelGrupo.includes(u.taller.id)) // Usuarios de talleres del grupo
+                );
+            } else if ((currentUser as any)?.taller?.rol === 'owner') {
+                // Owner de taller ve usuarios de su taller
+                const miTallerId = (currentUser as any).taller.id;
+                this.usuarios = allUsuarios.filter((u) => u.taller?.id === miTallerId);
+            } else {
+                // Member solo se ve a sí mismo
+                this.usuarios = allUsuarios.filter((u) => u.id === (currentUser as any)?.user_id);
+            }
 
-            this.usuarios = allUsuarios.filter(u =>
-                u.grupo?.id_grupo === miGrupoId ||  // Usuarios del grupo
-                (u.taller && talleresDelGrupo.includes(u.taller.id))  // Usuarios de talleres del grupo
-            );
-        } else if ((currentUser as any)?.taller?.rol === 'owner') {
-            // Owner de taller ve usuarios de su taller
-            const miTallerId = (currentUser as any).taller.id;
-            this.usuarios = allUsuarios.filter(u =>
-                u.taller?.id === miTallerId
-            );
-        } else {
-            // Member solo se ve a sí mismo
-            this.usuarios = allUsuarios.filter(u => u.id === (currentUser as any)?.user_id);
+            this.loading = false;
+            this.errorMessage = '';
+        } catch (error: any) {
+            this.errorMessage = error?.message ?? 'Error al cargar';
+            this.loading = false;
         }
-
-        console.log('🔍 Usuarios filtrados:', this.usuarios);
-        this.loading = false;
-        this.errorMessage = '';
-    } catch (error: any) {
-        console.error('❌ Error al cargar usuarios:', error);
-        this.errorMessage = error?.message ?? 'Error al cargar';
-        this.loading = false;
     }
-}
-
 
     openCrearUsuarioDialog() {
         this.selectedUser = undefined as any;
@@ -115,10 +101,9 @@ export class TalleresUsuariosComponent implements OnInit {
     }
 
     onEditUsuarioClick(usuario: Usuario) {
-        if(usuario.taller) usuario.id_taller = usuario.taller.id;
-        if(usuario.grupo) usuario.id_grupo = usuario.grupo.id_grupo;
+        if (usuario.taller) usuario.id_taller = usuario.taller.id;
+        if (usuario.grupo) usuario.id_grupo = usuario.grupo.id_grupo;
         this.selectedUser = Object.assign({}, usuario);
-        console.log("edit usuario", usuario);
         this.isEditMode = true;
         this.openModal();
     }

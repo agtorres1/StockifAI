@@ -20,7 +20,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     loadingUrgentes: boolean = false;
     errorUrgentes: string = '';
     errorSaludInventario: string = '';
-    sinAccesoTaller: boolean = false; // ← NUEVO
+    sinAccesoTaller: boolean = false;
 
     page: number = 1;
     pageSize: number = 5;
@@ -68,7 +68,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     sub: Subscription | undefined;
 
-    constructor(private alertasService: AlertasService, private authService: AuthService, private titleService: TitleService, private router: Router) {}
+    constructor(
+        private alertasService: AlertasService,
+        private authService: AuthService,
+        private titleService: TitleService,
+        private router: Router
+    ) {}
 
     ngOnInit(): void {
         this.titleService.setTitle('Dashboard');
@@ -91,13 +96,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
     }
     cargarKPIs() {
-          console.log('🔍 tallerId para KPIs:', this.tallerId);
-
-    if (!this.tallerId) {
-        console.warn('⚠️ No hay tallerId, no se pueden cargar KPIs');
-        this.loadingKpis = false;
-        return;
-    }
+        if (!this.tallerId) {
+            console.warn('⚠️ No hay tallerId, no se pueden cargar KPIs');
+            this.loadingKpis = false;
+            return;
+        }
         this.loadingKpis = true;
         this.alertasService.getKPIsResumen(this.tallerId).subscribe({
             next: (data) => {
@@ -158,8 +161,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.loadingSaludInventario = true;
             const res = await firstValueFrom(this.alertasService.getSaludInventario(this.tallerId));
             this.chartData = this.convertirSaludInventarioPorFrecuencia(res);
-
-            console.log('Salud inventario chart data:', this.chartData);
 
             const deadStock = this.chartData.find((c) => c.frecuencia === 'MUERTO');
             this.deadStockTotal = deadStock?.total_valor ?? 0;

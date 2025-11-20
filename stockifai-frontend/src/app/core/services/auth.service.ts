@@ -63,7 +63,6 @@ export class AuthService {
             )
             .pipe(
                 tap((response: any) => {
-                    console.log('✅ Response del backend:', response); // ← DEBUG
                     this.currentUserSubject.next(response.user);
                     localStorage.setItem(AuthService.STORAGE_USER, JSON.stringify(response.user));
 

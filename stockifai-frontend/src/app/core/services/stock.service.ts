@@ -1,15 +1,16 @@
 import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { catchError, Observable, shareReplay, throwError } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { ForecastResponse } from '../models/forecast-response';
 import { Movimiento } from '../models/movimiento';
 import { PagedResponse } from '../models/paged-response';
 import { RepuestoStock } from '../models/repuesto-stock';
+import { CacheService } from './cache.service';
 import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
 export class StockService {
-    constructor(private restService: RestService) {}
+    constructor(private restService: RestService, private cacheService: CacheService) {}
 
     getMovimientos(
         tallerId: number,
@@ -54,10 +55,21 @@ export class StockService {
     ): Observable<PagedResponse<RepuestoStock>> {
         let params = new HttpParams().set('page', page).set('page_size', pageSize);
 
-        if (filtro?.searchText) params = params.set('q', filtro.searchText);
-        if (filtro?.idCategoria) params = params.set('categoria_id', filtro.idCategoria);
+        if (filtro?.searchText) {
+            params = params.set('q', filtro.searchText);
+        }
 
-        return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/stock`, params);
+        if (filtro?.idCategoria) {
+            params = params.set('categoria_id', filtro.idCategoria);
+        }
+
+        const key = `stock-${tallerId}-${page}-${pageSize}-${filtro?.searchText ?? ''}-${filtro?.idCategoria ?? ''}`;
+        const cached = this.cacheService.get<PagedResponse<RepuestoStock>>(key);
+        if (cached) return cached;
+
+        return this.restService
+            .get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/stock`, params)
+            .pipe(tap((resp) => this.cacheService.set(key, resp)));
     }
 
     getForecastingList(
@@ -66,42 +78,30 @@ export class StockService {
         pageSize = 10,
         filtro?: { searchText: string }
     ): Observable<PagedResponse<RepuestoStock>> {
+        const cacheKey = `forecasting-${tallerId}-${page}-${pageSize}-${filtro?.searchText ?? ''}`;
+        const cached = this.cacheService.get<PagedResponse<RepuestoStock>>(cacheKey);
+
+        if (cached) return cached;
+
         let params = new HttpParams().set('page', page).set('page_size', pageSize);
 
         if (filtro?.searchText) params = params.set('q', filtro.searchText);
 
-        return this.restService.get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/forecasting`, params);
+        return this.restService
+            .get<PagedResponse<RepuestoStock>>(`talleres/${tallerId}/forecasting`, params)
+            .pipe(tap((res) => this.cacheService.set(cacheKey, res)));
     }
 
-    private cache = new Map<string, { obs$: Observable<ForecastResponse>; exp: number }>();
-    private TTL = 60_000; // 1 minuto (ajustá a gusto)
-
     getRepuestoTallerForecast(tallerId: number, repuestoTallerId: number): Observable<ForecastResponse> {
+        const cacheKey = `forecast-${tallerId}-${repuestoTallerId}`;
+        const cached$ = this.cacheService.get<ForecastResponse>(cacheKey);
+        if (cached$) return cached$;
+
         const url = `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`;
 
-        const now = Date.now();
-        const hit = this.cache.get(url);
-
-        if (hit && hit.exp > now) {
-            return hit.obs$; // devolver lo cacheado
-        }
-
-        const obs$ = this.restService.get<ForecastResponse>(url).pipe(
-            shareReplay(1),
-            catchError((err) => {
-                this.cache.delete(url);
-                return throwError(() => err);
-            })
-        );
-
-        this.cache.set(url, { obs$, exp: now + this.TTL });
-        return obs$;
-
-        /*
-        return this.restService.get<ForecastResponse>(
-            `talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`
-        );
-        */
+        return this.restService
+            .get<ForecastResponse>(`talleres/${tallerId}/repuestos/${repuestoTallerId}/forecasting`)
+            .pipe(tap((res) => this.cacheService.set(cacheKey, res)));
     }
 
     procesarRepuestoStock(item: RepuestoStock): RepuestoStock {

@@ -1,4 +1,4 @@
-import { HttpParams, HttpResponse, HttpClient  } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import {
     catchError,
@@ -11,6 +11,7 @@ import {
     shareReplay,
     Subject,
     switchMap,
+    tap,
     throwError,
     timer,
 } from 'rxjs';
@@ -18,6 +19,7 @@ import { Alerta, NivelAlerta } from '../models/alerta';
 import { AlertasResumen } from '../models/alertas-resumen';
 import { PagedResponse } from '../models/paged-response';
 import { TotalesPorCategoria } from '../models/salud-inventario';
+import { CacheService } from './cache.service';
 import { RestService } from './rest.service';
 
 @Injectable({ providedIn: 'root' })
@@ -26,9 +28,7 @@ export class AlertasService {
 
     private resumenRefresh$ = new Subject<number>();
 
-    constructor(private restService: RestService,
-                private http: HttpClient,
-                ) {}
+    constructor(private restService: RestService, private http: HttpClient, private cacheService: CacheService) {}
 
     summary$(tallerId: number): Observable<AlertasResumen> {
         return merge(
@@ -42,22 +42,30 @@ export class AlertasService {
     }
 
     getKPIsResumen(tallerId: number): Observable<any> {
-    const params = new HttpParams().set('taller_id', tallerId.toString());
+        const params = new HttpParams().set('taller_id', tallerId.toString());
 
-    return this.restService.get<any>('kpis/resumen/', params).pipe(
-        catchError((error) => {
-            if (error.status === 403) {
-                return of({
-                    tasa_rotacion: { valor: 0, objetivo: 0 },
-                    dias_en_mano: { valor: 0, objetivo: 0 },
-                    dead_stock: { porcentaje: 0, objetivo: 0 },
-                });
-            }
-            return throwError(() => error);
-        })
-    );
-}
+        const key = `kpis-resumen-${tallerId}`;
 
+        const cached = this.cacheService.get<any>(key);
+        if (cached) return cached;
+
+        return this.restService.get<any>('kpis/resumen/', params).pipe(
+            tap((resp) => this.cacheService.set(key, resp)),
+            catchError((error) => {
+                if (error.status === 403) {
+                    const fallback = {
+                        tasa_rotacion: { valor: 0, objetivo: 0 },
+                        dias_en_mano: { valor: 0, objetivo: 0 },
+                        dead_stock: { porcentaje: 0, objetivo: 0 },
+                    };
+
+                    return of(fallback);
+                }
+
+                return throwError(() => error);
+            })
+        );
+    }
 
     getAlertas(
         tallerId: number,
@@ -137,11 +145,18 @@ export class AlertasService {
     }
 
     getSaludInventario(tallerId: number): Observable<TotalesPorCategoria[]> {
+        const key = `salud-inventario-${tallerId}`;
+        const cached = this.cacheService.get<TotalesPorCategoria[]>(key);
+        if (cached) return cached;
+
         return this.restService.get<TotalesPorCategoria[]>(`talleres/${tallerId}/salud-por-categoria/`).pipe(
+            tap((resp) => this.cacheService.set(key, resp)),
             catchError((error) => {
                 if (error.status === 403) {
-                    return of([] as TotalesPorCategoria[]);
+                    const fallback: TotalesPorCategoria[] = [];
+                    return of(fallback);
                 }
+
                 return throwError(() => error);
             })
         );

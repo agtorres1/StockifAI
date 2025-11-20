@@ -113,15 +113,11 @@ export class RegisterComponent {
       codigo_postal: formData.codigoPostal
     };
 
-    console.log('Datos a enviar:', data);
-
     try {
       const res: any = await this.http.post('/api/register/', data).toPromise();
-      console.log('Usuario creado:', res);
       this.showSuccessMessage = true;
       this.registroForm.reset();
     } catch (err: any) {
-      console.error('Error al enviar:', err);
       const errorMsg = err.error?.error || 'No se pudo conectar con el servidor';
       alert(errorMsg);
     } finally {
