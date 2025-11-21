@@ -1,23 +1,27 @@
-import { Component, OnInit } from '@angular/core';
-import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { debounceTime, distinctUntilChanged, firstValueFrom, forkJoin, Subject, Subscription } from 'rxjs';
 import { Categoria } from '../../../core/models/categoria';
 import { Marca } from '../../../core/models/marca';
 import { Repuesto } from '../../../core/models/repuesto';
 import { RepuestosService } from '../../../core/services/repuestos.service';
 import { TitleService } from '../../../core/services/title.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-catalogo',
     templateUrl: './catalogo.component.html',
     styleUrl: './catalogo.component.scss',
 })
-export class CatalogoComponent implements OnInit {
+export class CatalogoComponent implements OnInit, OnDestroy {
     filtro = { searchText: '', idMarca: '', idCategoria: '' };
 
     marcas: Marca[] = [];
     categorias: Categoria[] = [];
     loading: boolean = false;
     errorMessage: string = '';
+
+    tallerId: number | null = null;
+    tallerNombre: string = '';
 
     page: number = 1;
     pageSize: number = 10;
@@ -26,6 +30,7 @@ export class CatalogoComponent implements OnInit {
     repuestos: Repuesto[] = [];
 
     private search$ = new Subject<string>();
+    private authSub?: Subscription;
 
     archivo: File | null = null;
     errorMsg = '';
@@ -33,12 +38,27 @@ export class CatalogoComponent implements OnInit {
     loadingArchivo = false;
     erroresImport: any[] = [];
 
-    constructor(private titleService: TitleService, private repuestosService: RepuestosService) {
+    archivoPrecios: File | null = null;
+    erroresPrecios: any[] = [];
+    preciosSuccessMsg = '';
+    preciosErrorMsg = '';
+    loadingPrecios = false;
+
+    constructor(
+        private titleService: TitleService,
+        private repuestosService: RepuestosService,
+        private authService: AuthService
+    ) {
         this.titleService.setTitle('Catalogo');
     }
 
     ngOnInit(): void {
         this.loading = true;
+
+        this.authSub = this.authService.activeTaller$.subscribe((taller) => {
+            this.tallerId = taller?.id ?? null;
+            this.tallerNombre = taller?.nombre ?? '';
+        });
 
         forkJoin({
             marcas: this.repuestosService.getMarcas(),
@@ -64,6 +84,10 @@ export class CatalogoComponent implements OnInit {
             this.filtro.searchText = text;
             this.cargarPagina(this.page);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.authSub?.unsubscribe();
     }
 
     filtrar() {
@@ -182,6 +206,51 @@ export class CatalogoComponent implements OnInit {
         this.successMsg = '';
         if (refresh) {
             this.cargarPagina(1);
+        }
+    }
+
+    // IMPORT PRECIOS
+    openActualizarPreciosModal() {
+        this.loadingPrecios = false;
+        this.erroresPrecios = [];
+        this.preciosSuccessMsg = '';
+        this.preciosErrorMsg = '';
+        this.archivoPrecios = null;
+    }
+
+    onPreciosFileChange(event: Event) {
+        const input = event.target as HTMLInputElement | null;
+        if (input?.files && input.files.length > 0) {
+            this.archivoPrecios = input.files[0];
+        } else {
+            this.archivoPrecios = null;
+        }
+    }
+
+    async submitArchivoPrecios() {
+        if (!this.archivoPrecios) return;
+        if (!this.tallerId) {
+            this.preciosErrorMsg = 'Seleccioná un taller activo para actualizar precios.';
+            return;
+        }
+
+        this.loadingPrecios = true;
+        this.preciosErrorMsg = '';
+        this.preciosSuccessMsg = '';
+        this.erroresPrecios = [];
+
+        try {
+            const res = await firstValueFrom(
+                this.repuestosService.importarPrecios(this.tallerId, this.archivoPrecios)
+            );
+            if (res.errores && res.errores.length > 0) {
+                this.erroresPrecios = res.errores;
+            }
+            this.preciosSuccessMsg = `Precios procesados: ${res.actualizados ?? 0} actualizados, ${res.ignorados ?? 0} sin cambios.`;
+        } catch (error: any) {
+            this.preciosErrorMsg = error?.error?.error ?? 'Error al actualizar precios.';
+        } finally {
+            this.loadingPrecios = false;
         }
     }
 }

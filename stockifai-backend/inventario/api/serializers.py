@@ -38,6 +38,13 @@ class CatalogoImportSerializer(serializers.Serializer):
     mode = serializers.ChoiceField(choices=("upsert", "create-only", "update-only"), required=False, default="upsert")
 
 
+class PreciosImportSerializer(serializers.Serializer):
+    file = serializers.FileField()
+    taller_id = serializers.IntegerField(min_value=1)
+    fields_map = serializers.DictField(child=serializers.CharField(), required=False)
+
+
+
 class DepositoSerializer(serializers.ModelSerializer):
     taller_nombre = serializers.CharField(source='taller.nombre', read_only=True)
 
@@ -114,7 +121,6 @@ class RepuestoStockSerializer(serializers.Serializer):
     repuesto_taller = RepuestoTallerSerializer()
     stock_total = serializers.IntegerField()
     depositos = StockDepositoDetalleSerializer(many=True)
-
 
 class ObjetivoKPISerializer(serializers.ModelSerializer):
     class Meta:

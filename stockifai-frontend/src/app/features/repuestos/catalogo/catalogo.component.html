@@ -1,8 +1,23 @@
 <div class="card shadow-sm">
     <div class="card-body p-3">
         <div class="row">
-            <div class="col-md-12 col-lg-12 d-flex justify-content-end">
-                <button type="button" class="btn btn-primary ms-auto d-flex align-items-center gap-1"
+            <div class="col-md-12 col-lg-12 d-flex justify-content-end gap-2 flex-wrap">
+                <div class="me-auto d-flex align-items-center text-muted small" *ngIf="tallerId; else noTaller">
+                    <i class="fa fa-store me-1"></i> Taller activo: <strong class="ms-1">{{ tallerNombre }}</strong>
+                </div>
+                <ng-template #noTaller>
+                    <div class="me-auto text-danger small d-flex align-items-center gap-1">
+                        <i class="fa fa-triangle-exclamation"></i>
+                        Seleccioná un taller para actualizar precios.
+                    </div>
+                </ng-template>
+                <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1"
+                    data-bs-toggle="modal" data-bs-target="#actualizarPreciosModal"
+                    (click)="openActualizarPreciosModal()">
+                    <i class="fa fa-money-bill-transfer me-1"></i>
+                    Actualizar precios
+                </button>
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-1"
                     data-bs-toggle="modal" data-bs-target="#importarCatalogoModal" (click)="openImportarModal()">
                     <i class="fa fa-file-export me-1"></i>
                     Importar Catalogo
@@ -110,6 +125,60 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="modal fade" id="actualizarPreciosModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content" #preciosForm="ngForm" (ngSubmit)="submitArchivoPrecios()">
+            <div class="modal-header">
+                <h5 class="modal-title">Actualizar precios y costos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"
+                    (click)="openActualizarPreciosModal()"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Archivo</label>
+                    <input type="file" accept=".csv, .xlsx" class="form-control" name="preciosFile"
+                        (change)="onPreciosFileChange($event)" required />
+                    <div class="invalid-feedback d-block" *ngIf="preciosForm.submitted && !archivoPrecios">
+                        Seleccioná un archivo csv o xlsx.
+                    </div>
+                    <div class="form-text">
+                        Formato: <code>numero_pieza,precio,costo</code>. Los montos se cargan para el taller
+                        seleccionado.
+                    </div>
+                </div>
+
+                <div class="alert alert-warning d-flex align-items-center gap-2" *ngIf="!tallerId">
+                    <i class="fa fa-triangle-exclamation"></i>
+                    <div>Debés seleccionar un taller activo para asociar los precios.</div>
+                </div>
+
+                <div *ngIf="preciosErrorMsg" class="alert alert-danger mt-3">{{ preciosErrorMsg }}</div>
+                <div *ngIf="preciosSuccessMsg" class="alert alert-success mt-3">{{ preciosSuccessMsg }}</div>
+                <div *ngIf="erroresPrecios && erroresPrecios.length > 0" class="alert alert-danger mt-3">
+                    <h6 class="mb-2">Filas rechazadas ({{erroresPrecios.length}})</h6>
+                    <ul class="mb-0 ps-3 small">
+                        <li *ngFor="let error of erroresPrecios">
+                            <strong>Fila {{ error.fila ?? '—' }}:</strong> {{ error.motivo }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                    (click)="openActualizarPreciosModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" (click)="submitArchivoPrecios()"
+                    [disabled]="!archivoPrecios || loadingPrecios || !tallerId">
+                    <div *ngIf="loadingPrecios" class="spinner-border spinner-border-sm me-2" role="status"
+                        aria-hidden="true"></div>
+                    {{ loadingPrecios ? 'Actualizando...' : 'Actualizar' }}
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

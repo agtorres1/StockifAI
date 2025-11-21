@@ -40,11 +40,13 @@ from ..services._helpers import (
 )
 from ..services.actualizar_alertas import actualizar_alertas_para_repuestos, generar_alertas_inventario
 from ..services.import_catalogo import importar_catalogo
+from ..services.import_precios import importar_precios
 from ..services.import_movimientos import importar_movimientos
 from ..services.import_stock import importar_stock
 from .serializers import (
     AlertaSerializer,
     CatalogoImportSerializer,
+    PreciosImportSerializer,
     DepositoSerializer,
     MovimientosImportSerializer,
     ObjetivoKPISerializer,
@@ -102,6 +104,23 @@ class ImportarCatalogoView(APIView):
                 mode=ser.validated_data.get("mode", "upsert"),
             )
         return Response(res, status=status.HTTP_200_OK)
+
+class ImportarPreciosView(APIView):
+    def post(self, request):
+        ser = PreciosImportSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        try:
+            res = importar_precios(
+                file=ser.validated_data["file"],
+                taller_id=ser.validated_data["taller_id"],
+                fields_map=ser.validated_data.get("fields_map"),
+            )
+        except ValueError as ex:
+            return Response({"error": str(ex)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(res, status=status.HTTP_200_OK)
+
 
 class DepositosPorTallerView(APIView):
     def get(self, request, taller_id: int):

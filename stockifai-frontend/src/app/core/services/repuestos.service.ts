@@ -39,4 +39,12 @@ export class RepuestosService {
 
         return this.restService.upload('importaciones/catalogo', formData);
     }
+
+    importarPrecios(tallerId: number, file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('taller_id', String(tallerId));
+        formData.append('file', file);
+
+        return this.restService.upload('importaciones/precios', formData);
+    }
 }
