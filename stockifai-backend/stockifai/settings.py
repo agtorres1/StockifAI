@@ -12,7 +12,10 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
 #DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
 DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
 
-ALLOWED_HOSTS = ["*"] if DEBUG else os.getenv("DJANGO_ALLOWED_HOSTS","").split(",")
+ALLOWED_HOSTS = [
+    ".onrender.com",
+    "localhost",
+]
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -156,8 +159,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
     "http://localhost:8000",
+    "https://stockifai-frontend.onrender.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_HEADERS = True
+CORS_ALLOW_ALL_METHODS = True
 
 
 SESSION_COOKIE_HTTPONLY = True   # Seguridad: no accesible desde JavaScript
