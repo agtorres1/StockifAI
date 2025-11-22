@@ -32,7 +32,7 @@ export class AuthService {
         shareReplay(1)
     );
 
-    private readonly API_URL = 'http://localhost:8000/api';
+    private readonly API_URL = 'https://stockifai-backend.onrender.com/api/';
 
     private static readonly STORAGE_USER = 'user';
     private static readonly STORAGE_TALLER = 'activeTaller';
