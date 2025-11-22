@@ -4,7 +4,7 @@ import { catchError, Observable, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RestService {
-     private baseUrl = 'http://localhost:8000/api/';
+     private baseUrl = 'https://stockifai-backend.onrender.com/api';
 
     constructor(private http: HttpClient) {}
 
