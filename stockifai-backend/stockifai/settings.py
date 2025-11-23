@@ -25,6 +25,7 @@ DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
 ALLOWED_HOSTS = [
     ".onrender.com",
     "localhost",
+    "3.137.136.34",
 ]
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -174,6 +175,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:4200",
     "http://localhost:8000",
     "https://stockifai-frontend.onrender.com",
+    "http://3.137.136.34:4200",
+    "http://3.137.136.34",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_HEADERS = True
