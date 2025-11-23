@@ -1,13 +1,23 @@
+##########codigo del auth0
+# Inicializar django-environ
 import os
+import environ
+
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
+env = environ.Env()
+
+# Ruta al archivo .env (está un nivel arriba de settings.py)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
 AUTH_USER_MODEL = 'user.User'  # 'user' es el nombre de tu app
-import environ
+
 
 load_dotenv()
-BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-unsafe")
 #DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1","true","yes","y")
 DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
@@ -35,13 +45,16 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.security.SecurityMiddleware","django.contrib.sessions.middleware.SessionMiddleware",
+
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware","django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+
+    "django.middleware.common.CommonMiddleware",
+
+    "django.middleware.security.SecurityMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-   # 'user.middleware.Auth0Middleware',
-    #"auth0_backend.middleware.jwt_middleware"
 ]
 ROOT_URLCONF = "stockifai.urls"
 
@@ -167,6 +180,26 @@ CORS_ALLOW_ALL_HEADERS = True
 CORS_ALLOW_ALL_METHODS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "accept",
+    "origin",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 SESSION_COOKIE_HTTPONLY = True   # Seguridad: no accesible desde JavaScript
 
@@ -186,7 +219,8 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'user.authentication.SessionAuthentication',  # ← AGREGAR ESTO
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
 
 
@@ -243,14 +277,6 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
-
-##########codigo del auth0
-# Inicializar django-environ
-env = environ.Env()
-
-# Ruta al archivo .env (está un nivel arriba de settings.py)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 AUTH0_DOMAIN = env('AUTH0_DOMAIN')
 AUTH0_CLIENT_ID = env('AUTH0_CLIENT_ID')

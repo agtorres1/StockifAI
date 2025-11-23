@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.contrib.auth import authenticate, login
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
@@ -28,17 +28,20 @@ import requests
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from rest_framework.permissions import AllowAny
+
 
 from ...auth0_utils import get_mgmt_token  # tu función para el token de Auth0
 from user.api.serializers.user_serializer import UserSerializer
 from user.api.models.models import Taller
 
 
+@api_view(["POST", "OPTIONS"])
 @csrf_exempt
 def login_with_credentials(request):
     """Login directo con email/password usando Auth0"""
-    if request.method != "POST":
-        return JsonResponse({"error": "Método no permitido"}, status=405)
+    if request.method == "OPTIONS":
+        return Response(status=200)
 
     try:
         data = json.loads(request.body)
