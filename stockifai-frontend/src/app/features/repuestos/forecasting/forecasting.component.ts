@@ -69,23 +69,25 @@ export class ForecastingComponent implements OnInit, OnDestroy {
             }
             this.tallerId = id;
             this.errorMessage = '';
-            
+
             this.cargarPagina(this.page || 1);
             this.closeDetail();
         });
 
-        this.searchSub = this.search$.pipe(debounceTime(300), distinctUntilChanged()).subscribe((text) => {
-            this.page = 1;
-            this.filtro.searchText = text;
-            this.cargarPagina(this.page);
-        });
+        this.searchSub = this.search$
+            .pipe(debounceTime(300), distinctUntilChanged())
+            .subscribe((text) => {
+                this.page = 1;
+                this.filtro.searchText = text;
+                this.cargarPagina(this.page);
+            });
 
         this.navigationSub = this.router.events
             .pipe(filter((ev) => ev instanceof NavigationStart || ev instanceof NavigationEnd))
             .subscribe((ev) => {
                 if (ev instanceof NavigationStart) {
                     const nav = this.router.getCurrentNavigation();
-                    this.navFromMenu = !!nav?.extras?.state?.['fromMenu'];
+                    this.navFromMenu = !!(nav?.extras?.state as any)?.['fromMenu'];
                     return;
                 }
                 if (ev instanceof NavigationEnd) {
@@ -125,7 +127,9 @@ export class ForecastingComponent implements OnInit, OnDestroy {
 
         this.stockService.getForecastingList(this.tallerId, p, this.pageSize, this.filtro).subscribe({
             next: (resp) => {
-                this.forecast = (resp.results || []).map((i) => this.stockService.procesarRepuestoStock(i));
+                this.forecast = (resp.results || []).map((i) =>
+                    this.stockService.procesarRepuestoStock(i)
+                );
                 const count = resp.count ?? this.forecast.length;
                 this.totalPages = Math.max(1, Math.ceil(count / this.pageSize));
                 this.page = p;
@@ -175,14 +179,19 @@ export class ForecastingComponent implements OnInit, OnDestroy {
 
         try {
             const res = await firstValueFrom(
-                this.stockService.getRepuestoTallerForecast(this.tallerId, item.repuesto_taller.id_repuesto_taller)
+                this.stockService.getRepuestoTallerForecast(
+                    this.tallerId,
+                    item.repuesto_taller.id_repuesto_taller
+                )
             );
             this.forecastRepuesto = res;
             this.setCobertura(this.forecastRepuesto.grafico_cobertura);
             this.setDemanda(this.forecastRepuesto.grafico_demanda);
             this.loadingDetails = false;
         } catch (error: any) {
-            this.errorMessage = error?.message ?? 'No se pudo obtener información extra para este repuesto.';
+            this.errorMessage =
+                error?.message ??
+                'No se pudo obtener información extra para este repuesto.';
             this.loadingDetails = false;
         }
     }
@@ -211,7 +220,10 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     get paginationItems(): Array<number | '…'> {
         const windowSize = 2;
         const total = this.totalPages ?? 0;
-        const current = Math.min(Math.max(this.page ?? 1, 1), Math.max(total, 1));
+        const current = Math.min(
+            Math.max(this.page ?? 1, 1),
+            Math.max(total, 1)
+        );
 
         if (total <= 7) {
             return Array.from({ length: total }, (_, i) => i + 1);
@@ -236,12 +248,12 @@ export class ForecastingComponent implements OnInit, OnDestroy {
     }
 
     // GRAFICO DE COBERTURA
-    coberturaData: ChartData<'bar' | 'line'> = {
+    coberturaData: any = {
         labels: [],
         datasets: [],
     };
 
-    coberturaOptions: ChartOptions<'bar' | 'line'> = {
+    coberturaOptions: any = {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
@@ -262,7 +274,7 @@ export class ForecastingComponent implements OnInit, OnDestroy {
             legend: { position: 'top' },
             tooltip: {
                 callbacks: {
-                    label: (ctx) => {
+                    label: (ctx: any) => {
                         const v = ctx.parsed.y;
                         const ds = ctx.dataset.label ?? '';
                         return `${ds}: ${v ?? 0} u.`;
@@ -277,15 +289,15 @@ export class ForecastingComponent implements OnInit, OnDestroy {
         const stock = (gc.stock_proyectado ?? []).map((n) => n ?? 0);
         const demanda = (gc.demanda_proyectada ?? []).map((n) => n ?? 0);
 
-        const stockDs: ChartDataset<'bar'> = {
-            type: 'bar',
+        const stockDs = {
+            type: 'bar' as const,
             label: 'Stock Proyectado',
             data: stock,
             borderRadius: 6,
         };
 
-        const demandaDs: ChartDataset<'line'> = {
-            type: 'line',
+        const demandaDs = {
+            type: 'line' as const,
             label: 'Demanda Proyectada',
             data: demanda,
             tension: 0.25,
