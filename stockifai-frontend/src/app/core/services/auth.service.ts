@@ -32,7 +32,7 @@ export class AuthService {
         shareReplay(1)
     );
 
-    private readonly API_URL = 'http://3.137.136.34:8000/api';
+    private readonly API_URL = 'http://3.137.136.34/api';
 
     private static readonly STORAGE_USER = 'user';
     private static readonly STORAGE_TALLER = 'activeTaller';

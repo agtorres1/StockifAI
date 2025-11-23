@@ -4,7 +4,7 @@ import { catchError, Observable, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class RestService {
-     private baseUrl = 'http://3.137.136.34:8000/api/';
+     private baseUrl = 'http://3.137.136.34/api/';
 
     constructor(private http: HttpClient) {}
 
