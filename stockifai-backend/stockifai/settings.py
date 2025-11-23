@@ -25,6 +25,7 @@ DEBUG = True  # ← CAMBIAR A TRUE TEMPORALMENTE
 ALLOWED_HOSTS = [
     ".onrender.com",
     "localhost",
+    "127.0.0.1",
     "3.141.117.250",
 ]
 INSTALLED_APPS = [
