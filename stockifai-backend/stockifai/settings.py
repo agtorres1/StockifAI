@@ -182,7 +182,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_HEADERS = True
 CORS_ALLOW_ALL_METHODS = True
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
@@ -197,20 +197,27 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
     "authorization",
     "content-type",
-    "accept",
+    "dnt",
     "origin",
+    "user-agent",
     "x-csrftoken",
     "x-requested-with",
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:4200",
+    "https://stockifai-frontend.onrender.com", 
+]
 SESSION_COOKIE_HTTPONLY = True   # Seguridad: no accesible desde JavaScript
 
 SESSION_COOKIE_AGE = 86400       # 24 horas
 SESSION_SAVE_EVERY_REQUEST = True  # Renueva la sesión en cada petición
 SESSION_COOKIE_SAMESITE = None  # ← Alternativa
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = True
+
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
