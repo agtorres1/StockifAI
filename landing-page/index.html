@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockifAI | Sabe hoy lo que vas a necesitar mañana.</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/x-icon" href="assets/IconoStockifAI.ico" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+
+<body>
+
+    <header id="navbar">
+        <div class="container">
+            <div class="logo-container">
+                <img src="assets/images/LogoStockifAI-clear.png" alt="StockifAI" class="logo" />
+            </div>
+            <nav>
+                <a href="#hero">Inicio</a>
+                <a href="#features-timeline">Cómo funciona</a>
+                <a href="#pasos">Implementación</a>
+                <a href="#cta-banner">Contacto</a>
+                <a href="#pricing">Planes</a>
+            </nav>
+            <button onclick="openModal()" class="cta-button nav-cta">Agendá una Demo</button>
+        </div>
+    </header>
+
+    <section id="hero">
+        <div class="container hero-split">
+
+            <div class="hero-text">
+                <h1>
+                    Conocé <span class="accent-ud">hoy</span> lo que vas a necesitar
+                    <span class="accent-ud">mañana.</span>
+                </h1>
+
+                <p class="subtitle">
+                    Control y forecasting de stock para talleres automotrices.
+                </p>
+
+                <a href="#features-timeline" class="cta-button hero-cta">Descubrí StockifAI</a>
+            </div>
+
+            <div class="hero-image">
+                <img src="assets/images/forecasting.svg" alt="StockifAI Hero Image">
+            </div>
+
+        </div>
+    </section>
+
+    <section id="features-timeline" class="ft-section">
+        <div class="container">
+            <h2 class="fh-title text-center">¿Qué puede hacer <span class="accent-ud">StockifAI</span> por tu taller?
+            </h2>
+
+            <div class="timeline-full">
+                <div class="timeline-line"></div>
+
+                <div class="timeline-row">
+                    <div class="timeline-content text-side text-right-align">
+                        <h3>Predicción <span class="highlight">Inteligente</span></h3>
+                        <p>Nuestro motor de forecast anticipa la demanda y te indica cuánto comprar, evitando faltantes
+                            y exceso de stock.</p>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="icon-circle">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                    </div>
+                    <div class="timeline-content image-side">
+                        <div class="img-wrapper shadow-effect">
+                            <img src="assets/images/prediccion.png" alt="Predicción">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row reverse-mobile">
+                    <div class="timeline-content image-side">
+                        <div class="img-wrapper shadow-effect">
+                            <img src="assets/images/alertas.png" alt="Alertas">
+                        </div>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="icon-circle">
+                            <i class="bi bi-bell-fill"></i>
+                        </div>
+                    </div>
+                    <div class="timeline-content text-side text-left-align">
+                        <h3>Alertas <span class="highlight">Automáticas</span></h3>
+                        <p>Recibí alertas que te permiten reaccionar a tiempo cuando el stock se desvía de los niveles
+                            recomendados.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-row">
+                    <div class="timeline-content text-side text-right-align">
+                        <h3>Red <span class="highlight">Colaborativa</span></h3>
+                        <p>Consultá el stock disponible en talleres asociados y resolvé faltantes al instante.</p>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="icon-circle">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                    </div>
+                    <div class="timeline-content image-side">
+                        <div class="img-wrapper shadow-effect">
+                            <img src="assets/images/localizador.png" alt="Red Colaborativa">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-row reverse-mobile">
+                    <div class="timeline-content image-side">
+                        <div class="img-wrapper shadow-effect">
+                            <img src="assets/images/dashboard.png" alt="Métricas">
+                        </div>
+                    </div>
+                    <div class="timeline-center">
+                        <div class="icon-circle">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </div>
+                    </div>
+                    <div class="timeline-content text-side text-left-align">
+                        <h3><span class="highlight">Análisis</span> de Inventario</h3>
+                        <p>Accedé a indicadores clave que te muestran cómo se mueve tu inventario y dónde podés mejorar
+                            costos y disponibilidad.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <section id="marcas" class="brands-section">
+        <div class="container text-center">
+            <h2 class="brands-title">Marcas que ya optimizan su inventario con <span class="accent-ud">StockifAI</span>
+            </h2>
+
+            <div class="brands-grid">
+                <div class="brand-card shadow-effect">
+                    <img src="assets/images/nissan-logo.png" alt="Nissan">
+                </div>
+
+                <div class="brand-card shadow-effect">
+                    <img src="assets/images/renault-logo.svg" alt="Renault">
+                </div>
+
+                <div class="brand-card shadow-effect">
+                    <img src="assets/images/toyota-logo.png" alt="Toyota">
+                </div>
+
+                <div class="brand-card shadow-effect">
+                    <img src="assets/images/casa-renault-logo.png" alt="CasaRenault">
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="pasos">
+        <div class="container">
+            <h2 class="pasos-title">Sumate a <span class="accent-ud">StockifAI</span> en Solo 3 Pasos</h2>
+            <div class="steps-grid">
+                <!-- PASO 1 -->
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Agendá una Demo Gratuita</h3>
+                    <p class="step-desc">
+                        Conocé cómo StockifAI puede transformar la gestión de tu taller.
+                    </p>
+                    <p class="step-highlight">
+                        <i class="bi bi-clipboard-check"></i>
+                        Recibí un diagnóstico completo de tu stock en menos de 24 horas.
+                    </p>
+                </div>
+                <!-- PASO 2 -->
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Configurá tu Taller</h3>
+                    <p class="step-desc">
+                        Nos encargamos de dejar todo listo para que empieces sin esfuerzo.
+                    </p>
+                    <p class="step-highlight">
+                        <i class="bi bi-box-seam"></i>
+                        Cargamos tu stock inicial y ajustamos tus parámetros.
+                    </p>
+                </div>
+                <!-- PASO 3 -->
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Empezá a Optimizar</h3>
+                    <p class="step-desc">
+                        Reducí faltantes, optimizá tus compras y liberá capital inmovilizado.
+                    </p>
+                    <p class="step-highlight">
+                        <i class="bi bi-activity"></i>
+                        Predicciones y alertas desde el primer día.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cta-banner">
+        <div class="container text-center">
+            <div class="cta-content">
+                <h2>¿Listo para llevar tu taller al siguiente nivel?</h2>
+                <p>Sumate a la red de talleres que ya predicen su demanda con Inteligencia Artificial.</p>
+
+                <button onclick="openModal()" class="cta-button btn-white btn-giant shake-hover">
+                    Agendar Demo Gratuita <i class="bi bi-calendar-check"></i>
+                </button>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing">
+        <div class="container" style="padding-top: 0;">
+            <h2 style="margin-bottom: 20px;">Nuestros Planes de Suscripción</h2>
+            <p class="subtitle" style="margin-top: 10px !important;">Elige el plan que mejor se adapta al tamaño y
+                complejidad de
+                tu taller.</p>
+            <div class="pricing-grid">
+                <div class="plan-card">
+                    <h3>Plan Básico</h3>
+                    <div class="price"><span>$</span>49.000<span>/mes</span></div>
+                    <ul>
+                        <li><span class="check">✓</span> Predicción de stock</li>
+                        <li><span class="check">✓</span> Sistema de Alertas</li>
+                        <li>Ideal para talleres individuales</li>
+                    </ul>
+                    <a class="cta-button" onclick="openModal()">Elegir Plan Básico</a>
+                </div>
+                <div class="plan-card featured">
+                    <h3>Plan Red</h3>
+                    <div class="price"><span>$</span>99.000<span>/mes</span></div>
+                    <ul>
+                        <li><span class="check">✓</span> Predicción de stock</li>
+                        <li><span class="check">✓</span> Sistema de Alertas</li>
+                        <li><span class="check">✓</span> Acceso a Red Colaborativa</li>
+                    </ul>
+                    <a class="cta-button" onclick="openModal()">Elegir Plan Red</a>
+                </div>
+                <div class="plan-card">
+                    <h3>Plan Premium</h3>
+                    <div class="price"><span>$</span>249.000<span>/mes</span></div>
+                    <ul>
+                        <li><span class="check">✓</span> Predicción de stock</li>
+                        <li><span class="check">✓</span> Sistema de Alertas</li>
+                        <li><span class="check">✓</span> Acceso a Red Colaborativa</li>
+                        <li><span class="check">✓</span> Gestión de Sucursales</li>
+                        <li class="text-sm">
+                            Hasta 3 sucursales sin cargo extra
+                        </li>
+                    </ul>
+                    <a class="cta-button" onclick="openModal()">Elegir Plan Premium</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="detalles">
+        <div class="container">
+            <h3>El Desafío de Gestionar tu Inventario</h3>
+            <p style="text-align: justify;">
+                Los talleres mecánicos enfrentan un desafío constante: manejar miles de repuestos con una demanda
+                difícil de anticipar y con información dispersa entre sistemas, depósitos y sucursales.
+                Esta falta de visibilidad genera <strong>decisiones de compra imprecisas</strong>,
+                <strong>exceso de capital inmovilizado</strong> y
+                <strong>faltantes de piezas clave</strong> que pueden producir la pérdida de una venta.
+                <br><br>
+                <strong>StockifAI</strong> reúne toda esa información en un solo lugar,
+                <strong>predice</strong> la demanda, activa <strong>alertas</strong>
+                automáticas ante riesgos y permite consultar disponibilidad en la
+                <strong>red de talleres</strong>.
+                El resultado: compras más inteligentes, menos capital inmovilizado y una mayor disponibilidad de
+                repuestos justo cuando se necesitan.
+            </p>
+        </div>
+    </section>
+
+    <footer id="contacto" class="footer">
+        <div class="container">
+            <div class="footer-grid">
+
+                <!-- INFO -->
+                <div class="footer-info">
+                    <h4>StockifAI</h4>
+                    <p>Plataforma de Control y Forecasting de Stock.</p>
+                </div>
+
+                <!-- LINKS -->
+                <div class="footer-links">
+                    <h4>Secciones</h4>
+                    <a href="#hero">Inicio</a>
+                    <a href="#features-timeline">Cómo funciona</a>
+                    <a href="#pasos">Implementación</a>
+                    <a href="#cta-banner">Contacto</a>
+                    <a href="#pricing">Planes</a>
+                </div>
+
+                <!-- CONTACT -->
+                <div class="footer-contact">
+                    <h4 style="margin-bottom: 10px;">Contacto</h4>
+                    <p style="margin-bottom: 10px;"><i class="bi bi-envelope-fill"></i> contacto@stockifai.com</p>
+                    <p style="margin-bottom: 10px;"><i class="bi bi-telephone-fill"></i> +54 9 11 4031-7224</p>
+
+                    <div class="social-icons">
+                        <a href="#">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
+                        <a href="#">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="#">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- COPYRIGHT -->
+            <div class="copyright">
+                © 2025 StockifAI — Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+
+
+    <div id="demoModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+
+            <div class="modal-header">
+                <h3>Agendar Demo</h3>
+                <p>Completá tus datos y un especialista te contactará en breve.</p>
+            </div>
+
+            <form id="contactForm" onsubmit="submitForm(event)">
+                <div class="form-group">
+                    <label for="empresa">Nombre de la Empresa / Taller</label>
+                    <input type="text" id="empresa" name="empresa" placeholder="Ej. Taller Martínez" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email Corporativo</label>
+                        <input type="email" id="email" name="email" placeholder="vos@empresa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="+54 11..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="comentarios">Comentarios / Necesidad Principal</label>
+                    <textarea id="comentarios" name="comentarios" rows="3"
+                        placeholder="Me interesa predecir stock de frenos..."></textarea>
+                </div>
+
+                <button type="submit" class="cta-button modal-submit">Confirmar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div id="lightbox" class="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-img" src="" alt="preview">
+    </div>
+
+
+    <script>
+        // Abrir Modal
+        function openModal() {
+            document.getElementById('demoModal').style.display = 'flex';
+        }
+
+        // Cerrar Modal
+        function closeModal() {
+            document.getElementById('demoModal').style.display = 'none';
+        }
+
+        // Cerrar si hacen clic afuera del cuadro blanco
+        window.onclick = function (event) {
+            const modal = document.getElementById('demoModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Simular envío (para que veas el efecto)
+        function submitForm(e) {
+            e.preventDefault(); // Evita que recargue la página
+            alert("¡Gracias! Tu solicitud ha sido enviada. Te contactaremos pronto.");
+            closeModal();
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId.length > 1) {
+                    e.preventDefault();
+                    const target = document.querySelector(targetId);
+                    const offset = 70; // ALTURA DEL NAVBAR
+
+                    const elementPosition = target.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.scrollY - offset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+                }
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const lightbox = document.getElementById("lightbox");
+            const lightboxImg = document.querySelector(".lightbox-img");
+            const closeBtn = document.querySelector(".lightbox-close");
+
+            // Todas las imágenes del timeline
+            const images = document.querySelectorAll(".timeline-content.image-side img");
+
+            images.forEach(img => {
+                img.addEventListener("click", () => {
+                    lightbox.style.display = "block";
+                    lightboxImg.src = img.src;
+                });
+            });
+
+            // Cerrar al clickear la X
+            closeBtn.addEventListener("click", () => {
+                lightbox.style.display = "none";
+            });
+
+            // Cerrar al clickear por fuera de la imagen
+            lightbox.addEventListener("click", (e) => {
+                if (e.target === lightbox) {
+                    lightbox.style.display = "none";
+                }
+            });
+
+            // Cerrar con ESC
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    lightbox.style.display = "none";
+                }
+            });
+        });
+    </script>
+
+
+</body>
+
+</html>
